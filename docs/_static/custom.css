@@ -1,0 +1,98 @@
+/* Styling for new concept terms */
+.newconcept {
+    color: blue;
+    font-style: italic;
+}
+
+/* Styling for reference concept terms */
+.refconcept {
+    font-style: italic;
+}
+
+/* Underline styles */
+.underline {
+    text-decoration: underline;
+}
+
+.underline-bold {
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+/* Adjust page width for better readability */
+.wy-nav-content {
+    max-width: 1200px !important;  /* Increase from default 800px */
+}
+
+/* Responsive width adjustments */
+@media screen and (min-width: 1400px) {
+    .wy-nav-content {
+        max-width: 50% !important;  /* Use percentage for ultra-wide screens */
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .wy-nav-content {
+        max-width: 90% !important;  /* Make content more readable on smaller screens */
+    }
+}
+
+/* Improve paragraph spacing */
+p {
+    margin-top: 0.8em;
+    margin-bottom: 0.8em;
+}
+
+/* Green Example Block */
+.example-green {
+    background-color: #e6f3e6 !important;  /* Light green background */
+    padding: 1em;
+    margin: 1em 0;
+    border-radius: 5px;
+}
+
+/* Example Title Bar */
+.example-green .admonition-title {
+    background-color: #4caf50 !important; /* Darker green title */
+    color: white !important;
+    padding: 0.5em;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    cursor: pointer; /* Make the title clickable for collapsibility */
+}
+
+/* Admonition container with grey background */
+.admonition.code-grey {
+    background-color: #f0f0f0;  /* Light grey background */
+    padding: 1em;
+    margin: 1em 0;
+    border-radius: 5px;
+}
+
+/* Code Block Title Styling */
+.admonition.code-grey > .admonition-title {
+    background-color: #000; /* Black title bar */
+    color: #fff; /* White text */
+    margin: -1em -1em 1em -1em;
+    padding: 0.5em 1em;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    cursor: pointer; /* Make title clickable for collapsibility */
+}
+
+/* Default expanded state */
+.admonition-title:after {
+    content: " ▲"; /* Arrow pointing up (expanded) */
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+
+/* When collapsed, hide content & update arrow */
+.admonition.collapsed .admonition-title:after {
+    content: " ▼"; /* Arrow pointing down (collapsed) */
+}
+
+.admonition.collapsed .admonition-content {
+    display: none;
+}
+

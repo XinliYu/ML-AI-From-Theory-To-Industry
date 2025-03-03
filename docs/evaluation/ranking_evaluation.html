@@ -1,0 +1,465 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ranking Evaluation &mdash; MLAI 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=211db8cb" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/foldable_admonitions.js?v=7eeb6e3d"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Basic Evaluation" href="basic_evaluation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Evaluation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic_evaluation.html">Basic Evaluation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ranking Evaluation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#precision-k-recall-k">Precision&#64;k &amp; Recall&#64;k</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mean-average-precision-map">Mean Average Precision (MAP)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#normalized-discounted-cumulative-gain-ndcg">Normalized Discounted Cumulative Gain (NDCG)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mean-reciprocal-rank-mrr">Mean Reciprocal Rank (MRR)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metrics-for-low-precision-ranking-scenarios">Metrics for Low-Precision Ranking Scenarios</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#position-based-metrics">Position-Based Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#comprehensive-ranking-metrics">Comprehensive Ranking Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#low-precision-ranking-scenarios">Low-Precision Ranking Scenarios</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Evaluation</a></li>
+      <li class="breadcrumb-item active">Ranking Evaluation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/evaluation/ranking_evaluation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ranking-evaluation">
+<h1>Ranking Evaluation<a class="headerlink" href="#ranking-evaluation" title="Link to this heading"></a></h1>
+<p>Many ML/AI systems must rank items in order of predicted relevance, such as search engines and recommendation systems. In this section, we assume that given a <strong>query</strong>, the ML/AI system returns an ordered list of items.</p>
+<p>Unlike precision and recall which only measure how well the ML/AI system makes binary decisions about returning relevant items, <span class="target" id="newconcept-ranking_evaluation"></span><span class="newconcept">Ranking Evaluation</span> focuses on assessing how well a system orders items. The common approach is to assign higher weights to items appearing higher in the ranked results during metric calculation. Ranking evaluation is particularly valuable in applications where the position of an item in results directly impacts user experience.</p>
+<section id="precision-k-recall-k">
+<h2>Precision&#64;k &amp; Recall&#64;k<a class="headerlink" href="#precision-k-recall-k" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-precision&#64;k"></span><span class="newconcept">Precision&#64;k</span> (P&#64;k) and <span class="target" id="newconcept-recall&#64;k"></span><span class="newconcept">Recall&#64;k</span> (R&#64;k) are basic metrics for ranking evaluation. Given a query, they adapt the traditional <a class="reference external" href="basic_evaluation.html#newconcept-precision"><span class="refconcept">precision</span></a> and <a class="reference external" href="basic_evaluation.html#newconcept-recall"><span class="refconcept">recall</span></a> metrics to evaluate only the top-k ranked items:</p>
+<div class="math notranslate nohighlight">
+\[\text{Precision&#64;k} = \frac{\text{Number of relevant items in top-k results}}{k}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Recall&#64;k} = \frac{\text{Number of relevant items in top-k results}}{\text{Total number of relevant items}}\]</div>
+<p>These metrics are useful for evaluating systems where users typically only examine a limited number of top results (e.g., first page of search results). To evaluation the ML/AI system ranking, we can avearge P&#64;k and R&#64;k across all queries in the ground truth.</p>
+</section>
+<section id="mean-average-precision-map">
+<h2>Mean Average Precision (MAP)<a class="headerlink" href="#mean-average-precision-map" title="Link to this heading"></a></h2>
+<p>Given a query, <span class="target" id="newconcept-average_precision"></span><span class="newconcept">Average Precision (AP)</span> averages P&#64;k and R&#64;k metrics across a range of $k$ from 1 to a chosen maximum rank number $n$ when the item at position $k$ is relevant.</p>
+<div class="math notranslate nohighlight">
+\[AP(q) = \frac{\sum_{k=1}^{n} P(k) \cdot \text{rel}(k)}{\sum_{k=1}^{n} \text{rel}(k)}\]</div>
+<p>Where:</p>
+<ul>
+<li><p>$q$ is a query.</p></li>
+<li><p>$P(k)$ is P&#64;k for query $q$.</p></li>
+<li><p>$\text{rel}(k)$ is the relevance score for the item ranked at $k$, and is typically an indicator function for MAP,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{rel}(k) = \mathbf{1}[{\text{item at position $k$ is relevant}}] =
+\begin{cases}
+1 &amp; \text{if item at position $k$ is relevant} \\
+0 &amp; \text{otherwise}
+\end{cases}\end{split}\]</div>
+</li>
+<li><p>Given the formula, item at higher rank has more weight in AP calculation. For example, item at rank $1$ will be considered across $k=1, …, n$, while the item at rank $n$ is only considered once.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Why $\text{rel}(k)$?</p>
+<ul class="simple">
+<li><p><strong>Intuitive interpretation</strong>: The overall AP value represents the average precision a user would experience when finding each relevant document in the ranked list. This is more meaningful than averaging precision at every position regardless of relevance.</p></li>
+<li><p><strong>Historical development</strong>: The formula evolved from the <a class="reference external" href="basic_evaluation.html#newconcept-pr_curve"><span class="refconcept">PR Curve</span></a> where precision is plotted against recall. By averaging precision at each recall point (which occurs exactly when a new relevant document is found), AP approximates the <a class="reference external" href="basic_evaluation.html#newconcept-area_under_curve"><span class="refconcept">area under curve</span></a>.</p></li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Can $\text{rel}(k)$ be a non-indicator function?</p>
+<p>The relevance metric in Mean Average Precision (MAP) doesn’t necessarily have to be an indicator function, but using a binary indicator function ($\text{rel}(k) \in \{0,1\}$) has become the standard approach. MAP was originally developed for information retrieval scenarios with binary relevance judgments (relevant/not relevant). The indicator function directly captures this binary nature. With binary relevance, AP has a clear interpretation: “the average precision a user experiences when finding each relevant document.”, and has an AUC based interpretation.</p>
+<p>There have been extensions of MAP that incorporate non-indicator relevance scores rather than just binary judgments to allow higher weights to more relevant items. The extended version is typically considered a separate metric with its own names (i.e., <span class="target" id="newconcept-graded_average_precision"></span><span class="newconcept">Graded Average Precision (GAP)</span>) rather than standard MAP.</p>
+</div>
+<div class="example-green admonition">
+<p class="admonition-title">AP’s Sensitivity to Ranking Order</p>
+<p>Consider two different rankings for the same query, each with 3 relevant items (R) and 2 irrelevant items (N):</p>
+<p><strong>Ranking A:</strong> [R, R, R, N, N]</p>
+<p>Precision calculations:</p>
+<ul class="simple">
+<li><p>P&#64;1 = 1/1 = 1.0 (rel=1)</p></li>
+<li><p>P&#64;2 = 2/2 = 1.0 (rel=1)</p></li>
+<li><p>P&#64;3 = 3/3 = 1.0 (rel=1)</p></li>
+<li><p>P&#64;4 = 3/4 = 0.75 (rel=0)</p></li>
+<li><p>P&#64;5 = 3/5 = 0.6 (rel=0)</p></li>
+</ul>
+<p>AP = (1.0×1 + 1.0×1 + 1.0×1 + 0.75×0 + 0.6×0)/3 = 3.0/3 = 1.0</p>
+<p><strong>Ranking B:</strong> [R, N, R, N, R]</p>
+<p>Precision calculations:</p>
+<ul class="simple">
+<li><p>P&#64;1 = 1/1 = 1.0 (rel=1)</p></li>
+<li><p>P&#64;2 = 1/2 = 0.5 (rel=0)</p></li>
+<li><p>P&#64;3 = 2/3 = 0.67 (rel=1)</p></li>
+<li><p>P&#64;4 = 2/4 = 0.5 (rel=0)</p></li>
+<li><p>P&#64;5 = 3/5 = 0.6 (rel=1)</p></li>
+</ul>
+<p>AP = (1.0×1 + 0.5×0 + 0.67×1 + 0.5×0 + 0.6×1)/3 = 2.27/3 = 0.76</p>
+<p>Despite having the same relevant documents, Ranking B has a lower AP (0.76 vs 1.0) because the relevant documents are ranked lower.</p>
+</div>
+<p><span class="target" id="newconcept-mean_average_precision"></span><span class="newconcept">Mean Average Precision (MAP)</span> is simply the avearge of AP across all queries.</p>
+<div class="math notranslate nohighlight">
+\[MAP = \frac{1}{|Q|} \sum_{q \in Q} \text{AP}(q)\]</div>
+<p>MAP rewards methods that place relevant documents higher in the ranking and is particularly useful for comparing different ranking algorithms.</p>
+<div class="example-green admonition">
+<p class="admonition-title">Example: Step-by-Step MAP Calculation</p>
+<p>Let’s work through a complete example to illustrate MAP calculation with multiple queries.</p>
+<p>Consider a search engine evaluation with three queries: “machine learning frameworks”, “neural networks”, and “data visualization”. For each query, we have an ordered list of search results with relevance judgments (R = relevant, N = not relevant).</p>
+<p><strong>Query 1: “machine learning frameworks”</strong></p>
+<p>Top 10 ranked results:</p>
+<ol class="arabic simple">
+<li><p>TensorFlow (R)</p></li>
+<li><p>PyTorch (R)</p></li>
+<li><p>Weather forecast (N)</p></li>
+<li><p>Scikit-learn (R)</p></li>
+<li><p>Keras (R)</p></li>
+<li><p>Random news article (N)</p></li>
+<li><p>Theano (R)</p></li>
+<li><p>E-commerce site (N)</p></li>
+<li><p>Caffe (R)</p></li>
+<li><p>Restaurant review (N)</p></li>
+</ol>
+<p>Total relevant items for this query: 6
+Relevant items are at positions: 1, 2, 4, 5, 7, 9</p>
+<p>Let’s calculate precision at each relevant position:</p>
+<ul class="simple">
+<li><p>P&#64;1 = 1/1 = 1.000 (rel=1)</p></li>
+<li><p>P&#64;2 = 2/2 = 1.000 (rel=1)</p></li>
+<li><p>P&#64;4 = 3/4 = 0.750 (rel=1)</p></li>
+<li><p>P&#64;5 = 4/5 = 0.800 (rel=1)</p></li>
+<li><p>P&#64;7 = 5/7 = 0.714 (rel=1)</p></li>
+<li><p>P&#64;9 = 6/9 = 0.667 (rel=1)</p></li>
+</ul>
+<p>AP for Query 1 = (1.000 + 1.000 + 0.750 + 0.800 + 0.714 + 0.667) / 6 = 4.931 / 6 = 0.822</p>
+<p><strong>Query 2: “neural networks”</strong></p>
+<p>Top 8 ranked results:</p>
+<ol class="arabic simple">
+<li><p>Deep learning article (R)</p></li>
+<li><p>Sports news (N)</p></li>
+<li><p>Convolutional networks paper (R)</p></li>
+<li><p>Online shop (N)</p></li>
+<li><p>Recurrent networks tutorial (R)</p></li>
+<li><p>Biography of a celebrity (N)</p></li>
+<li><p>Tech blog post (N)</p></li>
+<li><p>Backpropagation explanation (R)</p></li>
+</ol>
+<p>Total relevant items for this query: 4
+Relevant items are at positions: 1, 3, 5, 8</p>
+<p>Let’s calculate precision at each relevant position:</p>
+<ul class="simple">
+<li><p>P&#64;1 = 1/1 = 1.000 (rel=1)</p></li>
+<li><p>P&#64;3 = 2/3 = 0.667 (rel=1)</p></li>
+<li><p>P&#64;5 = 3/5 = 0.600 (rel=1)</p></li>
+<li><p>P&#64;8 = 4/8 = 0.500 (rel=1)</p></li>
+</ul>
+<p>AP for Query 2 = (1.000 + 0.667 + 0.600 + 0.500) / 4 = 2.767 / 4 = 0.692</p>
+<p><strong>Query 3: “data visualization”</strong></p>
+<p>Top 6 ranked results:</p>
+<ol class="arabic simple">
+<li><p>Movie review (N)</p></li>
+<li><p>Matplotlib tutorial (R)</p></li>
+<li><p>D3.js gallery (R)</p></li>
+<li><p>Social media post (N)</p></li>
+<li><p>Tableau guide (R)</p></li>
+<li><p>Visualization best practices (R)</p></li>
+</ol>
+<p>Total relevant items for this query: 4
+Relevant items are at positions: 2, 3, 5, 6</p>
+<p>Let’s calculate precision at each relevant position:</p>
+<ul class="simple">
+<li><p>P&#64;2 = 1/2 = 0.500 (rel=1)</p></li>
+<li><p>P&#64;3 = 2/3 = 0.667 (rel=1)</p></li>
+<li><p>P&#64;5 = 3/5 = 0.600 (rel=1)</p></li>
+<li><p>P&#64;6 = 4/6 = 0.667 (rel=1)</p></li>
+</ul>
+<p>AP for Query 3 = (0.500 + 0.667 + 0.600 + 0.667) / 4 = 2.434 / 4 = 0.609</p>
+<p><strong>MAP Calculation</strong></p>
+<p>MAP = (AP_Query1 + AP_Query2 + AP_Query3) / 3
+MAP = (0.822 + 0.692 + 0.609) / 3 = 2.123 / 3 = 0.708</p>
+<p><strong>Analysis</strong></p>
+<p>The MAP score of 0.708 indicates good overall ranking performance across the three queries. Breaking down the results:</p>
+<ul class="simple">
+<li><p><strong>Query 1 (AP = 0.822)</strong>: Best performance, with relevant items clustered near the top and good precision throughout.</p></li>
+<li><p><strong>Query 2 (AP = 0.692)</strong>: Good performance but with some relevant items appearing lower in the ranking.</p></li>
+<li><p><strong>Query 3 (AP = 0.609)</strong>: Weakest performance, starting with an irrelevant result and having more inconsistent precision.</p></li>
+</ul>
+<p>This example illustrates how MAP rewards systems that rank relevant items higher while penalizing those that place irrelevant items at top positions. The use of macro-averaging gives equal weight to each query regardless of how many relevant items it contains, ensuring that performance on all queries contributes equally to the final metric.</p>
+</div>
+<p>MAP has its counterpart for recall. <span class="target" id="newconcept-mean_average_recall"></span><span class="newconcept">Mean Average Recall (MAR)</span> is the metric for evaluating ranking performance but focusing on recall. While MAP emphasizes precision, MAR measures how well the system retrieves all relevant items across different ranks. MAR also shares a similar interpretation to MAP - related to the Recall-Precision curve and the AUC-RP metric.</p>
+<div class="math notranslate nohighlight">
+\[AR(q) = \frac{\sum_{k=1}^{n} R(k) \cdot \text{rel}(k)}{\sum_{k=1}^{n} \text{rel}(k)}\]</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p>$q$ is a query.</p></li>
+<li><p>$R(k)$ is R&#64;k for query $q$.</p></li>
+<li><p>$\text{rel}(k)$ is the relevance score for the item ranked at $k$, typically an indicator function as in MAP.</p></li>
+</ul>
+<p><span class="target" id="newconcept-mean_average_recall"></span><span class="newconcept">Mean Average Recall (MAR)</span> is then calculated as the average of AR across all queries:</p>
+<div class="math notranslate nohighlight">
+\[MAR = \frac{1}{|Q|} \sum_{q \in Q} \text{AR}(q)\]</div>
+</section>
+<section id="normalized-discounted-cumulative-gain-ndcg">
+<h2>Normalized Discounted Cumulative Gain (NDCG)<a class="headerlink" href="#normalized-discounted-cumulative-gain-ndcg" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-normalized_discounted_cumulative_gain"></span><span class="newconcept">Normalized Discounted Cumulative Gain (NDCG)</span> is another widely used ranking metric that considers the position of relevant documents. It is based on <span class="target" id="newconcept-discounted_cumulative_gain"></span><span class="newconcept">Discounted Cumulative Gain (DCG)</span>, which assigns higher importance to relevant documents appearing earlier in the ranked list. NDCG and DCG are typically calculated for the top-k items, and are noted as <strong>NDCG&#64;k</strong> and <strong>DCG&#64;k</strong>.</p>
+<p>DCG is calculated for the top-k of the ranked list as</p>
+<div class="math notranslate nohighlight">
+\[\text{DCG}(k) = \sum_{i=1}^{k} \frac{\text{rel}(i)}{\log_2(i+1)}\]</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p>$\text{rel}(i)$ is the relevance of the item at position $i$ in the ranked list.</p></li>
+<li><p>$\text{rel}^*(i)$ is the relevance of the item in the ideal ranked list.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The denominator in Discounted Cumulative Gain (DCG) can use logarithms with bases other than 2. The choice of denominator affects how quickly relevance is discounted as position increases.
+* Higher base (e.g., the natural logarithm with base $e=2.71828$) create a more gradual discount, placing more importance on items deeper in the results.
+* Smaller base (e.g., 1.5) creates a steeper discount, severely penalizing lower positions.</p>
+</div>
+<p>DCG scores have interpretability issues that make it challenging to use on its own.</p>
+<ul class="simple">
+<li><p><strong>Query-specific interpretation</strong>: A DCG of 10 might be excellent for a query with few relevant documents but poor for a query with many highly relevant documents.</p></li>
+<li><p><strong>Scale &amp; upperbound issue</strong>: Unlike metrics that are normalized between 0 and 1, DCG can grow unbounded depending on the number of relevant documents.</p></li>
+</ul>
+<p>To address these limitations, NDCG normalizes DCG by the maximum possible DCG for that query:</p>
+<p>The <span class="target" id="newconcept-ideal_dcg"></span><span class="newconcept">Ideal DCG (IDCG)</span> is calculated by sorting all relevant items by their relevance scores (highest to lowest) and computing the DCG of this ideal ordering:</p>
+<div class="math notranslate nohighlight">
+\[\text{IDCG}&#64;k = \sum_{i=1}^{k} \frac{\text{rel}^*(i)}{\log_2(i+1)}\]</div>
+<p>Where $\text{rel}^*(i)$ is the relevance score at position $i$ in the ideally ranked list.</p>
+<p>NDCG is then defined as:</p>
+<div class="math notranslate nohighlight">
+\[\text{NDCG}&#64;k = \frac{\text{DCG}&#64;k}{\text{IDCG}&#64;k}\]</div>
+<div class="example-green admonition">
+<p class="admonition-title">Example: NDCG Calculation</p>
+<p>Consider a movie recommendation system that ranks films on a relevance scale:</p>
+<ul class="simple">
+<li><p>3: Highly relevant</p></li>
+<li><p>2: Relevant</p></li>
+<li><p>1: Somewhat relevant</p></li>
+<li><p>0: Irrelevant</p></li>
+</ul>
+<p><strong>User Query: “Sci-fi action movies”</strong></p>
+<p>System ranking with relevance scores:</p>
+<ol class="arabic simple">
+<li><p>Star Wars: Episode V (rel=3)</p></li>
+<li><p>Blade Runner (rel=3)</p></li>
+<li><p>Romantic comedy (rel=0)</p></li>
+<li><p>The Matrix (rel=3)</p></li>
+<li><p>Avatar (rel=2)</p></li>
+</ol>
+<p>DCG&#64;5 calculation:</p>
+<ul class="simple">
+<li><p>DCG&#64;5 = 3/log₂(1+1) + 3/log₂(2+1) + 0/log₂(3+1) + 3/log₂(4+1) + 2/log₂(5+1)</p></li>
+<li><p>DCG&#64;5 = 3/1 + 3/1.585 + 0/2 + 3/2.322 + 2/2.585</p></li>
+<li><p>DCG&#64;5 = 3 + 1.892 + 0 + 1.292 + 0.774 = 6.958</p></li>
+</ul>
+<p>The ideal ranking would place all highly relevant (3) items first, followed by relevant (2) items:</p>
+<ol class="arabic simple">
+<li><p>Star Wars: Episode V (rel=3)</p></li>
+<li><p>Blade Runner (rel=3)</p></li>
+<li><p>The Matrix (rel=3)</p></li>
+<li><p>Avatar (rel=2)</p></li>
+<li><p>Romantic comedy (rel=0)</p></li>
+</ol>
+<p>IDCG&#64;5 calculation:</p>
+<ul class="simple">
+<li><p>IDCG&#64;5 = 3/log₂(1+1) + 3/log₂(2+1) + 3/log₂(3+1) + 2/log₂(4+1) + 0/log₂(5+1)</p></li>
+<li><p>IDCG&#64;5 = 3/1 + 3/1.585 + 3/2 + 2/2.322 + 0/2.585</p></li>
+<li><p>IDCG&#64;5 = 3 + 1.892 + 1.5 + 0.861 + 0 = 7.253</p></li>
+</ul>
+<p>NDCG&#64;5 = DCG&#64;5/IDCG&#64;5 = 6.958/7.253 = 0.959</p>
+<p>This high NDCG score of 0.959 indicates that despite ranking one irrelevant item at position 3, the system still performs very well overall, capturing most of the ideal ordering.</p>
+</div>
+</section>
+<section id="mean-reciprocal-rank-mrr">
+<h2>Mean Reciprocal Rank (MRR)<a class="headerlink" href="#mean-reciprocal-rank-mrr" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-mean_reciprocal_rank"></span><span class="newconcept">Mean Reciprocal Rank (MRR)</span> evaluates ranking quality by measuring how soon the first relevant document appears in the ranked list. It is calculated as the average reciprocal rank of the first relevant result across multiple queries.</p>
+<div class="math notranslate nohighlight">
+\[MRR = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{\text{rank}(q)}\]</div>
+<p>Where $\text{rank}(q)$ is the position of the first relevant item for query $q$.</p>
+<p>MRR is commonly used in question-answering (retrieval-based approach), Ads, recommendations, or even search results, when user is constrained to only pay attention to first few items, and the ranking of the first right answer is crucial. The following are some concrete scenarios.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Voice assistants</strong>: For smart devices like Alexa or Google Home, the screen may be small and low resolution, showing only three items at a time. On headless devices, voice recommendations can typically only present one item before user patience is exhausted.</p></li>
+<li><p><strong>Sponsored Ads</strong>: On search engines or social media platforms, there are typically only 2-3 available spots for sponsored results. Advertisers pay premiums for these positions, making the correct ranking critical for monetization.</p></li>
+<li><p><strong>Mobile search</strong>: On mobile screens, often only the top a few results appear without scrolling. Users frequently select from just these top results, rarely scrolling past the first few items.</p></li>
+<li><p><strong>Fact-based queries</strong>: For questions with a single correct answer (like “Who is the president of France?”), users primarily care about finding that one correct answer quickly rather than seeing multiple relevant documents.</p></li>
+<li><p><strong>Featured snippets</strong>: Search engines often display a single “featured snippet” at the top of results for certain queries. The system must correctly identify the most relevant result to feature in this high-visibility position.</p></li>
+<li><p><strong>Autocomplete suggestions</strong>: Search bars typically show 4-5 autocomplete suggestions, with users commonly selecting from only the top 1-2 options.</p></li>
+</ul>
+</div></blockquote>
+<p>In comparison to the other metric <a class="reference internal" href="#newconcept-first_relevant_position"><span class="refconcept">First Relevant Position (FRP)</span></a> introduced below, MRR is less affected by extreme outliers since the reciprocal transformation compresses very large rank values.</p>
+</section>
+<section id="metrics-for-low-precision-ranking-scenarios">
+<h2>Metrics for Low-Precision Ranking Scenarios<a class="headerlink" href="#metrics-for-low-precision-ranking-scenarios" title="Link to this heading"></a></h2>
+<p>Some ranking applications involve inherently low-precision scenarios (e.g., Ads, personalized recommendation), where</p>
+<ol class="arabic simple">
+<li><p>only one or very few items in a large candidate pool are relevant;</p></li>
+<li><p>the primary goal is to surface at least one relevant item within top positions;</p></li>
+<li><p>traditional metrics like Precision&#64;k may underrepresent performance.</p></li>
+</ol>
+<p><a class="reference internal" href="#newconcept-mean_reciprocal_rank"><span class="refconcept">Mean Reciprocal Rank (MRR)</span></a> is a suitable metric for this scenario, as discussed previously. The following additional metrics are particularly well-suited for evaluating ranking performance in these contexts.</p>
+<p><span class="target" id="newconcept-hit&#64;k"></span><span class="newconcept">Hit&#64;k</span> is a binary metric that evaluates whether at least one relevant item appears in the top-k ranked results:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{Hit&#64;k} =
+\begin{cases}
+1 &amp; \text{if any relevant item appears in top-k results} \\
+0 &amp; \text{otherwise}
+\end{cases}\end{split}\]</div>
+<p><span class="target" id="newconcept-mean_rank"></span><span class="newconcept">Mean Rank (MR)</span> measures the average position of relevant items in the ranked results.</p>
+<div class="math notranslate nohighlight">
+\[\text{MR} = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{|R_q|} \sum_{r \in R_q} \text{rank}(r)\]</div>
+<p>Where:
+- $R_q$ is the set of relevant items for query $q$
+- $\text{rank}(r)$ is the position of relevant item $r$ in the ranked list</p>
+<p><span class="target" id="newconcept-first_relevant_position"></span><span class="newconcept">First Relevant Position (FRP)</span> focuses solely on the rank of the first relevant item (similar to MRR):</p>
+<div class="math notranslate nohighlight">
+\[\text{FRP} = \frac{1}{|Q|} \sum_{q \in Q} \min_{r \in R_q} \text{rank}(r)\]</div>
+<p>Compared to <a class="reference internal" href="#newconcept-mean_reciprocal_rank"><span class="refconcept">Mean Reciprocal Rank (MRR)</span></a>, both <span class="underline">MR and FRP offer the benefit of being straightforward and immediately interpretable</span>, making them easier to understand for stakeholders without technical backgrounds. However, MR and FRP can be heavily skewed by a few queries where relevant items appear very late in the ranking.
+A simple technique to address this limitation is to calculate <strong>MR&#64;k</strong> and <strong>FRP&#64;k</strong>, which only consider items within the top-k positions. For FRP&#64;k specifically, a fixed constant “rank” value (e.g., k+1) can be assigned if no relevant item appears in the top-k results, creating a bounded metric while maintaining interpretability.</p>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>This chapter examined ranking evaluation metrics for ML/AI systems that return ordered lists of items.</p>
+<section id="position-based-metrics">
+<h3>Position-Based Metrics<a class="headerlink" href="#position-based-metrics" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Precision&#64;k</strong>: Proportion of relevant items in the top-k results</p></li>
+<li><p><strong>Recall&#64;k</strong>: Proportion of all relevant items found in the top-k results</p></li>
+<li><p><strong>Mean Reciprocal Rank (MRR)</strong> and <strong>First Relevant Position</strong>: Focuses on the position of the first relevant item</p></li>
+<li><p><strong>Hit&#64;k</strong>: Binary metric indicating if at least one relevant item appears in top-k</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="comprehensive-ranking-metrics">
+<h3>Comprehensive Ranking Metrics<a class="headerlink" href="#comprehensive-ranking-metrics" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Mean Average Precision (MAP)</strong> and <strong>Mean Average Recall (MAR)</strong>: Averages precision/recall at each position where a relevant item appears</p></li>
+<li><p><strong>Normalized Discounted Cumulative Gain (NDCG)</strong>: Evaluates both relevance and position with discount factors</p></li>
+<li><p><strong>Mean Rank</strong>: Average position of relevant items in the results</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="low-precision-ranking-scenarios">
+<h3>Low-Precision Ranking Scenarios<a class="headerlink" href="#low-precision-ranking-scenarios" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>Few relevant items in a large candidate pool</p></li>
+<li><p>Primary goal is surfacing at least one relevant item in top positions</p></li>
+<li><p>MRR, Hit&#64;k, and First Relevant Position are particularly well-suited</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="best-practices">
+<h3>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>Choose metrics aligned with how users interact with results</p></li>
+<li><p>Consider the visibility constraints of the interface (e.g., mobile vs. desktop)</p></li>
+<li><p>Select appropriate k values based on typical user browsing behavior</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="basic_evaluation.html" class="btn btn-neutral float-left" title="Basic Evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tony.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

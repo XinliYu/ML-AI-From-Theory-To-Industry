@@ -63,6 +63,9 @@ exclude_patterns = []
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+html_use_index = True
+html_baseurl = 'https://xinliyu.github.io/ML-AI-From-Theory-To-Industry'  # Important for GitHub Pages
+html_use_relative_paths = True
 numfig = True
 
 

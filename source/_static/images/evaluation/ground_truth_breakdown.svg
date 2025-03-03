@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <!-- Title -->
+  <text x="400" y="40" font-family="Arial, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#333">
+    Break Down of Ground Truth
+  </text>
+  
+  <!-- Main rectangles for ground truth -->
+  <rect x="100" y="80" width="600" height="350" fill="none" stroke="#333" stroke-width="2" />
+  <text x="400" y="105" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Ground Truth (All Items)</text>
+  
+  <!-- Relevant vs Irrelevant division (vertical) -->
+  <line x1="400" y1="120" x2="400" y2="430" stroke="#333" stroke-width="2" stroke-dasharray="5,5" />
+  <text x="180" y="135" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#4CAF50">Relevant Items (P)</text>
+  <text x="620" y="135" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#d32f2f">Irrelevant Items (N)</text>
+  
+  <!-- Recommended vs Not Recommended division (horizontal) -->
+  <line x1="100" y1="250" x2="700" y2="250" stroke="#333" stroke-width="2" stroke-dasharray="5,5" />
+  <text x="80" y="200" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#333" transform="rotate(-90, 80, 200)">Recommended</text>
+  <text x="80" y="350" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#333" transform="rotate(-90, 80, 350)">Not Recommended</text>
+  
+  <!-- Four quadrants -->
+  <!-- True Positive - Light green with green boundary -->
+  <rect x="120" y="150" width="260" height="80" fill="#A5D6A7" stroke="#00C853" stroke-width="3" rx="5" ry="5" />
+  <text x="250" y="195" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">True Positive (TP)</text>
+  
+  <!-- False Positive - Pink with red boundary -->
+  <rect x="420" y="150" width="260" height="80" fill="#EF9A9A" stroke="#FF0000" stroke-width="3" rx="5" ry="5" />
+  <text x="550" y="195" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">False Positive (FP)</text>
+  
+  <!-- False Negative - Light green with red boundary -->
+  <rect x="120" y="270" width="260" height="80" fill="#A5D6A7" stroke="#FF0000" stroke-width="3" rx="5" ry="5" />
+  <text x="250" y="315" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">False Negative (FN)</text>
+  
+  <!-- True Negative - More red with green boundary -->
+  <rect x="420" y="270" width="260" height="80" fill="#EF9A9A" stroke="#00C853" stroke-width="3" rx="5" ry="5" />
+  <text x="550" y="315" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">True Negative (TN)</text>
+  
+  <!-- Precision and Recall arrows -->
+  <!-- Precision arrow -->
+  <line x1="250" y1="370" x2="250" y2="400" stroke="#333" stroke-width="2" />
+  <line x1="550" y1="370" x2="550" y2="400" stroke="#333" stroke-width="2" />
+  <line x1="250" y1="385" x2="550" y2="385" stroke="#333" stroke-width="2" />
+  <polygon points="250,400 240,390 260,390" fill="#333" />
+  <text x="400" y="380" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Total Items (P + N)</text>
+  
+  <!-- Recall arrow -->
+  <line x1="80" y1="190" x2="110" y2="190" stroke="#333" stroke-width="2" />
+  <line x1="80" y1="310" x2="110" y2="310" stroke="#333" stroke-width="2" />
+  <line x1="95" y1="190" x2="95" y2="310" stroke="#333" stroke-width="2" />
+  <polygon points="110,190 100,180 100,200" fill="#333" />
+  <text x="45" y="250" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333" transform="rotate(-90, 45, 250)">System Decision</text>
+  
+  <!-- Formula definitions -->
+  <rect x="150" y="420" width="500" height="60" fill="none" stroke="#333" stroke-width="1" rx="5" ry="5" />
+  <text x="180" y="445" font-family="Arial, sans-serif" font-size="16" text-anchor="start" fill="#333">Precision = TP / (TP + FP)</text>
+  <text x="450" y="445" font-family="Arial, sans-serif" font-size="16" text-anchor="start" fill="#333">Recall = TP / (TP + FN)</text>
+  <text x="230" y="470" font-family="Arial, sans-serif" font-size="16" text-anchor="start" fill="#333">F1 Score = 2 × (Precision × Recall) / (Precision + Recall)</text>
+</svg>

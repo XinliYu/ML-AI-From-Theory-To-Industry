@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 530">
+  <!-- Grid lines -->
+  <g stroke="#e0e0e0" stroke-width="1">
+    <!-- Vertical grid lines -->
+    <line x1="50" y1="50" x2="50" y2="450" />
+    <line x1="150" y1="50" x2="150" y2="450" />
+    <line x1="250" y1="50" x2="250" y2="450" />
+    <line x1="350" y1="50" x2="350" y2="450" />
+    <line x1="450" y1="50" x2="450" y2="450" />
+    <line x1="550" y1="50" x2="550" y2="450" />
+    
+    <!-- Horizontal grid lines -->
+    <line x1="50" y1="50" x2="550" y2="50" />
+    <line x1="50" y1="130" x2="550" y2="130" />
+    <line x1="50" y1="210" x2="550" y2="210" />
+    <line x1="50" y1="290" x2="550" y2="290" />
+    <line x1="50" y1="370" x2="550" y2="370" />
+    <line x1="50" y1="450" x2="550" y2="450" />
+  </g>
+  
+  <!-- Axes -->
+  <g stroke="#333" stroke-width="2">
+    <line x1="50" y1="450" x2="550" y2="450" /> <!-- X-axis -->
+    <line x1="50" y1="50" x2="50" y2="450" /> <!-- Y-axis -->
+  </g>
+  
+  <!-- Axis labels -->
+  <g font-family="Arial" font-size="12" fill="#333">
+    <!-- X-axis labels -->
+    <text x="50" y="470" text-anchor="middle">0.0</text>
+    <text x="150" y="470" text-anchor="middle">0.2</text>
+    <text x="250" y="470" text-anchor="middle">0.4</text>
+    <text x="350" y="470" text-anchor="middle">0.6</text>
+    <text x="450" y="470" text-anchor="middle">0.8</text>
+    <text x="550" y="470" text-anchor="middle">1.0</text>
+    <text x="300" y="490" text-anchor="middle" font-weight="bold">Recall</text>
+    
+    <!-- Y-axis labels with full 0 to 1 range -->
+    <text x="30" y="450" text-anchor="end" dominant-baseline="middle">0.0</text>
+    <text x="30" y="370" text-anchor="end" dominant-baseline="middle">0.2</text>
+    <text x="30" y="290" text-anchor="end" dominant-baseline="middle">0.4</text>
+    <text x="30" y="210" text-anchor="end" dominant-baseline="middle">0.6</text>
+    <text x="30" y="130" text-anchor="end" dominant-baseline="middle">0.8</text>
+    <text x="30" y="50" text-anchor="end" dominant-baseline="middle">1.0</text>
+    <text x="20" y="250" text-anchor="middle" transform="rotate(-90, 20, 250)" font-weight="bold">Precision</text>
+  </g>
+  
+  <!-- Title -->
+  <text x="300" y="25" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Precision-Recall Curve: Model Comparison</text>
+  
+  <!-- Model A area under the curve - adjusted for more separation at low recall -->
+  <path d="M50,70 L150,90 L225,105 L340,120 L400,140 L450,165 L475,190 L510,230 L530,263.59 L540,318.46 L545,350.75 L550,410 L550,450 L50,450 Z" 
+        fill="#1f77b450" stroke="none" />
+  
+  <!-- Model B area under the curve - adjusted for lower precision at high recall -->
+  <path d="M50,50 L150,55 L200,59 L310,65 L375,75 L425,90 L460,125 L490,185 L515,250 L530,310 L540,350 L550,425 L550,450 L50,450 Z" 
+        fill="#ff7f0e50" stroke="none" />
+  
+  <!-- Model A PR curve - adjusted for more separation at low recall -->
+  <path d="M50,70 L150,90 L225,105 L340,120 L400,140 L450,165 L475,190 L510,230 L530,263.59 L540,318.46 L545,350.75 L550,410" 
+        fill="none" stroke="#1f77b4" stroke-width="3" />
+  
+  <!-- Model B PR curve - adjusted for lower precision at high recall -->
+  <path d="M50,50 L150,55 L200,59 L310,65 L375,75 L425,90 L460,125 L490,185 L515,250 L530,310 L540,350 L550,425" 
+        fill="none" stroke="#ff7f0e" stroke-width="3" />
+  
+  <!-- Highlighted points for Model A -->
+  <!-- High Precision Point (t=0.8) -->
+  <circle cx="340" cy="120" r="6" fill="#1f77b4" />
+  <text x="305" y="110" font-family="Arial" font-size="11" fill="#1f77b4" font-weight="bold">A (t=0.8): P=0.883, R=0.580</text>
+  
+  <!-- High Recall Point (t=0.4) -->
+  <circle cx="510" cy="230" r="6" fill="#1f77b4" />
+  <text x="410" y="220" font-family="Arial" font-size="11" fill="#1f77b4" font-weight="bold">A (t=0.4): P=0.545, R=0.920</text>
+  
+  <!-- Highlighted points for Model B -->
+  <!-- High Precision Point (t=0.8) -->
+  <circle cx="310" cy="65" r="6" fill="#ff7f0e" />
+  <text x="270" y="57" font-family="Arial" font-size="11" fill="#ff7f0e" font-weight="bold">B (t=0.8): P=0.962, R=0.520</text>
+  
+  <!-- High Recall Point (t=0.4) -->
+  <circle cx="490" cy="185" r="6" fill="#ff7f0e" />
+  <text x="395" y="175" font-family="Arial" font-size="11" fill="#ff7f0e" font-weight="bold">B (t=0.4): P=0.624, R=0.880</text>
+  
+  <!-- Legend - Horizontal without box, with AUC values -->
+  <line x1="120" y1="510" x2="150" y2="510" stroke="#1f77b4" stroke-width="3" />
+  <text x="155" y="514" font-family="Arial" font-size="12">Model A (AUC-PR 0.838)</text>
+  
+  <line x1="350" y1="510" x2="380" y2="510" stroke="#ff7f0e" stroke-width="3" />
+  <text x="385" y="514" font-family="Arial" font-size="12">Model B (AUC-PR 0.852)</text>
+</svg>

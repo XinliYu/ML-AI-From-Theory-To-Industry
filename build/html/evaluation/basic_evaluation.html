@@ -1,0 +1,1289 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Basic Evaluation &mdash; MLAI 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=211db8cb" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/foldable_admonitions.js?v=7eeb6e3d"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ranking Evaluation" href="ranking_evaluation.html" />
+    <link rel="prev" title="Evaluation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Evaluation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Basic Evaluation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-ground-truth">Dataset &amp; Ground Truth</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#confusion-matrix">Confusion Matrix</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#precision">Precision</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recall-fpr">Recall &amp; FPR</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#f1-score">F1 Score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#precision-recall-trade-off">Precision-Recall Trade-off</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#threshold-dependency-pr-curve">Threshold Dependency &amp; PR Curve</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#receiver-operating-characteristic-roc">Receiver Operating Characteristic (ROC)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#true-negative-sensitivity">True Negative Sensitivity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#threshold-dependency">Threshold Dependency</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-roc-curve">The ROC Curve</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#auc-roc">AUC-ROC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#micro-and-macro-averaging">Micro and Macro Averaging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#macro-precision-and-macro-recall">Macro-Precision and Macro-Recall</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#micro-precision-and-micro-recall">Micro-Precision and Micro-Recall</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#micro-and-macro-auc">Micro and Macro AUC</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-class-extension">Multi-Class Extension</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#strategies">Strategies</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-class-confusion-matrix">Multi-Class Confusion Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fundamental-metrics">Fundamental Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Threshold Dependency</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#threshold-agnostic-evaluation">Threshold-Agnostic Evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#multi-group-evaluation">Multi-Group Evaluation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#application-specific-considerations">Application-Specific Considerations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ranking_evaluation.html">Ranking Evaluation</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Evaluation</a></li>
+      <li class="breadcrumb-item active">Basic Evaluation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/evaluation/basic_evaluation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="basic-evaluation">
+<h1>Basic Evaluation<a class="headerlink" href="#basic-evaluation" title="Link to this heading"></a></h1>
+<p>In evaluating the performance of Machine Learning (ML) and Artificial Intelligence (AI) systems, <span class="target" id="newconcept-precision"></span><span class="newconcept">precision</span> and <span class="target" id="newconcept-recall"></span><span class="newconcept">recall</span> are foundational metrics that quantify how well a system retrieves or recommends relevant items. These metrics originated in <span class="target" id="newconcept-information_retrieval"></span><span class="newconcept">information retrieval (IR)</span> and <span class="target" id="newconcept-recommender/ranking_systems"></span><span class="newconcept">recommender/ranking systems (RecSys)</span>, but are now widely applied across various ML and AI tasks.</p>
+<p>For simplicity without loss of generality, we adopt standard terminology from IR and RecSys, focusing on <span class="target" id="newconcept-ground_truth_based_evaluation"></span><span class="newconcept">ground truth based evaluation</span> in this section — where labeled data provides the reference standard for assessing model predictions.</p>
+<section id="dataset-ground-truth">
+<h2>Dataset &amp; Ground Truth<a class="headerlink" href="#dataset-ground-truth" title="Link to this heading"></a></h2>
+<p>A <span class="target" id="newconcept-dataset"></span><span class="newconcept">dataset</span> consists of three essential components, <span class="target" id="newconcept-queries"></span><span class="newconcept">queries</span> (denoted by $Q$) representing the inputs into the ML/AI system, <span class="target" id="newconcept-documents"></span><span class="newconcept">documents</span> (denoted by $D$) representing the pool of all candidate items the ML/AI system can choose from to respond to a query, and the <span class="target" id="newconcept-annotations"></span><span class="newconcept">annotations</span> $A$ where $A \subset Q \times D \times \{0, 1\}$.</p>
+<ul class="simple">
+<li><p>The terms “<strong>query</strong>” and “<strong>document</strong>” are generic concepts in IR. They can take many concrete forms in practice. For example, a query can be a user profie, and a document can be a Song, Movie, or Ad. In practice, we often refer to a “document” as a “<strong>candidate item</strong>” to be recommended by the ML/AI system.</p></li>
+<li><p>Each annotation $a=(q, d, l)\in A$ is a triplet consiting of a query $q$, a document $d$ and a <span class="target" id="newconcept-label"></span><span class="newconcept">label</span> $l\in\{0, 1\}$ where the <span class="target" id="newconcept-positive_label"></span><span class="newconcept">positive label</span> “$1$” means $d$ is relevant to $q$ and <span class="target" id="newconcept-negative_label"></span><span class="newconcept">negative label</span> “$0$” means otherwise. Each annotation is sometimes also referred to as a <span class="target" id="newconcept-data_sample"></span><span class="newconcept">data sample</span>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The annotations provide information known to be factually accurate because it has been verified or labeled by humans or reliable processes. It <span class="underline">serves as the reference</span> standard against which predictions or measurements are compared. It is <span class="underline">context-specific</span> and represents the “correct answer” for a particular machine learning or AI application, <span class="underline">may still contain some mistakes or subjectivity</span>, but is treated as correct for evaluation purposes.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The concept of “query” and “documents” even generalize to scenarios beyond classic IR an RecSys. For example, in modern NLP tasks like generative summarization or translation, the “query” is the original text pieces, and the “documents” is an infinite set of possible candidates. <span class="underline">The annotations can be provided “on-the-fly” using an annotator model</span>.</p>
+</div>
+<p>Given a query $q$, a <span class="target" id="newconcept-model"></span><span class="newconcept">model</span> $M(q, d)$ is a function generating a <span class="target" id="newconcept-relevance_score"></span><span class="newconcept">relevance score</span> for every candidate $d \in D$. We choose a <span class="target" id="newconcept-threshold"></span><span class="newconcept">threshold</span> $t$ and all items $d$ such that $M(q, d) &gt; t$ are considered relevant or recommended.</p>
+<p>Given a query $q$, its <span class="target" id="newconcept-ground_truth"></span><span class="newconcept">Ground Truth</span>, denoted by $A_q$ where $A_q \subset \{q\} \times D \times \{0, 1\} \subset A$, is all annotations associated with $q$. Ground truth in practice often only provides positive labels for a subset of $D$, with the remaining items from $D$ assumed to be negatively labeled. Ground truth can be broken down in two ways, as shown in <a class="reference internal" href="#fig-ground-truth"><span class="std std-numref">Fig. 1</span></a>.</p>
+<figure class="align-default" id="fig-ground-truth">
+<a class="reference internal image-reference" href="../_images/ground_truth_breakdown.png"><img alt="Break Down of Ground Truth showing TP, FP, TN, and FN categories" src="../_images/ground_truth_breakdown.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">Break Down of Ground Truth showing TP, FP, TN, and FN categories</span><a class="headerlink" href="#fig-ground-truth" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>Depending on if an item is relevant:</p>
+<ul class="simple">
+<li><p><span class="target" id="newconcept-positive/relevant_items"></span><strong class="newconcept">Positive/Relevant Items (P)</strong>: Items that match the user needs or preferences according to the ground truth. These are the items that should ideally be recommended or retrieved. Also called the <span class="target" id="newconcept-positive_class"></span><span class="newconcept">Positive Class</span>. Positive/Relevant Items include <a class="reference internal" href="#newconcept-true_positive"><span class="refconcept">True Positive</span></a> and <a class="reference internal" href="#newconcept-false_negative"><span class="refconcept">False Negative</span></a> (i.e., P=TP+FN).</p></li>
+<li><p><span class="target" id="newconcept-negative/irrelevant_items"></span><strong class="newconcept">Negative/Irrelevant Items (N)</strong>: Items that do not match the user’s needs or preferences according to the ground truth. These items should ideally not be recommended or retrieved. Also called the <span class="target" id="newconcept-negative_class"></span><span class="newconcept">Negative Class</span>. Negative/Irrelevant Items include <a class="reference internal" href="#newconcept-false_positive"><span class="refconcept">False Positive</span></a> and <a class="reference internal" href="#newconcept-true_negative"><span class="refconcept">True Negative</span></a> (i.e., N=FP+TN).</p></li>
+<li><p>Whichever of these two classes is significantly smaller is called the <span class="target" id="newconcept-minority_class"></span><span class="newconcept">minority class</span>. By convention, we assume the positive class is the minority class (without loss of generality), because if the negative class is the minority, we can simply flip the labels. While many real-world ML/AI applications involve imbalanced classes (e.g., retrieval, recommendation, anomaly detection), certain problems can have relatively balanced classes (for example, sentiment analysis where positive and negative sentiments are comparably frequent, or stock market prediction with similar rates of upward and downward movements).</p></li>
+</ul>
+<p>Depending on if an item is recommended:</p>
+<ul class="simple">
+<li><p><strong>Recommended Items</strong>: Items that are suggested to the user as potentially relevant or interesting. Examples include documents retrieved by a search engine, products recommended by an e-commerce platform, or advertisements displayed to a user. “Recommended Items” consists of:</p>
+<ul>
+<li><p><span class="target" id="newconcept-true_positive"></span><strong class="newconcept">True Positive (TP)</strong>: Items that are both recommended by the system and genuinely relevant to the user. These represent successful recommendations that match user needs.</p></li>
+<li><p><span class="target" id="newconcept-false_positive"></span><strong class="newconcept">False Positive (FP)</strong>: Items that are recommended by the system but are not actually relevant to the user. These are also called <span class="target" id="newconcept-type_i_errors"></span><span class="newconcept">Type I errors</span> (or <span class="target" id="newconcept-errors_of_commission"></span><span class="newconcept">errors of commission</span>) where the system incorrectly includes irrelevant items.</p></li>
+</ul>
+</li>
+<li><p><strong>Not-Recommended Items</strong>: All other items in the ground truth that are not suggested to the user.</p>
+<ul>
+<li><p><span class="target" id="newconcept-true_negative"></span><strong class="newconcept">True Negative (TN)</strong>: Items neither recommended by the system nor relevant to the user. These represent correct decisions to exclude irrelevant items from recommendations.</p></li>
+<li><p><span class="target" id="newconcept-false_negative"></span><strong class="newconcept">False Negative (FN)</strong>: Items that are not recommended by the system but would have been relevant to the user. These represent <span class="target" id="newconcept-type_ii_errors"></span><span class="newconcept">Type II errors</span> (<span class="target" id="newconcept-errors_of_omission"></span><span class="newconcept">errors of omission</span>) where the system fails to identify relevant items.</p></li>
+</ul>
+</li>
+</ul>
+<section id="confusion-matrix">
+<h3>Confusion Matrix<a class="headerlink" href="#confusion-matrix" title="Link to this heading"></a></h3>
+<p>A confusion matrix is a structured way to evaluate a model’s performance by categorizing its predictions into four possible outcomes:</p>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">Confusion Matrix</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+<col style="width: 33.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Actual / Predicted</strong></p></th>
+<th class="head"><p><strong>Relevant (Predicted Positive)</strong></p></th>
+<th class="head"><p><strong>Irrelevant (Predicted Negative)</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Relevant (Actual Positive)</strong></p></td>
+<td><p>True Positive (TP)</p></td>
+<td><p>False Negative (FN)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Irrelevant (Actual Negative)</strong></p></td>
+<td><p>False Positive (FP)</p></td>
+<td><p>True Negative (TN)</p></td>
+</tr>
+</tbody>
+</table>
+<p>The confusion matrix provides a structured way to analyze errors and trade-offs.</p>
+</section>
+</section>
+<section id="precision">
+<h2>Precision<a class="headerlink" href="#precision" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-precision"></span><strong class="newconcept">Precision</strong> metric measures the proportion of recommended items that are relevant to the user.</p>
+<div class="math notranslate nohighlight">
+\[\text{Precision} = \frac{\text{TP}}{\text{Recommended Items}} = \frac{\text{TP}}{\text{TP} + \text{FP}}\]</div>
+<p><span class="target" id="newconcept-minimum_baseline_precision"></span><span class="newconcept">Minimum Baseline Precision</span> refers to the precision when the system recommends everything.</p>
+<div class="math notranslate nohighlight">
+\[\text{Minimum Baseline Precision} = \frac{\text{P}}{\text{All Items}} = \frac{\text{P}}{\text{P} + \text{N}}\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The “Minimum Baseline Precision” metric <span class="underline">serves great guardrail purpose when the candidate pool is small and already consists mostly of positive items</span>. For example, in multi-phase recommendations, the last phase could be choosing the top-3 from 10 candidates where most candidates are already relevant, and then we need to compare Precision with this metric.</p>
+</div>
+</section>
+<section id="recall-fpr">
+<h2>Recall &amp; FPR<a class="headerlink" href="#recall-fpr" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-recall"></span><strong class="newconcept">Recall</strong> metric (also known as <span class="target" id="newconcept-sensitivity"></span><span class="newconcept">sensitivity</span>, <span class="target" id="newconcept-true_positive_rate"></span><span class="newconcept">True Positive Rate (TPR)</span>) measures the proportion of relevant items that were successfully recommended. It answers the question: “Of all relevant items, how many did we recommend?”</p>
+<div class="math notranslate nohighlight">
+\[\text{Recall} = \frac{\text{TP}}{\text{P}} = \frac{\text{TP}}{\text{Relevant Items}} = \frac{\text{TP}}{\text{TP} + \text{FN}}\]</div>
+<p>While recall focuses on the positive items, the <span class="target" id="newconcept-false_positive_rate"></span><span class="newconcept">False Positive Rate (FPR)</span> focuses on the negative itesms. It answers the question: “Of all irrelevant items, how many did we recommend?”.</p>
+<div class="math notranslate nohighlight">
+\[\text{FPR} = \frac{\text{FP}}{\text{N}} = \frac{\text{FP}}{\text{Irrelevant Items}} = \frac{\text{FP}}{\text{FP} + \text{TN}}\]</div>
+</section>
+<section id="f1-score">
+<h2>F1 Score<a class="headerlink" href="#f1-score" title="Link to this heading"></a></h2>
+<p>Given <span class="math notranslate nohighlight">\(n\)</span> quantities <span class="math notranslate nohighlight">\(x_1, ..., x_n\)</span>, their <span class="target" id="newconcept-harmonic_mean"></span><span class="newconcept">harmonic mean</span> <span class="math notranslate nohighlight">\(H\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[H(x_1, ..., x_n) = \frac{n}{\sum_{i=1}^{n}{\frac{1}{x_i}}}\]</div>
+<p>where a key property is any one of <span class="math notranslate nohighlight">\(x_i, i=1, ..., n\)</span> approaches <span class="math notranslate nohighlight">\(0\)</span>, the mean approaches <span class="math notranslate nohighlight">\(0\)</span>. To obtain a reasonably high harmonic mean, none of the individual values should approach <span class="math notranslate nohighlight">\(0\)</span>, as shown in <a class="reference internal" href="#fig-harmonic-mean"><span class="std std-numref">Fig. 2</span></a>. Intuitively, <span class="underline">this metric is giving more weights to low values</span>.</p>
+<figure class="align-default" id="fig-harmonic-mean">
+<a class="reference internal image-reference" href="../_images/harmonnic_mean.png"><img alt="A plot of 2D harmonic mean between range 0 and 1" src="../_images/harmonnic_mean.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">A plot of 2D harmonic mean between range 0 and 1. The mean approaches 0 if either x or y approaches 0.</span><a class="headerlink" href="#fig-harmonic-mean" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The F1 score is the harmonic mean of precision and recall, providing a single metric that balances both considerations. The harmonic mean is used instead of the arithmetic mean because it gives more weight to low values. Intuitively, <span class="underline">a reasonable F1-score performance needs to have reasonable performance in precision and recall</span>.</p>
+<div class="math notranslate nohighlight">
+\[\text{F1 Score} = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}\]</div>
+</section>
+<section id="precision-recall-trade-off">
+<h2>Precision-Recall Trade-off<a class="headerlink" href="#precision-recall-trade-off" title="Link to this heading"></a></h2>
+<p>In most machine learning and AI systems, there exists an inherent trade-off between precision and recall. This trade-off arises because:</p>
+<ol class="arabic simple">
+<li><p><strong>Increasing recall</strong> typically requires recommending more items, which often leads to including more irrelevant items, thus decreasing precision.</p></li>
+<li><p><strong>Increasing precision</strong> typically requires being more selective about recommendations, which often means missing some relevant items, thus decreasing recall.</p></li>
+</ol>
+<p>This trade-off is particularly evident when adjusting the threshold for making recommendations:</p>
+<ul class="simple">
+<li><p>A <strong>higher threshold</strong> (recommending fewer items) tends to increase precision but decrease recall.</p></li>
+<li><p>A <strong>lower threshold</strong> (recommending more items) tends to increase recall but decrease precision.</p></li>
+</ul>
+<p>The F1 score addresses this trade-off by finding a balance point where both precision and recall are reasonably high. Since the F1 score uses the harmonic mean, it penalizes systems that achieve high performance in one metric at the expense of poor performance in the other. For example:</p>
+<ul class="simple">
+<li><p>A system with precision = 1.0 and recall = 0.1 would have F1 = 0.18</p></li>
+<li><p>A system with precision = 0.5 and recall = 0.5 would have F1 = 0.5</p></li>
+</ul>
+<p>This demonstrates how the F1 score favors balanced performance over excellence in just one dimension. In practical applications, the choice between optimizing for precision, recall, or F1 depends on the specific requirements of the task:</p>
+<ul class="simple">
+<li><p><strong>Precision-focused applications</strong>: <span class="underline">High risk at missing false positives</span>. For example, medical diagnosis systems where false positives can lead to unnecessary treatments.</p></li>
+<li><p><strong>Recall-focused applications</strong>: <span class="underline">High risk at missing false negatives</span>. For example, fraud detection systems where missing fraudulent cases is costly.</p></li>
+<li><p><strong>F1-focused applications</strong>: General recommendation systems where overall user experience depends on both relevance and coverage.</p></li>
+</ul>
+<section id="threshold-dependency-pr-curve">
+<h3>Threshold Dependency &amp; PR Curve<a class="headerlink" href="#threshold-dependency-pr-curve" title="Link to this heading"></a></h3>
+<p>In practice, <span class="underline">precision-recall trade-off is often tweaked by adjusting a threshold on the relevance score</span> (assuming model and its hyperparameters are fixed) on the training data. For example, for a “F1-focused application”, we could tweak a final relevance score threshold to achieve the best F1 score on the training data. When given multiple models, or multiple sets of hyperparameters, such threshold dependent evaluation has limitation.</p>
+<ol class="arabic simple">
+<li><p><strong>Threshold Dependency Challenge</strong>: Precision, recall, and F1 score at a single threshold may not provide a complete performance picture.</p>
+<ul class="simple">
+<li><p>Different business contexts may require different operating thresholds.</p></li>
+<li><p>Threshold selection introduces subjectivity into evaluation.</p></li>
+<li><p>Optimal thresholds on training data often don’t generalize well to production environments.</p></li>
+</ul>
+</li>
+<li><p><strong>Dynamic Requirements</strong>: In many real-world applications, the optimal threshold may not be reflected in the test set, and may change over time due to various business dynamics, such as shifting data distributions, evolving business priorities, changing cost structures and seasonal variations.</p></li>
+<li><p><strong>Comparison Difficulties</strong>: When comparing multiple models/systems:</p>
+<ul class="simple">
+<li><p>Each model might perform optimally at a different threshold. A model that performs well at one threshold may perform poorly at others</p></li>
+<li><p>While each model can theoretically be tuned to its own “best” threshold using training or validation data, but even this approach has limitations:</p>
+<ul>
+<li><p>Varying threshold per model instead of a single standardized operating point might complicate science, production and business operations.</p></li>
+<li><p>The thresholds are still subjective and limited to offline data, and doesn’t capture a model’s robustness to threshold adjustments, which is important in dynamic environments.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p>These limitations motivate the need for a <span class="target" id="newconcept-threshold-agnostic_evaluation"></span><span class="newconcept">threshold-agnostic evaluation</span> approach that evaluates overall performance across <span class="underline">all possible threshold values</span>. A typical technique is to plot a graph for the trade-off metrics, and here it is the <span class="target" id="newconcept-pr_curve"></span><span class="newconcept">PR Curve</span>, and <span class="target" id="newconcept-area_under_curve"></span><span class="newconcept">Area Under Curve (AUC)</span> (here it is <span class="target" id="newconcept-area_under_the_pr_curve"></span><span class="newconcept">Area Under the PR Curve (AUC-PR)</span>) is a single, threshold-agnostic and comprehensive metric measuring the overall performance.</p>
+<dl class="simple">
+<dt>In comparison to the <a class="reference internal" href="#newconcept-roc_curve"><span class="refconcept">ROC curve</span></a>, PR curve typically applies when</dt><dd><ol class="arabic simple">
+<li><p>The dataset has <span class="underline">strong class imbalance</span>, and the ML/AI system is <span class="underline">constrained to output a maximum number of relevant items</span> (e.g., in search results where the first page only shows 20 items, or fraud detection use cases where human judgment is required and the maxium number of cases to review is capped by huamn resource), then the <a class="reference internal" href="#newconcept-false_positive_rate"><span class="refconcept">False Positive Rate</span></a> would naturally be low nonetheless, making it harder to compare different models/systems.</p></li>
+<li><p><span class="underline">Precision is more critical</span> (to minimize false positive while managing recall), and the evaluation is required to be <span class="underline">sensitive to the minority class</span> (and therefore AUC-PR is considered a precision-focused metric).</p></li>
+<li><p>Evaluation requires <span class="underline">directly highlight the precision-recall trade-off</span>.</p></li>
+</ol>
+</dd>
+</dl>
+<p>Analagous to PR Curve, and AUC-PR, there is <span class="target" id="newconcept-recall-precision_curve"></span><span class="newconcept">Recall-Precision Curve</span> (RP Curve) and <span class="target" id="newconcept-auc-rp"></span><span class="newconcept">AUC-RP</span>, which is more recall-focused while managing the precision.</p>
+<div class="example-green admonition">
+<p class="admonition-title">Example : Email Spam Detection Model Comparison</p>
+<p><strong>Scenario:</strong>
+Our precision-recall curves compare two spam detection models (Model A and Model B) that assign scores between 0 and 1 to emails, with higher scores indicating higher likelihood of being spam. Both models are evaluated on 1000 emails, of which 100 (10%) are actually spam. This is a scenario with high class imbalance.</p>
+<p><strong>Score Distribution Comparison:</strong></p>
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-number">Table 2 </span><span class="caption-text">Score Distribution by Model</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Score Range</p></th>
+<th class="head"><p>Model A Spam Caught</p></th>
+<th class="head"><p>Model A Precision</p></th>
+<th class="head"><p>Model B Spam Caught</p></th>
+<th class="head"><p>Model B Precision</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.8-1.0</p></td>
+<td><p>58</p></td>
+<td><p>88.3%</p></td>
+<td><p>52</p></td>
+<td><p>96.2%</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.6-0.8</p></td>
+<td><p>22</p></td>
+<td><p>68.8%</p></td>
+<td><p>23</p></td>
+<td><p>79.3%</p></td>
+</tr>
+<tr class="row-even"><td><p>0.4-0.6</p></td>
+<td><p>12</p></td>
+<td><p>54.5%</p></td>
+<td><p>13</p></td>
+<td><p>62.4%</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.2-0.4</p></td>
+<td><p>6</p></td>
+<td><p>16.7%</p></td>
+<td><p>8</p></td>
+<td><p>28.6%</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0-0.2</p></td>
+<td><p>2</p></td>
+<td><p>0.9%</p></td>
+<td><p>4</p></td>
+<td><p>1.6%</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precision-Recall Curve Analysis:</strong>
+Our visualization compares both models across the precision-recall space. Key thresholds are highlighted:</p>
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-number">Table 3 </span><span class="caption-text">Key Operating Points</span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>Threshold</p></th>
+<th class="head"><p>Precision</p></th>
+<th class="head"><p>Recall</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>A</p></td>
+<td><p>0.8</p></td>
+<td><p>88.3%</p></td>
+<td><p>58.0%</p></td>
+<td><p>High-precision point</p></td>
+</tr>
+<tr class="row-odd"><td><p>B</p></td>
+<td><p>0.8</p></td>
+<td><p>96.2%</p></td>
+<td><p>52.0%</p></td>
+<td><p>High-precision point</p></td>
+</tr>
+<tr class="row-even"><td><p>A</p></td>
+<td><p>0.4</p></td>
+<td><p>54.5%</p></td>
+<td><p>92.0%</p></td>
+<td><p>High-recall point</p></td>
+</tr>
+<tr class="row-odd"><td><p>B</p></td>
+<td><p>0.4</p></td>
+<td><p>62.4%</p></td>
+<td><p>88.0%</p></td>
+<td><p>High-recall point</p></td>
+</tr>
+</tbody>
+</table>
+<p>The area under the curve (AUC-PR) for Model A is 0.838 and for Model B is 0.852, indicating that Model B has slightly better overall performance across different threshold settings.</p>
+<figure class="align-default" id="fig-spam-model-comparison">
+<a class="reference internal image-reference" href="../_images/spam_model_comparison_pr.svg"><img alt="Precision-Recall curve comparing two spam detection models" src="../_images/spam_model_comparison_pr.svg" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">Precision-Recall curve comparing two spam detection models. Model A (blue) and Model B (orange) show different performance characteristics. Model B maintains higher precision at low to medium recall levels, while Model A performs slightly better at very high recall values.</span><a class="headerlink" href="#fig-spam-model-comparison" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong>Business Implications:</strong>
+The comparison between the two models reveals important performance differences:</p>
+<ul class="simple">
+<li><p><strong>Model B excels in high-precision scenarios</strong>: At the 0.8 threshold, Model B significantly outperforms Model A in precision (96.2% vs 88.3%) although with slightly lower recall (52.0% vs 58.0%). This makes Model B substantially more suitable for contexts where false positives are particularly costly.</p></li>
+<li><p><strong>Model B maintains precision advantage at medium recall levels</strong>: In the mid-range of recall values (around 0.4-0.7), Model B maintains a precision advantage, indicating better discrimination ability in this common operational range.</p></li>
+<li><p><strong>Model A performs better at very high recall</strong>: At the highest recall levels (above 0.9), Model A begins to outperform Model B in precision, which might be preferred in scenarios where catching every possible spam email is the absolute priority.</p></li>
+</ul>
+<p><strong>Operational Considerations:</strong>
+The choice between models depends on business priorities:</p>
+<ul class="simple">
+<li><p><strong>Business email services</strong> would strongly prefer Model B due to its superior precision at standard operating thresholds, minimizing the risk of legitimate business communications being marked as spam</p></li>
+<li><p><strong>Security-focused environments</strong> would benefit from Model B’s higher precision in the typical working range, reducing false alarms</p></li>
+<li><p><strong>Consumer email services</strong> might still consider Model B because its precision significantly outperforms at a reasonable 80% recall level.</p></li>
+<li><p><strong>Tiered filtering systems</strong> might use Model B for primary classification and Model A as a secondary review mechanism for maximum recovery of more potential spam emails.</p></li>
+</ul>
+</div>
+<div class="code-grey admonition">
+<p class="admonition-title">Code: AUC-PR Calculation</p>
+<p>In practice, <strong>Area Under the Precision-Recall Curve (AUC-PR)</strong> is typically computed by:</p>
+<ol class="arabic simple">
+<li><p><strong>Sorting predictions by their scores</strong> (from highest to lowest).</p></li>
+<li><p><strong>Iterating over possible thresholds</strong> defined by each unique score to calculate the corresponding precision and recall values.</p></li>
+<li><p><strong>Plotting precision (y-axis) against recall (x-axis)</strong>, then using numerical integration to compute the area under the curve.</p></li>
+</ol>
+<p>Most machine learning libraries handle these steps internally. For instance, in Python’s scikit-learn, you can use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">average_precision_score</span>
+
+<span class="n">y_true</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>       <span class="c1"># Ground truth (0/1) labels</span>
+<span class="n">y_scores</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>     <span class="c1"># Model outputs (continuous probabilities or scores)</span>
+
+<span class="n">auc_pr</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_scores</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">auc_pr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Under the hood, <code class="docutils literal notranslate"><span class="pre">average_precision_score</span></code>:</p>
+<ul class="simple">
+<li><p>Sorts examples by their predicted score.</p></li>
+<li><p>Computes a “precision-recall” pair at each threshold.</p></li>
+<li><p>Integrates (using the <a class="reference external" href="https://en.wikipedia.org/wiki/Trapezoidal_rule">trapezoidal rule</a>) to approximate the area under the PR curve.</p></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="receiver-operating-characteristic-roc">
+<h2>Receiver Operating Characteristic (ROC)<a class="headerlink" href="#receiver-operating-characteristic-roc" title="Link to this heading"></a></h2>
+<section id="true-negative-sensitivity">
+<h3>True Negative Sensitivity<a class="headerlink" href="#true-negative-sensitivity" title="Link to this heading"></a></h3>
+<p>Although PR curve offers a nuanced threshold-agnostic view in imbalanced datasets, it ignores true negatives entirely. This is generally acceptable or even desirable for highly imbalanced problems, where the focus is on performance for the minority (positive) class. However, this could be a problem when</p>
+<ol class="arabic simple">
+<li><p><strong class="underline-bold">Classes are balanced or moderately imbalanced</strong>.
+If your positive and negative classes are roughly of similar size — or at least not extremely skewed — ignoring true negatives can cause you to lose insight into how well the model rejects negative cases.</p></li>
+<li><p><strong class="underline-bold">Costs of false negatives are similar to or even higher than false positives</strong>.
+When missing a positive (false negative, Type II error) carries a cost comparable to incorrectly flagging a negative (false positive, type I error), you need a measure that balances both Type I/II errors. Because the PR curve disregards true negatives (TN), it cannot show how many false positives arise from all negative examples.</p></li>
+<li><p><strong class="underline-bold">You want a global view of how the model/system separates classes</strong>.
+The PR curve focuses on performance within the minority class and may obscure information about how the model treats the majority (negative) class — particularly relevant when class distribution is not extremely skewed or both classes matter equally.</p></li>
+<li><p><strong class="underline-bold">The problem iself is inherently low precision, such as the click-through rate in Ads campaigns</strong>.
+In certain settings—like advertising campaigns that must target a large fraction of users—precision remains low across all thresholds and models. This “crushes” the PR curve near the bottom, offering limited insight into performance trade-offs.</p></li>
+</ol>
+<div class="example-green admonition">
+<p class="admonition-title">Example 1: Fraud Detection (High-Stake False Negatives)</p>
+<p>Consider a fraud detection system where 1% of 1,000 transactions are fraudulent (i.e., 10 positive cases). Two models are compared:</p>
+<ul class="simple">
+<li><p><strong>Model A</strong>: Flags 50 transactions, correctly identifying 8 frauds (TP = 8, FP = 42). This model misses 2 fraudulent transactions (FN = 2).</p></li>
+<li><p><strong>Model B</strong>: Flags 20 transactions, correctly identifying 6 frauds (TP = 6, FP = 14). This model misses 4 fraudulent transactions (FN = 4).</p></li>
+</ul>
+<p>Their F1 scores are:
+* Model A: Precision = 8/50 = 0.16, Recall = 8/10 = 0.80, F1 ≈ 0.27
+* Model B: Precision = 6/20 = 0.30, Recall = 6/10 = 0.60, F1 ≈ 0.40</p>
+<p>Although Model B achieves a higher F1 score (0.40 versus 0.27) due to its improved precision, it comes at the cost of a lower recall — meaning it misses more fraudulent transactions (4 missed cases instead of 2). In high-stakes environments where missing a fraudulent transaction carries significant financial or legal consequences, this trade-off is critical. This example demonstrates that while F1 or PR curves might suggest better performance by Model B, they fail to fully capture the impact of high-stake false negatives, underscoring the need for evaluation metrics that consider the overall balance of errors, including true negatives.</p>
+</div>
+<div class="example-green admonition">
+<p class="admonition-title">Example 2: Online Advertising</p>
+<p>Consider an online advertising system where typical click-through rates are around 2%. In a pool of 1,000,000 users, suppose 20,000 are potential clickers. Two advertising models are evaluated:</p>
+<ul class="simple">
+<li><p><strong>Model A</strong>: Shows ads to 10,000 users, resulting in 500 clicks (TP = 500, FN = 1,500).
+- Precision = 500/10,000 = 0.05
+- Recall = 500/2,000 = 0.25
+- F1 ≈ 0.083</p></li>
+<li><p><strong>Model B</strong>: Shows ads to 100,000 users, resulting in 1,800 clicks (TP = 1,800, FN = 200).
+- Precision = 1,800/100,000 = 0.018
+- Recall = 1,800/2,000 = 0.90
+- F1 ≈ 0.035</p></li>
+</ul>
+<p>Despite Model A achieving a much higher recall (90%) by reaching more potential clickers, its precision remains extremely low because it shows ads to a vast number of uninterested users. This scenario—where precision is inherently low across all thresholds—illustrates point (4): the PR curve is “crushed” near the bottom and offers limited insight into performance trade-offs.</p>
+</div>
+<div class="example-green admonition">
+<p class="admonition-title">Example 3: Sentiment Analysis (Balanced Scenario)</p>
+<p>Consider a sentiment analysis system with a balanced dataset of 5,000 positive and 5,000 negative reviews. Two models, <strong>Model A</strong> and <strong>Model B</strong>, are evaluated based on their classification of positive reviews:</p>
+<ul class="simple">
+<li><p><strong>Model A</strong>:
+- True Positives (TP): 4,500 (Recall = 90%)
+- False Positives (FP): 500, so Precision = 4,500 / (4,500 + 500) = 90%
+- True Negatives (TN): 4,500</p></li>
+<li><p><strong>Model B</strong>:
+- True Positives (TP): 4,500 (Recall = 90%)
+- False Positives (FP): 800, so Precision = 4,500 / (4,500 + 800) ≈ 84.9%
+- True Negatives (TN): 4,200</p></li>
+</ul>
+<p>The PR curve would indeed show that Model B has lower precision compared to Model A, reflecting its higher FP count. However, the PR curve only tells you that precision is lower without indicating the broader impact: in Model B, those extra 300 false positives come from misclassifying a significant fraction of the negative reviews.</p>
+</div>
+<p>In all these examples, metrics that account for true negatives (like AUC-ROC) provide critical additional insights by considering the false positive rate across different thresholds. This enables a more comprehensive evaluation of model performance and supports more informed business decisions in scenarios where class balance, cost trade-offs, global separation, or inherently low precision are important considerations.</p>
+</section>
+<section id="threshold-dependency">
+<h3>Threshold Dependency<a class="headerlink" href="#threshold-dependency" title="Link to this heading"></a></h3>
+<p>Similar to what motivated Precision-Recall Curve, we need for a threshold-agonostic evaluation metric to peform overall evaluation of multiple models/systems, and need to considers <span class="underline">both positive and negative classes</span> in its calculation.</p>
+</section>
+<section id="the-roc-curve">
+<h3>The ROC Curve<a class="headerlink" href="#the-roc-curve" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-roc_curve"></span><span class="newconcept">ROC curve</span> (Receiver Operating Characteristic) is a graphical plot that illustrates the diagnostic ability of a binary classifier system as its discrimination threshold varies. The ROC curve was first developed during World War II for radar signal detection before finding applications now in ML/AI systems.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The term “<strong>Receiver Operating Characteristic</strong>” originates from its early development during World War II, where it was used to evaluate the performance of radar receivers in detecting enemy aircraft, specifically how well a “receiver operator” could distinguish between actual signals and background noise; hence, the “receiver” part of the name refers to the radar receiver, and “operating characteristic” describes how well it functioned under different conditions.</p>
+</div>
+<p>The ROC curve plots two parameters:
+* <a class="reference internal" href="#newconcept-true_positive_rate"><span class="refconcept">True Positive Rate (TPR)</span></a> or <a class="reference internal" href="#newconcept-recall"><span class="refconcept">Recall</span></a> on the y-axis
+* <a class="reference internal" href="#newconcept-false_positive_rate"><span class="refconcept">False Positive Rate (FPR)</span></a> on the x-axis</p>
+<p>While both ROC and PR curves provide threshold-agnostic evaluation of ML/AI systems, they emphasize different aspects of model performance. Understanding the key differences helps select the appropriate curve for specific use cases:</p>
+<table class="docutils align-default" id="id6">
+<caption><span class="caption-number">Table 4 </span><span class="caption-text">Key Differences Between ROC and PR Curves</span><a class="headerlink" href="#id6" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Aspect</p></th>
+<th class="head"><p>ROC Curve</p></th>
+<th class="head"><p>PR Curve</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Axes</p></td>
+<td><p>TPR (y-axis) vs FPR (x-axis)</p></td>
+<td><p>Precision (y-axis) vs Recall (x-axis)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Incorporates TN</p></td>
+<td><p>Yes (in FPR denominator)</p></td>
+<td><p>No</p></td>
+</tr>
+<tr class="row-even"><td><p>Class Imbalance Sensitivity</p></td>
+<td><p>Less sensitive; can be misleadingly optimistic with severe imbalance</p></td>
+<td><p>Highly sensitive; directly affected by class imbalance</p></td>
+</tr>
+<tr class="row-odd"><td><p>Visualization Focus</p></td>
+<td><p>Overall discriminative ability</p></td>
+<td><p>Focus on positive class performance</p></td>
+</tr>
+<tr class="row-even"><td><p>Baseline</p></td>
+<td><p>Diagonal line (y=x) represents random classifier</p></td>
+<td><p>Horizontal line at y=P/(P+N) represents random classifier</p></td>
+</tr>
+<tr class="row-odd"><td><p>Preferred Use Cases</p></td>
+<td><p>Balanced datasets; both classes matter equally; FPR not crushed</p></td>
+<td><p>Imbalanced datasets; focus on minority class; Precision not crushed</p></td>
+</tr>
+</tbody>
+</table>
+<div class="example-green admonition">
+<p class="admonition-title">Example : Credit Scoring Model</p>
+<p><strong>Scenario:</strong>
+Our ROC curve illustrates a credit scoring model that assigns a score between 0 and 1 to customers, with higher scores indicating lower likelihood of default. The model is evaluated on 200 customers, of which 50 (25%) actually defaulted.</p>
+<p><strong>Data Distribution:</strong>
+The distribution of scores shows the model’s ability to separate defaulting and non-defaulting customers:</p>
+<table class="docutils align-default" id="id7">
+<caption><span class="caption-number">Table 5 </span><span class="caption-text">Score Distribution by Customer Type</span><a class="headerlink" href="#id7" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Score Range</p></th>
+<th class="head"><p>Defaulted Customers</p></th>
+<th class="head"><p>Good Customers</p></th>
+<th class="head"><p>Precision</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.8-1.0</p></td>
+<td><p>0</p></td>
+<td><p>39</p></td>
+<td><p>0.0%</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.6-0.8</p></td>
+<td><p>13</p></td>
+<td><p>49</p></td>
+<td><p>21.0%</p></td>
+</tr>
+<tr class="row-even"><td><p>0.4-0.6</p></td>
+<td><p>11</p></td>
+<td><p>40</p></td>
+<td><p>21.6%</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.2-0.4</p></td>
+<td><p>18</p></td>
+<td><p>22</p></td>
+<td><p>45.0%</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0-0.2</p></td>
+<td><p>8</p></td>
+<td><p>0</p></td>
+<td><p>100.0%</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>ROC Curve Analysis:</strong>
+Our visualization shows how varying the threshold creates different points on the ROC curve. Three key thresholds are highlighted:</p>
+<table class="docutils align-default" id="id8">
+<caption><span class="caption-number">Table 6 </span><span class="caption-text">Selected Points on the ROC Curve</span><a class="headerlink" href="#id8" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Score Threshold</p></th>
+<th class="head"><p>TPR (Recall)</p></th>
+<th class="head"><p>FPR</p></th>
+<th class="head"><p>Precision</p></th>
+<th class="head"><p>Interpretation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.7</p></td>
+<td><p>0.21</p></td>
+<td><p>0.20</p></td>
+<td><p>25.0%</p></td>
+<td><p>Conservative (red point)</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.5</p></td>
+<td><p>0.50</p></td>
+<td><p>0.40</p></td>
+<td><p>28.6%</p></td>
+<td><p>Balanced (green point)</p></td>
+</tr>
+<tr class="row-even"><td><p>0.3</p></td>
+<td><p>0.85</p></td>
+<td><p>0.80</p></td>
+<td><p>26.6%</p></td>
+<td><p>Aggressive (orange point)</p></td>
+</tr>
+</tbody>
+</table>
+<p>The area under the curve (AUC) is 0.767, indicating good discrimination ability. The shaded blue region in our visualization represents this area.</p>
+<figure class="align-default" id="fig-credit-scoring-roc">
+<a class="reference internal image-reference" href="../_images/credit_scoring_roc.svg"><img alt="ROC curve for a credit scoring model showing different threshold points" src="../_images/credit_scoring_roc.svg" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Fig. 4 </span><span class="caption-text">ROC curve for a credit scoring model. The curve shows how TPR and FPR change as the classification threshold varies from high (0.7, conservative) to low (0.3, aggressive). The diagonal dashed line represents random guessing performance. The “High Precision Region” generally contains points with better precision but lower recall, while the “Low Precision Region” offers higher recall at the cost of precision.</span><a class="headerlink" href="#fig-credit-scoring-roc" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong>Business Implications:</strong>
+The three threshold points on our curve represent different business strategies:</p>
+<ul class="simple">
+<li><p><strong>Conservative approach (t=0.7):</strong> The red point shows a TPR of 0.2 and FPR of 0.2. The bank would approve most loans but miss detecting 80% of defaulters. This maximizes loan volume but increases default-related losses.</p></li>
+<li><p><strong>Balanced approach (t=0.5):</strong> The green point shows a TPR of 0.5 and FPR of 0.4. This middle-ground catches half the defaulters while maintaining reasonable precision.</p></li>
+<li><p><strong>Aggressive approach (t=0.3):</strong> The orange point shows a TPR of 0.85 and FPR of 0.8. This conservative lending strategy catches most defaulters but also rejects 80% of good customers. This minimizes default losses but significantly reduces loan volume.</p></li>
+</ul>
+<p><strong>Operational Decisions:</strong>
+The optimal threshold depends on business considerations not visible in the ROC curve itself:</p>
+<ul class="simple">
+<li><p>The cost ratio between false negatives (approving defaults) and false positives (rejecting good loans)</p></li>
+<li><p>Regulatory requirements for risk management</p></li>
+<li><p>Overall lending volume targets and risk appetite</p></li>
+</ul>
+<p>Our visualization demonstrates why threshold-independent metrics like AUC-ROC are valuable for model evaluation, while the specific operating point selection remains a critical business decision requiring additional context beyond model performance.</p>
+</div>
+</section>
+<section id="auc-roc">
+<h3>AUC-ROC<a class="headerlink" href="#auc-roc" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-auc-roc"></span><span class="newconcept">AUC-ROC</span> (Area Under the ROC Curve) has a nice probabilistic interpretation. It represents the probability that a randomly chosen positive instance is ranked higher than a randomly chosen negative instance. It is a single scalar value between 0 and 1 that quantifies the overall discriminative ability of a ML/AI system independent of any specific threshold.</p>
+<div class="math notranslate nohighlight">
+\[\text{AUC-ROC} = P(S_{\text{positive}} &gt; S_{\text{negative}})\]</div>
+<p>Where $S_{\text{positive}}$ is the score for a positive instance, and $S_{\text{negative}}$ is the score for a negative instance.</p>
+<div class="example-green admonition">
+<p class="admonition-title">Mathematical Proof: AUC-ROC as a Probability</p>
+<p><strong>Theorem:</strong>
+The Area Under the ROC Curve (AUC-ROC) equals the probability that a randomly chosen positive instance receives a higher score than a randomly chosen negative instance.</p>
+<p><strong>Mathematical Statement:</strong></p>
+<div class="math notranslate nohighlight">
+\[\text{AUC-ROC} = P(S_{\text{positive}} &gt; S_{\text{negative}})\]</div>
+<p>Where:
+- <span class="math notranslate nohighlight">\(S_{\text{positive}}\)</span> is the score assigned by the model to a randomly selected positive instance
+- <span class="math notranslate nohighlight">\(S_{\text{negative}}\)</span> is the score assigned by the model to a randomly selected negative instance</p>
+<p><strong>Proof:</strong></p>
+<p>Let’s define:
+- <span class="math notranslate nohighlight">\(X_1, X_2, \ldots, X_m\)</span> as the scores for the <span class="math notranslate nohighlight">\(m\)</span> positive instances
+- <span class="math notranslate nohighlight">\(Y_1, Y_2, \ldots, Y_n\)</span> as the scores for the <span class="math notranslate nohighlight">\(n\)</span> negative instances</p>
+<p>The ROC curve is constructed by varying a threshold <span class="math notranslate nohighlight">\(t\)</span> and plotting the resulting (FPR, TPR) pairs:</p>
+<div class="math notranslate nohighlight">
+\[\text{TPR}(t) = \frac{1}{m}\sum_{i=1}^{m} \mathbf{1}(X_i &gt; t)\]</div>
+<div class="math notranslate nohighlight">
+\[\text{FPR}(t) = \frac{1}{n}\sum_{j=1}^{n} \mathbf{1}(Y_j &gt; t)\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\mathbf{1}(\cdot)\)</span> is the indicator function that equals 1 when its argument is true and 0 otherwise.</p>
+<p>The AUC-ROC is the integral of the TPR with respect to the FPR:</p>
+<div class="math notranslate nohighlight">
+\[\text{AUC-ROC} = \int_{0}^{1} \text{TPR}(t) \, d(\text{FPR}(t))\]</div>
+<p>To compute this integral in practice, we don’t use a continuous set of thresholds. Instead, we use the unique score values in our dataset as thresholds, because TPR and FPR only change when the threshold crosses an actual data point. We construct the ROC curve by sorting all instances by their scores and moving the threshold from highest to lowest.</p>
+<p><span class="underline">Key Step: Examining Threshold Movement</span></p>
+<p>Let’s examine what happens when we move the threshold past a specific negative instance with score <span class="math notranslate nohighlight">\(Y_j\)</span> (assuming <span class="math notranslate nohighlight">\(Y_j \ne X_i, i=1, ..., m\)</span>):</p>
+<ol class="arabic">
+<li><p>We’re essentially setting the threshold to be just below <span class="math notranslate nohighlight">\(Y_j\)</span> (i.e., <span class="math notranslate nohighlight">\(Y_j - \epsilon\)</span>, where <span class="math notranslate nohighlight">\(\epsilon\)</span> is infinitesimally small).</p></li>
+<li><p>All instances with scores <span class="math notranslate nohighlight">\(&gt; Y_j\)</span> were already classified as positive, and now we’re additionally classifying the instance with score <span class="math notranslate nohighlight">\(Y_j\)</span> as positive.</p></li>
+<li><p>Since <span class="math notranslate nohighlight">\(Y_j\)</span> is the score of a negative instance, this movement increases our false positive count by 1, which increases the FPR by <span class="math notranslate nohighlight">\(\frac{1}{n}\)</span>.</p></li>
+<li><p>The TPR at this threshold represents the fraction of positive instances with scores greater than <span class="math notranslate nohighlight">\(Y_j\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\text{TPR}(Y_j) = \frac{1}{m}\sum_{i=1}^{m} \mathbf{1}(X_i &gt; Y_j)\]</div>
+</li>
+<li><p>The area added to our AUC calculation is a small rectangle with:</p>
+<ul class="simple">
+<li><p>Width = <span class="math notranslate nohighlight">\(\frac{1}{n}\)</span> (the change in FPR)</p></li>
+<li><p>Height = TPR(<span class="math notranslate nohighlight">\(Y_j\)</span>) (the current TPR value)</p></li>
+</ul>
+</li>
+</ol>
+<p>Thus, the area added is:</p>
+<div class="math notranslate nohighlight">
+\[\Delta A_{\text{neg}} = \text{TPR}(Y_j) \cdot \frac{1}{n}\]</div>
+<p><span class="underline">Handling Ties</span></p>
+<p>For the case where multiple instances (both positive and negative) have the same score, we need to be more careful. If <span class="math notranslate nohighlight">\(Y_j = X_i\)</span> for some instances, then a most general approach is to assign a weight of 0.5 to tied positive-negative pairs.</p>
+<p>Using the third approach, we modify our calculation to:</p>
+<div class="math notranslate nohighlight">
+\[\text{TPR}(Y_j) = \frac{1}{m}\sum_{i=1}^{m} \left[ \mathbf{1}(X_i &gt; Y_j) + \frac{1}{2}\mathbf{1}(X_i = Y_j) \right]\]</div>
+<p><span class="underline">Summing Over All Instances</span></p>
+<p>Summing over all negative instances, the total area becomes:</p>
+<div class="math notranslate nohighlight">
+\[\text{AUC-ROC} = \sum_{j=1}^{n} \left( \frac{1}{m}\sum_{i=1}^{m} \left[ \mathbf{1}(X_i &gt; Y_j) + \frac{1}{2}\mathbf{1}(X_i = Y_j) \right] \right) \cdot \frac{1}{n}\]</div>
+<p>This simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\text{AUC-ROC} = \frac{1}{mn}\sum_{j=1}^{n}\sum_{i=1}^{m} \left[ \mathbf{1}(X_i &gt; Y_j) + \frac{1}{2}\mathbf{1}(X_i = Y_j) \right]\]</div>
+<p>This expression counts:</p>
+<ul class="simple">
+<li><p>1 for each pair where the positive instance has a higher score than the negative instance</p></li>
+<li><p>0.5 for each pair where the positive and negative instances have equal scores</p></li>
+<li><p>Divided by the total number of positive-negative pairs (<span class="math notranslate nohighlight">\(mn\)</span>)</p></li>
+</ul>
+<p>Therefore:</p>
+<div class="math notranslate nohighlight">
+\[\text{AUC-ROC} = P(S_{\text{positive}} &gt; S_{\text{negative}}) + \frac{1}{2}P(S_{\text{positive}} = S_{\text{negative}})\]</div>
+<p>When there are no ties (as is often the case with continuous scores), this simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\text{AUC-ROC} = P(S_{\text{positive}} &gt; S_{\text{negative}})\]</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Interpreting AUC-ROC:</p>
+<ul class="simple">
+<li><p>AUC = 1.0: Perfect classification (ideal model)</p></li>
+<li><p>0.9 ≤ AUC &lt; 1.0: Excellent classification</p></li>
+<li><p>0.8 ≤ AUC &lt; 0.9: Good classification</p></li>
+<li><p>0.7 ≤ AUC &lt; 0.8: Fair classification</p></li>
+<li><p>0.6 ≤ AUC &lt; 0.7: Poor classification</p></li>
+<li><p>0.5 ≤ AUC &lt; 0.6: Failed classification (little better than random)</p></li>
+<li><p>AUC = 0.5: Random classification (no discriminative power)</p></li>
+<li><p>AUC &lt; 0.5: Worse than random guessing (suggests inverted predictions)</p></li>
+</ul>
+</div>
+<div class="code-grey admonition">
+<p class="admonition-title">Code: AUC-ROC Calculation</p>
+<p>In practice, <strong>Area Under the ROC Curve (AUC-ROC)</strong> is typically computed using standard machine learning libraries. In Python’s scikit-learn, you can use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">roc_auc_score</span>
+
+<span class="n">y_true</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>       <span class="c1"># Ground truth (0/1) labels</span>
+<span class="n">y_scores</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>     <span class="c1"># Model outputs (continuous probabilities or scores)</span>
+
+<span class="n">auc_roc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_scores</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">auc_roc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Under the hood, <code class="docutils literal notranslate"><span class="pre">roc_auc_score</span></code>:</p>
+<ul class="simple">
+<li><p>Sorts examples by their predicted score.</p></li>
+<li><p>Computes TPR and FPR pairs at each possible threshold.</p></li>
+<li><p>Integrates (using the <a class="reference external" href="https://en.wikipedia.org/wiki/Trapezoidal_rule">trapezoidal rule</a>) to approximate the area under the ROC curve.</p></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="micro-and-macro-averaging">
+<h2>Micro and Macro Averaging<a class="headerlink" href="#micro-and-macro-averaging" title="Link to this heading"></a></h2>
+<p>A <a class="reference internal" href="#newconcept-dataset"><span class="refconcept">dataset</span></a> might be divided into multiple groups (e.g., by classes in multi-class classification; by users, categories, etc.), then each group can have its own <a class="reference internal" href="#newconcept-precision"><span class="refconcept">precision</span></a> and <a class="reference internal" href="#newconcept-recall"><span class="refconcept">recall</span></a> metrics, and we need to aggregate these metrics to measure overall system performance. There are two common approaches: micro-averaging and macro-averaging.</p>
+<section id="macro-precision-and-macro-recall">
+<h3>Macro-Precision and Macro-Recall<a class="headerlink" href="#macro-precision-and-macro-recall" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-macro-averaging"></span><span class="newconcept">Macro-averaging</span> calculates metrics individually for each group and then simply takes the average of these metrics.</p>
+<div class="math notranslate nohighlight">
+\[\text{Macro-Precision} = \frac{1}{n} \sum_{i=1}^{n} \text{Precision}_i\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Macro-Recall} = \frac{1}{n} \sum_{i=1}^{n} \text{Recall}_i\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Macro-F1} = \frac{1}{n} \sum_{i=1}^{n} \text{F1}_i\]</div>
+<p>Alternatively, Macro-F1 can be calculated as the harmonic mean of Macro-Precision and Macro-Recall:</p>
+<div class="math notranslate nohighlight">
+\[\text{Macro-F1} = 2 \cdot \frac{\text{Macro-Precision} \cdot \text{Macro-Recall}}{\text{Macro-Precision} + \text{Macro-Recall}}\]</div>
+</section>
+<section id="micro-precision-and-micro-recall">
+<h3>Micro-Precision and Micro-Recall<a class="headerlink" href="#micro-precision-and-micro-recall" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-micro-averaging"></span><span class="newconcept">Micro-averaging</span> calculates metrics by aggregating the individual true positives, false positives, and false negatives across all groups and then calculating the metrics.</p>
+<div class="math notranslate nohighlight">
+\[\text{Micro-Precision} = \frac{\sum_{i=1}^{n} \text{TP}_i}{\sum_{i=1}^{n} \text{TP}_i + \sum_{i=1}^{n} \text{FP}_i}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Micro-Recall} = \frac{\sum_{i=1}^{n} \text{TP}_i}{\sum_{i=1}^{n} \text{TP}_i + \sum_{i=1}^{n} \text{FN}_i}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Micro-F1} = 2 \cdot \frac{\text{Micro-Precision} \cdot \text{Micro-Recall}}{\text{Micro-Precision} + \text{Micro-Recall}}\]</div>
+<p>Micro-averaging gives equal weight to each item, which means a group with more items (e.g., active users, popular queries) has a greater influence on the final metric.</p>
+</section>
+<section id="micro-and-macro-auc">
+<h3>Micro and Macro AUC<a class="headerlink" href="#micro-and-macro-auc" title="Link to this heading"></a></h3>
+<p>When dealing with curve-based metrics like AUC-ROC or AUC-PR across multiple groups, we need to extend our averaging approaches. There are several strategies for computing AUC in multi-group scenarios:</p>
+<p><span class="target" id="newconcept-macro-auc"></span><span class="newconcept">Macro-AUC</span> computes the AUC for each group independently and then averages the results:</p>
+<div class="math notranslate nohighlight">
+\[\text{Macro-AUC} = \frac{1}{n} \sum_{i=1}^{n} \text{AUC}_i\]</div>
+<p>This gives equal importance to each group regardless of size, which can be desirable when each group is equally important from a business perspective.</p>
+<p><span class="target" id="newconcept-micro-auc"></span><span class="newconcept">Micro-AUC</span> approaches, on the other hand, can be implemented in two main ways:</p>
+<ol class="arabic">
+<li><p><strong>Pooling Method</strong>: Combine all instances from all groups into a single pool, then compute a single AUC on this pooled data:</p>
+<div class="math notranslate nohighlight">
+\[\text{Micro-AUC (Pooled)} = \text{AUC}(\text{all pooled instances})\]</div>
+<p>This method effectively weights each instance equally, giving more influence to larger groups.</p>
+</li>
+<li><p><strong>Threshold-wise Method</strong>: For each threshold value, compute micro-averaged TPR and FPR (or precision and recall for AUC-PR) across all groups, then compute the AUC from these averaged curves:</p>
+<div class="math notranslate nohighlight">
+\[\text{Micro-TPR}(t) = \frac{\sum_{i=1}^{n} \text{TP}_i(t)}{\sum_{i=1}^{n} \text{TP}_i(t) + \sum_{i=1}^{n} \text{FN}_i(t)}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Micro-FPR}(t) = \frac{\sum_{i=1}^{n} \text{FP}_i(t)}{\sum_{i=1}^{n} \text{FP}_i(t) + \sum_{i=1}^{n} \text{TN}_i(t)}\]</div>
+<p>The AUC is then calculated using these micro-averaged curves:</p>
+<div class="math notranslate nohighlight">
+\[\text{Micro-AUC (Threshold-wise)} = \int_{0}^{1} \text{Micro-TPR}(\text{Micro-FPR}^{-1}(x)) \, dx\]</div>
+</li>
+</ol>
+<div class="example-green admonition">
+<p class="admonition-title">Example: Micro vs. Macro AUC in Multi-Class Classification</p>
+<p>Consider a multi-class classification problem with 3 classes (A, B, C) where we’ve trained a one-vs-rest classifier. We evaluate the model for each class:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Class</p></th>
+<th class="head"><p>Class Size</p></th>
+<th class="head"><p>AUC-ROC</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>A</p></td>
+<td><p>1000</p></td>
+<td><p>0.95</p></td>
+</tr>
+<tr class="row-odd"><td><p>B</p></td>
+<td><p>200</p></td>
+<td><p>0.85</p></td>
+</tr>
+<tr class="row-even"><td><p>C</p></td>
+<td><p>50</p></td>
+<td><p>0.75</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Macro-AUC-ROC</strong> calculation:</p>
+<div class="math notranslate nohighlight">
+\[\text{Macro-AUC-ROC} = \frac{0.95 + 0.85 + 0.75}{3} = 0.85\]</div>
+<p>This gives equal weight to each class’s performance, regardless of its frequency in the dataset.</p>
+<p><strong>Micro-AUC-ROC</strong> (Pooled) would consider all 1250 instances together, essentially weighting by class frequency. This would heavily favor performance on class A which represents 80% of the data.</p>
+</div>
+</section>
+</section>
+<section id="multi-class-extension">
+<h2>Multi-Class Extension<a class="headerlink" href="#multi-class-extension" title="Link to this heading"></a></h2>
+<section id="strategies">
+<h3>Strategies<a class="headerlink" href="#strategies" title="Link to this heading"></a></h3>
+<p>When extending binary classification metrics to multi-class scenarios, <span class="target" id="newconcept-one-vs-rest"></span><span class="newconcept">One-vs-Rest (OVR)</span> is the most common approach for extending binary metrics to multi-class scenarios:</p>
+<ul class="simple">
+<li><p>For each class <span class="math notranslate nohighlight">\(c\)</span>, a separate binary classification problem is created</p></li>
+<li><p>Class <span class="math notranslate nohighlight">\(c\)</span> is treated as the “positive” class</p></li>
+<li><p>All other classes are combined and treated as the “negative” class</p></li>
+<li><p>Metrics are calculated for each binary problem, then averaged using micro or macro approaches</p></li>
+<li><p>This approach is specified with <code class="docutils literal notranslate"><span class="pre">multi_class='ovr'</span></code> in scikit-learn</p></li>
+</ul>
+<p>The other strategy <span class="target" id="newconcept-one-vs-one"></span><span class="newconcept">One-vs-One (OVO)</span> creates a binary classifier for each pair of classes:</p>
+<ul class="simple">
+<li><p>For <span class="math notranslate nohighlight">\(n\)</span> classes, <span class="math notranslate nohighlight">\(\frac{n(n-1)}{2}\)</span> binary classifiers are trained, and each classifier can be more specialized</p></li>
+<li><p>Each classifier distinguishes between just two classes</p></li>
+<li><p>The final classification is typically determined by “voting”</p></li>
+<li><p>This approach is specified with <code class="docutils literal notranslate"><span class="pre">multi_class='ovo'</span></code> in scikit-learn</p></li>
+<li><p>Generally more computationally expensive than OVR, but can perform better on some problems because each classifier is more specialized</p></li>
+</ul>
+<div class="code-grey admonition">
+<p class="admonition-title">Code: Computing Micro and Macro Metrics For Multi-Class Classification</p>
+<p>Here’s how to compute micro and macro metrics using scikit-learn for multi-class classification:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">roc_auc_score</span><span class="p">,</span> <span class="n">average_precision_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">precision_score</span><span class="p">,</span> <span class="n">recall_score</span><span class="p">,</span> <span class="n">f1_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">label_binarize</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Assume y_true contains class labels (0, 1, 2, ...)</span>
+<span class="c1"># y_score is of shape (n_samples, n_classes) containing probability scores</span>
+<span class="c1"># y_pred is of shape (n_samples,) containing predicted class labels</span>
+
+<span class="c1"># Binarize the labels for one-vs-rest evaluation</span>
+<span class="n">classes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span>
+<span class="n">y_true_bin</span> <span class="o">=</span> <span class="n">label_binarize</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">classes</span><span class="o">=</span><span class="n">classes</span><span class="p">)</span>
+
+<span class="c1"># 1. AUC calculations</span>
+<span class="c1"># ------------------</span>
+
+<span class="c1"># Macro AUC-ROC (average AUC for each class)</span>
+<span class="c1"># &quot;OVR&quot; stands for &quot;One-vs-Rest&quot; (sometimes also called &quot;One-vs-All&quot; or OVA), which is a strategy</span>
+<span class="c1"># for extending binary classification metrics to multi-class scenarios.</span>
+<span class="n">macro_auc_roc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_true_bin</span><span class="p">,</span> <span class="n">y_score</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">,</span> <span class="n">multi_class</span><span class="o">=</span><span class="s1">&#39;ovr&#39;</span><span class="p">)</span>
+
+<span class="c1"># Micro AUC-ROC (compute TPR/FPR across all classes, then calculate AUC)</span>
+<span class="n">micro_auc_roc</span> <span class="o">=</span> <span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_true_bin</span><span class="p">,</span> <span class="n">y_score</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">,</span> <span class="n">multi_class</span><span class="o">=</span><span class="s1">&#39;ovr&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Macro-averaged AUC-ROC: </span><span class="si">{</span><span class="n">macro_auc_roc</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Micro-averaged AUC-ROC: </span><span class="si">{</span><span class="n">micro_auc_roc</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># For PR AUC, we can use average_precision_score</span>
+<span class="n">macro_auc_pr</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_true_bin</span><span class="p">,</span> <span class="n">y_score</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
+<span class="n">micro_auc_pr</span> <span class="o">=</span> <span class="n">average_precision_score</span><span class="p">(</span><span class="n">y_true_bin</span><span class="p">,</span> <span class="n">y_score</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Macro-averaged AUC-PR: </span><span class="si">{</span><span class="n">macro_auc_pr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Micro-averaged AUC-PR: </span><span class="si">{</span><span class="n">micro_auc_pr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># 2. Precision, Recall, and F1 Score calculations</span>
+<span class="c1"># ----------------------------------------------</span>
+
+<span class="c1"># For precision, recall, and F1, we need predicted labels (not scores)</span>
+<span class="c1"># If you only have scores, you need to convert them to predictions first:</span>
+<span class="c1"># y_pred = np.argmax(y_score, axis=1)</span>
+
+<span class="c1"># Macro-averaging (compute metrics for each label, then average)</span>
+<span class="n">macro_precision</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
+<span class="n">macro_recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
+<span class="n">macro_f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;macro&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Macro-averaged Precision: </span><span class="si">{</span><span class="n">macro_precision</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Macro-averaged Recall: </span><span class="si">{</span><span class="n">macro_recall</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Macro-averaged F1: </span><span class="si">{</span><span class="n">macro_f1</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Micro-averaging (aggregate TP, FP, FN across all classes, then calculate metrics)</span>
+<span class="n">micro_precision</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
+<span class="n">micro_recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
+<span class="n">micro_f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;micro&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Micro-averaged Precision: </span><span class="si">{</span><span class="n">micro_precision</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Micro-averaged Recall: </span><span class="si">{</span><span class="n">micro_recall</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Micro-averaged F1: </span><span class="si">{</span><span class="n">micro_f1</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># 3. Class-specific metrics</span>
+<span class="c1"># -----------------------</span>
+
+<span class="c1"># Sometimes it&#39;s useful to see metrics for each class individually</span>
+<span class="n">class_precision</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">class_recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">class_f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="c1"># Print metrics for each class</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">classes</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Class </span><span class="si">{</span><span class="bp">cls</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Precision: </span><span class="si">{</span><span class="n">class_precision</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Recall: </span><span class="si">{</span><span class="n">class_recall</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  F1 Score: </span><span class="si">{</span><span class="n">class_f1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># 4. Weighted averaging (alternative that accounts for class imbalance)</span>
+<span class="c1"># ------------------------------------------------------------------</span>
+
+<span class="c1"># Weighted averaging - weights metrics by class frequency</span>
+<span class="n">weighted_precision</span> <span class="o">=</span> <span class="n">precision_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+<span class="n">weighted_recall</span> <span class="o">=</span> <span class="n">recall_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+<span class="n">weighted_f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;weighted&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Weighted-averaged Precision: </span><span class="si">{</span><span class="n">weighted_precision</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Weighted-averaged Recall: </span><span class="si">{</span><span class="n">weighted_recall</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Weighted-averaged F1: </span><span class="si">{</span><span class="n">weighted_f1</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># 5. Computing a confusion matrix for additional insights</span>
+<span class="c1"># ----------------------------------------------------</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">confusion_matrix</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+
+<span class="c1"># Generate the confusion matrix</span>
+<span class="n">cm</span> <span class="o">=</span> <span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+
+<span class="c1"># Optional: Normalize by row (true labels) to show recall</span>
+<span class="n">cm_norm</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">cm</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+<span class="c1"># Visualize the confusion matrix</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">cm_norm</span><span class="p">,</span> <span class="n">annot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;.2f&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">,</span>
+            <span class="n">xticklabels</span><span class="o">=</span><span class="n">classes</span><span class="p">,</span> <span class="n">yticklabels</span><span class="o">=</span><span class="n">classes</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Predicted Label&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;True Label&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Normalized Confusion Matrix&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="multi-class-confusion-matrix">
+<h2>Multi-Class Confusion Matrix<a class="headerlink" href="#multi-class-confusion-matrix" title="Link to this heading"></a></h2>
+<p>In multi-class classification, instead of just positive and negative classes, we have multiple classes (e.g., Class A, Class B, Class C). The confusion matrix extends to an <span class="math notranslate nohighlight">\(n \times n\)</span> structure, where each row represents the actual class and each column represents the predicted class.</p>
+<table class="docutils align-default" id="id9">
+<caption><span class="caption-number">Table 7 </span><span class="caption-text">Example Multi-Class Confusion Matrix (3 Classes)</span><a class="headerlink" href="#id9" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 15.8%" />
+<col style="width: 21.1%" />
+<col style="width: 21.1%" />
+<col style="width: 21.1%" />
+<col style="width: 21.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Actual / Predicted</strong></p></th>
+<th class="head"><p><strong>Class A</strong></p></th>
+<th class="head"><p><strong>Class B</strong></p></th>
+<th class="head"><p><strong>Class C</strong></p></th>
+<th class="head"><p><strong>Total (Actual)</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Class A</strong></p></td>
+<td><p>True Positives (TP_A)</p></td>
+<td><p>False Negative (FN_A→B)</p></td>
+<td><p>False Negative (FN_A→C)</p></td>
+<td><p>P_A = TP_A + FN_A→B + FN_A→C</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Class B</strong></p></td>
+<td><p>False Negative (FN_B→A)</p></td>
+<td><p>True Positives (TP_B)</p></td>
+<td><p>False Negative (FN_B→C)</p></td>
+<td><p>P_B = TP_B + FN_B→A + FN_B→C</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Class C</strong></p></td>
+<td><p>False Negative (FN_C→A)</p></td>
+<td><p>False Negative (FN_C→B)</p></td>
+<td><p>True Positives (TP_C)</p></td>
+<td><p>P_C = TP_C + FN_C→A + FN_C→B</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Total (Predicted)</strong></p></td>
+<td><p>PP_A = TP_A + FP_A</p></td>
+<td><p>PP_B = TP_B + FP_B</p></td>
+<td><p>PP_C = TP_C + FP_C</p></td>
+<td><p>Total = P_A + P_B + P_C</p></td>
+</tr>
+</tbody>
+</table>
+<p>Where:</p>
+<ul class="simple">
+<li><p><strong>True Positives (TP_x)</strong>: Correct predictions for Class X.</p></li>
+<li><p><strong>False Negatives (FN_x→y)</strong>: Instances of Class X misclassified as Class Y.</p></li>
+<li><p><strong>False Positives (FP_x)</strong>: Sum of Class Y and Class Z instances misclassified as Class X.</p></li>
+<li><p><strong>P_x</strong>: Total actual instances of Class X.</p></li>
+<li><p><strong>PP_x</strong>: Total predicted instances of Class X.</p></li>
+<li><p><strong>Total</strong>: Total number of samples</p></li>
+</ul>
+<div class="example-green admonition">
+<p class="admonition-title">Example: Concrete Multi-Class Confusion Matrix Example</p>
+<p>Suppose we have a weather classification system that predicts three possible weather conditions based on satellite imagery:</p>
+<ul class="simple">
+<li><p><strong>Class A: Sunny</strong></p></li>
+<li><p><strong>Class B: Cloudy</strong></p></li>
+<li><p><strong>Class C: Raining/Snowing</strong></p></li>
+</ul>
+<p>The model makes predictions based on historical weather data, and we evaluate its performance using a confusion matrix.</p>
+<table class="docutils align-default" id="id10">
+<caption><span class="caption-number">Table 8 </span><span class="caption-text">Example Multi-Class Confusion Matrix (Weather Classification)</span><a class="headerlink" href="#id10" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 15.8%" />
+<col style="width: 21.1%" />
+<col style="width: 21.1%" />
+<col style="width: 21.1%" />
+<col style="width: 21.1%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Actual / Predicted</strong></p></th>
+<th class="head"><p><strong>Sunny (Class A)</strong></p></th>
+<th class="head"><p><strong>Cloudy (Class B)</strong></p></th>
+<th class="head"><p><strong>Raining/Snowing (Class C)</strong></p></th>
+<th class="head"><p><strong>Total (Actual)</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Sunny (Class A)</strong></p></td>
+<td><p>True Positives (TP_A) = 45</p></td>
+<td><p>False Negative (FN_A→B) = 8</p></td>
+<td><p>False Negative (FN_A→C) = 2</p></td>
+<td><p>P_A = 45 + 8 + 2 = 55</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Cloudy (Class B)</strong></p></td>
+<td><p>False Negative (FN_B→A) = 7</p></td>
+<td><p>True Positives (TP_B) = 50</p></td>
+<td><p>False Negative (FN_B→C) = 10</p></td>
+<td><p>P_B = 7 + 50 + 10 = 67</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Raining/Snowing (Class C)</strong></p></td>
+<td><p>False Negative (FN_C→A) = 3</p></td>
+<td><p>False Negative (FN_C→B) = 9</p></td>
+<td><p>True Positives (TP_C) = 40</p></td>
+<td><p>P_C = 3 + 9 + 40 = 52</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Total (Predicted)</strong></p></td>
+<td><p>PP_A = TP_A + FP_A = 45 + 10 = 55</p></td>
+<td><p>PP_B = TP_B + FP_B = 50 + 17 = 67</p></td>
+<td><p>PP_C = TP_C + FP_C = 40 + 12 = 52</p></td>
+<td><p>Total = P_A + P_B + P_C = 55 + 67 + 52 = 174</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Observations:</strong>
+- The system performs well for <strong>Cloudy</strong> weather, but it misclassifies <strong>Sunny</strong> conditions as <strong>Cloudy</strong> 8 times.
+- <strong>Raining/Snowing</strong> has the highest number of false negatives (misclassified as Cloudy 9 times), which could be problematic in applications like weather forecasting for travel safety.
+- The system confuses <strong>Sunny and Cloudy</strong> more often than <strong>Sunny and Raining/Snowing</strong>, likely due to the visual similarities in cloud cover.</p>
+<p>This confusion matrix provides a structured way to evaluate model errors and potential areas for improvement, such as <strong>better feature differentiation between Cloudy and Raining/Snowing conditions</strong>.</p>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>This chapter explored essential evaluation metrics for machine learning and AI systems, focusing on their applications, trade-offs, and interpretations. Here’s a comprehensive summary of the key concepts:</p>
+<section id="fundamental-metrics">
+<h3>Fundamental Metrics<a class="headerlink" href="#fundamental-metrics" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Basic Components</strong>: True Positives (TP), False Positives (FP), True Negatives (TN), False Negatives (FN).</p></li>
+<li><p><strong>Core Metrics</strong>:</p>
+<ul>
+<li><p><strong>Precision</strong> (TP/(TP+FP)): Measures the proportion of recommended items that are actually relevant</p></li>
+<li><p><strong>Recall</strong> (TP/(TP+FN)): Measures the proportion of relevant items that were successfully recommended</p></li>
+<li><p><strong>F1 Score</strong>: Harmonic mean of precision and recall, balancing both considerations</p></li>
+<li><p><strong>False Positive Rate (FPR)</strong> (FP/(FP+TN)): Proportion of irrelevant items incorrectly recommended</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="id2">
+<h3>Threshold Dependency<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Trade-offs</strong>:</p>
+<ul>
+<li><p>Higher thresholds → Increased precision, decreased recall</p></li>
+<li><p>Lower thresholds → Increased recall, decreased precision</p></li>
+<li><p>Different applications prioritize different sides of this trade-off</p></li>
+</ul>
+</li>
+<li><p><strong>Challenges with Single-Threshold Evaluation</strong>:</p>
+<ul>
+<li><p>Business contexts require different operating thresholds</p></li>
+<li><p>Optimal thresholds on training data may not generalize</p></li>
+<li><p>Different models perform optimally at different thresholds</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="threshold-agnostic-evaluation">
+<h3>Threshold-Agnostic Evaluation<a class="headerlink" href="#threshold-agnostic-evaluation" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Precision-Recall Curves</strong>:</p>
+<ul>
+<li><p>Plot precision vs. recall across all thresholds</p></li>
+<li><p>AUC-PR: Area Under the Precision-Recall Curve</p></li>
+<li><p>Best for imbalanced datasets and when precision is critical</p></li>
+<li><p>Focuses on performance on positive class</p></li>
+</ul>
+</li>
+<li><p><strong>ROC Curves</strong>:</p>
+<ul>
+<li><p>Plot TPR vs. FPR across all thresholds</p></li>
+<li><p>AUC-ROC: Area Under the ROC Curve</p></li>
+<li><p>Probabilistic interpretation: P(S_positive &gt; S_negative)</p></li>
+<li><p>Best for balanced datasets and when both classes matter equally</p></li>
+</ul>
+</li>
+<li><p><strong>Comparative Analysis</strong>:</p>
+<ul>
+<li><p>PR curves are more sensitive to imbalanced datasets</p></li>
+<li><p>ROC curves incorporate true negatives through FPR</p></li>
+<li><p>PR curves have variable baseline depending on class distribution</p></li>
+<li><p>ROC curves have fixed baseline (diagonal line)</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="multi-group-evaluation">
+<h3>Multi-Group Evaluation<a class="headerlink" href="#multi-group-evaluation" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Macro-Averaging</strong>:</p>
+<ul>
+<li><p>Calculate metrics individually for each group, then average</p></li>
+<li><p>Gives equal weight to each group regardless of size</p></li>
+<li><p>Macro-F1: Either average of individual F1 scores or harmonic mean of macro-precision and macro-recall</p></li>
+</ul>
+</li>
+<li><p><strong>Micro-Averaging</strong>:</p>
+<ul>
+<li><p>Aggregate TP, FP, FN across all groups, then calculate metrics</p></li>
+<li><p>Gives more weight to groups with more samples</p></li>
+<li><p>Particularly useful for imbalanced group distributions</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="application-specific-considerations">
+<h3>Application-Specific Considerations<a class="headerlink" href="#application-specific-considerations" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Precision-Focused Applications</strong>:</p>
+<ul>
+<li><p>Medical diagnosis, content filtering</p></li>
+<li><p>High cost of false positives (Type I error)</p></li>
+<li><p>Metrics: Precision, AUC-PR</p></li>
+</ul>
+</li>
+<li><p><strong>Recall-Focused Applications</strong>:</p>
+<ul>
+<li><p>Fraud detection, disease screening</p></li>
+<li><p>High cost of false negatives (Type II error)</p></li>
+<li><p>Metrics: Recall, AUC-RP</p></li>
+</ul>
+</li>
+<li><p><strong>Balance-Focused Applications</strong>:</p>
+<ul>
+<li><p>General recommendation systems</p></li>
+<li><p>Similar costs for both types of errors</p></li>
+<li><p>Metrics: F1 score, AUC-ROC</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="best-practices">
+<h3>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Metric Selection</strong>:</p>
+<ul>
+<li><p>Choose metrics aligned with business objectives</p></li>
+<li><p>Consider class distribution (balanced vs. imbalanced)</p></li>
+<li><p>Evaluate across multiple operating thresholds</p></li>
+</ul>
+</li>
+<li><p><strong>Comprehensive Evaluation</strong>:</p>
+<ul>
+<li><p>Use both threshold-specific and threshold-agnostic metrics</p></li>
+<li><p>Consider both PR and ROC curves for complete picture</p></li>
+<li><p>Incorporate business context and error costs in interpretation</p></li>
+</ul>
+</li>
+<li><p><strong>Implementation</strong>:</p>
+<ul>
+<li><p>Leverage standard libraries for consistent calculation</p></li>
+<li><p>Be cautious of ties in score values when computing AUC</p></li>
+<li><p>Use both micro and macro averaging when evaluating across groups</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ranking_evaluation.html" class="btn btn-neutral float-right" title="Ranking Evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tony.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

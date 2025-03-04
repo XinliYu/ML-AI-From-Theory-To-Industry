@@ -90,7 +90,7 @@ where
 Proportionality (Total Variation Distance)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:newconcept:`Proportionality` measures how well the distribution of items across categories in the results matches a target distribution. It is based on Total Variation Distance (TVD) between two distributions,
+:newconcept:`Proportionality` measures how well the distribution of items across categories in the results matches a target distribution. It is based on :newconcept:`Total Variation Distance (TVD)` between two distributions,
 
 .. math::
 

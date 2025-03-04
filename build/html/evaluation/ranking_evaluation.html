@@ -25,6 +25,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Diversity Evaluation" href="diversity_evaluation.html" />
     <link rel="prev" title="Basic Evaluation" href="basic_evaluation.html" /> 
 </head>
 
@@ -54,9 +55,18 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Ranking Evaluation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#precision-k-recall-k">Precision&#64;k &amp; Recall&#64;k</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mean-average-precision-map">Mean Average Precision (MAP)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#normalized-discounted-cumulative-gain-ndcg">Normalized Discounted Cumulative Gain (NDCG)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mean-reciprocal-rank-mrr">Mean Reciprocal Rank (MRR)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#metrics-for-low-precision-ranking-scenarios">Metrics for Low-Precision Ranking Scenarios</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#normalized-discounted-cumulative-gain-ndcg">Normalized Discounted Cumulative Gain (NDCG)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#zipf-s-law">Zipf’s Law</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dcg">DCG</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ndcg">NDCG</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#ranking-metrics-for-early-relevance-low-precision-ranking-scenarios">Ranking Metrics For Early-Relevance &amp; Low-Precision Ranking Scenarios</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mean-reciprocal-rank-mrr">Mean Reciprocal Rank (MRR)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mean-expected-reciprocal-rank-merr">Mean Expected Reciprocal Rank (MERR)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#other-metrics">Other Metrics</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#position-based-metrics">Position-Based Metrics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#comprehensive-ranking-metrics">Comprehensive Ranking Metrics</a></li>
@@ -66,6 +76,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="diversity_evaluation.html">Diversity Evaluation</a></li>
 </ul>
 </li>
 </ul>
@@ -129,7 +140,8 @@
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Why $\text{rel}(k)$?</p>
+<p>Why using indicator $\text{rel}(k)$ to skip irrelevant items?</p>
+<p>AP’s formula skips items that are not relevant, through applying the indicator $\text{rel}$, for the following reasons.</p>
 <ul class="simple">
 <li><p><strong>Intuitive interpretation</strong>: The overall AP value represents the average precision a user would experience when finding each relevant document in the ranked list. This is more meaningful than averaging precision at every position regardless of relevance.</p></li>
 <li><p><strong>Historical development</strong>: The formula evolved from the <a class="reference external" href="basic_evaluation.html#newconcept-pr_curve"><span class="refconcept">PR Curve</span></a> where precision is plotted against recall. By averaging precision at each recall point (which occurs exactly when a new relevant document is found), AP approximates the <a class="reference external" href="basic_evaluation.html#newconcept-area_under_curve"><span class="refconcept">area under curve</span></a>.</p></li>
@@ -269,21 +281,39 @@ MAP = (0.822 + 0.692 + 0.609) / 3 = 2.123 / 3 = 0.708</p>
 </section>
 <section id="normalized-discounted-cumulative-gain-ndcg">
 <h2>Normalized Discounted Cumulative Gain (NDCG)<a class="headerlink" href="#normalized-discounted-cumulative-gain-ndcg" title="Link to this heading"></a></h2>
-<p><span class="target" id="newconcept-normalized_discounted_cumulative_gain"></span><span class="newconcept">Normalized Discounted Cumulative Gain (NDCG)</span> is another widely used ranking metric that considers the position of relevant documents. It is based on <span class="target" id="newconcept-discounted_cumulative_gain"></span><span class="newconcept">Discounted Cumulative Gain (DCG)</span>, which assigns higher importance to relevant documents appearing earlier in the ranked list. NDCG and DCG are typically calculated for the top-k items, and are noted as <strong>NDCG&#64;k</strong> and <strong>DCG&#64;k</strong>.</p>
-<p>DCG is calculated for the top-k of the ranked list as</p>
+<section id="zipf-s-law">
+<h3>Zipf’s Law<a class="headerlink" href="#zipf-s-law" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-zipf's_law"></span><span class="newconcept">Zipf’s Law</span> (<a class="reference external" href="https://en.wikipedia.org/wiki/Zipf%27s_law">Wiki</a>) is an empirical law that states that when a list of items are sorted in decreasing order by certain value (e.g., words sorted by frequency in descending order), the value of the $i$-th ranked item from the ordered list is often approximately inversely proportional to $i$:</p>
 <div class="math notranslate nohighlight">
-\[\text{DCG}(k) = \sum_{i=1}^{k} \frac{\text{rel}(i)}{\log_2(i+1)}\]</div>
+\[f(i) \propto \frac{1}{(i+p)^s}\]</div>
+<p>where $p$ and $s$ are two parameters.</p>
+<p>Zipf’s Law is highly relevant to information retrieval, recommendation systems, and ranking evaluation. Research has shown that user attention to search results follows a similar distribution, with dramatically less attention given to items as their rank increases. While Zipf’s Law suggests a power-law decline ($\frac{1}{(i+p)^s}$), many ranking metrics use logarithmic discounting as a more balanced approximation of this attention drop-off. The <span class="target" id="newconcept-discount_factor"></span><span class="newconcept">discount factor</span> used in DCG and NDCG draws inspiration from this relationship between item position and user attention.</p>
+</section>
+<section id="dcg">
+<h3>DCG<a class="headerlink" href="#dcg" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-normalized_discounted_cumulative_gain"></span><span class="newconcept">Normalized Discounted Cumulative Gain (NDCG)</span> is a widely used ranking metric that considers the position of relevant documents. It is based on <span class="target" id="newconcept-discounted_cumulative_gain"></span><span class="newconcept">Discounted Cumulative Gain (DCG)</span>, which assigns higher importance to relevant documents appearing earlier in the ranked list. NDCG and DCG are typically calculated for the top-k items, and are noted as <strong>NDCG&#64;k</strong> and <strong>DCG&#64;k</strong>.</p>
+<p>DCG is calculated for the top-k of the ranked list as:</p>
+<div class="math notranslate nohighlight">
+\[\text{DCG}&#64;k = \sum_{i=1}^{k} \frac{g(i)}{d(i)}\]</div>
 <p>Where:</p>
 <ul class="simple">
-<li><p>$\text{rel}(i)$ is the relevance of the item at position $i$ in the ranked list.</p></li>
-<li><p>$\text{rel}^*(i)$ is the relevance of the item in the ideal ranked list.</p></li>
+<li><p>$g(i)$ is the <span class="target" id="newconcept-gain_function"></span><span class="newconcept">gain function</span> of the item at position $i$ in the ranked list</p></li>
+<li><p>$d(i)$ is the <span class="target" id="newconcept-discount_factor"></span><span class="newconcept">discount factor</span> that reduces the contribution of items at lower positions</p></li>
 </ul>
+<p>In the canonical formulation, the gain function is simply the relevance score of the item $g(i) = \text{rel}(i)$, and the discount factor is logarithmic $d(i) = \log_2(i+1)$, giving us:</p>
+<div class="math notranslate nohighlight">
+\[\text{DCG}&#64;k = \sum_{i=1}^{k} \frac{\text{rel}(i)}{\log_2(i+1)}\]</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The denominator in Discounted Cumulative Gain (DCG) can use logarithms with bases other than 2. The choice of denominator affects how quickly relevance is discounted as position increases.
+<p>About Discount Factor $d(i)$</p>
+<p>The <strong>discount factor</strong> in Discounted Cumulative Gain (DCG) can use logarithms with bases other than 2. The choice of denominator affects how quickly relevance is discounted as position increases.
 * Higher base (e.g., the natural logarithm with base $e=2.71828$) create a more gradual discount, placing more importance on items deeper in the results.
 * Smaller base (e.g., 1.5) creates a steeper discount, severely penalizing lower positions.</p>
+<p>The discount factor need not necessarily be a logarithm. It can be <strong>linear discount</strong>, <strong>exponential discount</strong>, or <strong>power discount</strong> (as in the original Zipf’s Law), etc.</p>
 </div>
+</section>
+<section id="ndcg">
+<h3>NDCG<a class="headerlink" href="#ndcg" title="Link to this heading"></a></h3>
 <p>DCG scores have interpretability issues that make it challenging to use on its own.</p>
 <ul class="simple">
 <li><p><strong>Query-specific interpretation</strong>: A DCG of 10 might be excellent for a query with few relevant documents but poor for a query with many highly relevant documents.</p></li>
@@ -339,13 +369,15 @@ MAP = (0.822 + 0.692 + 0.609) / 3 = 2.123 / 3 = 0.708</p>
 <p>This high NDCG score of 0.959 indicates that despite ranking one irrelevant item at position 3, the system still performs very well overall, capturing most of the ideal ordering.</p>
 </div>
 </section>
-<section id="mean-reciprocal-rank-mrr">
-<h2>Mean Reciprocal Rank (MRR)<a class="headerlink" href="#mean-reciprocal-rank-mrr" title="Link to this heading"></a></h2>
-<p><span class="target" id="newconcept-mean_reciprocal_rank"></span><span class="newconcept">Mean Reciprocal Rank (MRR)</span> evaluates ranking quality by measuring how soon the first relevant document appears in the ranked list. It is calculated as the average reciprocal rank of the first relevant result across multiple queries.</p>
-<div class="math notranslate nohighlight">
-\[MRR = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{\text{rank}(q)}\]</div>
-<p>Where $\text{rank}(q)$ is the position of the first relevant item for query $q$.</p>
-<p>MRR is commonly used in question-answering (retrieval-based approach), Ads, recommendations, or even search results, when user is constrained to only pay attention to first few items, and the ranking of the first right answer is crucial. The following are some concrete scenarios.</p>
+</section>
+<section id="ranking-metrics-for-early-relevance-low-precision-ranking-scenarios">
+<h2>Ranking Metrics For Early-Relevance &amp; Low-Precision Ranking Scenarios<a class="headerlink" href="#ranking-metrics-for-early-relevance-low-precision-ranking-scenarios" title="Link to this heading"></a></h2>
+<p>Some ranking applications inherently involve a low-precision scenario, which demands metrics that specifically evaluate a system’s ability to present relevant content early in the ranking order.</p>
+<ol class="arabic simple">
+<li><p>Only one or very few items in a large candidate pool are relevant</p></li>
+<li><p>The primary goal is to surface at least one relevant item within top positions</p></li>
+</ol>
+<p>The following are some concrete scenarios.</p>
 <blockquote>
 <div><ul class="simple">
 <li><p><strong>Voice assistants</strong>: For smart devices like Alexa or Google Home, the screen may be small and low resolution, showing only three items at a time. On headless devices, voice recommendations can typically only present one item before user patience is exhausted.</p></li>
@@ -356,17 +388,74 @@ MAP = (0.822 + 0.692 + 0.609) / 3 = 2.123 / 3 = 0.708</p>
 <li><p><strong>Autocomplete suggestions</strong>: Search bars typically show 4-5 autocomplete suggestions, with users commonly selecting from only the top 1-2 options.</p></li>
 </ul>
 </div></blockquote>
+<section id="mean-reciprocal-rank-mrr">
+<h3>Mean Reciprocal Rank (MRR)<a class="headerlink" href="#mean-reciprocal-rank-mrr" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-mean_reciprocal_rank"></span><span class="newconcept">Mean Reciprocal Rank (MRR)</span> evaluates ranking quality by measuring how soon the first relevant document appears in the ranked list. It is calculated as the average reciprocal rank of the first relevant result across multiple queries.</p>
+<div class="math notranslate nohighlight">
+\[MRR = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{\text{rank}(q)}\]</div>
+<p>Where $\text{rank}(q)$ is the position of the first relevant item for query $q$.</p>
 <p>In comparison to the other metric <a class="reference internal" href="#newconcept-first_relevant_position"><span class="refconcept">First Relevant Position (FRP)</span></a> introduced below, MRR is less affected by extreme outliers since the reciprocal transformation compresses very large rank values.</p>
 </section>
-<section id="metrics-for-low-precision-ranking-scenarios">
-<h2>Metrics for Low-Precision Ranking Scenarios<a class="headerlink" href="#metrics-for-low-precision-ranking-scenarios" title="Link to this heading"></a></h2>
-<p>Some ranking applications involve inherently low-precision scenarios (e.g., Ads, personalized recommendation), where</p>
+<section id="mean-expected-reciprocal-rank-merr">
+<h3>Mean Expected Reciprocal Rank (MERR)<a class="headerlink" href="#mean-expected-reciprocal-rank-merr" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-mean_expected_reciprocal_rank"></span><span class="newconcept">Mean Expected Reciprocal Rank (MERR)</span> extends the concept of Mean Reciprocal Rank (MRR) by incorporating relevance score and modeling user behavior (stopping at an ealier item) more realistically.</p>
+<p>For a single query, <span class="target" id="newconcept-expected_reciprocal_rank"></span><span class="newconcept">Expected Reciprocal Rank (ERR)</span> is calculated as:</p>
+<div class="math notranslate nohighlight">
+\[\text{ERR}(q) = \sum_{i=1}^{n} \frac{1}{i} \times P(\text{stop at i})\]</div>
+<p>where $P(\text{stop at i})$ is the probability that the user stops at position $i$, which is a function of the document’s relevance and the probability that the user didn’t stop at earlier positions:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{stop at i}) = P(i) \times \prod_{j=1}^{i-1} (1 - P(j))\]</div>
+<p>Here $P(i) \in [0, 1]$ represents the probability that the user examines item at position $i$. It usually simply uses the relevacne scores, i.e., $P(i) = \text{rel}(i)$. For relevance scores not in the range $[0, 1]$, normalization is needed. For example,</p>
+<ul>
+<li><p><span class="target" id="newconcept-exponential_utility_transformation"></span><span class="newconcept">Exponential Utility Transformation</span></p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\text{rel}^{\text{exponential-utility-normalized}}(i) = \frac{2^{\text{rel}(i)} - 1}{2^R}\]</div>
+<p>where $\text{rel}(i)$ is the assigned relevance grade for the document at position $i$, and $R$ is the maximum possible relevance score.</p>
+</div></blockquote>
+</li>
+<li><p><span class="target" id="newconcept-sigmoid_transformation"></span><span class="newconcept">Sigmoid Transformation</span></p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\text{rel}^{\text{sigmoid-normalized}}(i) = \frac{1}{1 + \text{e}^{-\alpha(\text{rel}(i) - \beta)}}\]</div>
+<p>where $\alpha$ controls the steepness of the curve and $\beta$ shifts the midpoint. This transformation smoothly maps any range to $(0,1)$ and can better model gradual differences in relevance levels.</p>
+</div></blockquote>
+</li>
+</ul>
+<div class="example-green admonition">
+<p class="admonition-title">Example: ERR Calculation</p>
+<p>Consider a search for “smartphone reviews” with the following ranked results and relevance grades (on a scale of 0-3):</p>
 <ol class="arabic simple">
-<li><p>only one or very few items in a large candidate pool are relevant;</p></li>
-<li><p>the primary goal is to surface at least one relevant item within top positions;</p></li>
-<li><p>traditional metrics like Precision&#64;k may underrepresent performance.</p></li>
+<li><p>Comprehensive smartphone comparison guide (rel_score=3)</p></li>
+<li><p>Latest iPhone review (rel_score=2)</p></li>
+<li><p>Budget smartphones of 2024 (rel_score=3)</p></li>
+<li><p>Smartphone accessories (rel_score=1)</p></li>
+<li><p>Laptop reviews (rel_score=0)</p></li>
 </ol>
-<p><a class="reference internal" href="#newconcept-mean_reciprocal_rank"><span class="refconcept">Mean Reciprocal Rank (MRR)</span></a> is a suitable metric for this scenario, as discussed previously. The following additional metrics are particularly well-suited for evaluating ranking performance in these contexts.</p>
+<p>First, convert relevance scores to probabilities (using <a class="reference internal" href="#newconcept-exponential_utility_transformation"><span class="refconcept">Exponential Utility Transformation</span></a>):</p>
+<p>rel(1) = (2^3 - 1)/2^3 = 7/8 = 0.875
+rel(2) = (2^2 - 1)/2^3 = 3/8 = 0.375
+rel(3) = (2^3 - 1)/2^3 = 7/8 = 0.875
+rel(4) = (2^1 - 1)/2^3 = 1/8 = 0.125
+rel(5) = (2^0 - 1)/2^3 = 0</p>
+<p>ERR calculation:</p>
+<p>P(stop at 1) = rel(1) = 0.875
+P(stop at 2) = rel(2) × (1-rel(1)) = 0.375 × 0.125 = 0.047
+P(stop at 3) = rel(3) × (1-rel(1)) × (1-rel(2)) = 0.875 × 0.125 × 0.953 = 0.104
+P(stop at 4) = rel(4) × (1-rel(1)) × (1-rel(2)) × (1-rel(3)) = 0.125 × 0.125 × 0.953 × 0.896 = 0.013
+P(stop at 5) = rel(5) × … = 0 (since rel(5)=0)</p>
+<p>ERR = (1/1 × 0.875) + (1/2 × 0.047) + (1/3 × 0.104) + (1/4 × 0.013) + (1/5 × 0)
+ERR = 0.875 + 0.023 + 0.035 + 0.003 = 0.936</p>
+<p>This high ERR score (0.936) indicates that users are likely to find a highly relevant result very early in the list, with most users stopping at the first position.</p>
+</div>
+<p>Mean ERR (MERR) is calculated by averaging ERR across all queries:</p>
+<div class="math notranslate nohighlight">
+\[\text{MERR} = \frac{1}{|Q|} \sum_{q \in Q} \text{ERR}(q)\]</div>
+<p>If we cut off a ranked list to position $k$, we have the <strong>ERR&#64;k</strong> metric, and $MERR&#64;k$ can be calculated accordingly.</p>
+</section>
+<section id="other-metrics">
+<h3>Other Metrics<a class="headerlink" href="#other-metrics" title="Link to this heading"></a></h3>
+<p>The following additional metrics are also suited for evaluating ranking performance in these contexts.</p>
 <p><span class="target" id="newconcept-hit&#64;k"></span><span class="newconcept">Hit&#64;k</span> is a binary metric that evaluates whether at least one relevant item appears in the top-k ranked results:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\text{Hit&#64;k} =
@@ -383,8 +472,9 @@ MAP = (0.822 + 0.692 + 0.609) / 3 = 2.123 / 3 = 0.708</p>
 <p><span class="target" id="newconcept-first_relevant_position"></span><span class="newconcept">First Relevant Position (FRP)</span> focuses solely on the rank of the first relevant item (similar to MRR):</p>
 <div class="math notranslate nohighlight">
 \[\text{FRP} = \frac{1}{|Q|} \sum_{q \in Q} \min_{r \in R_q} \text{rank}(r)\]</div>
-<p>Compared to <a class="reference internal" href="#newconcept-mean_reciprocal_rank"><span class="refconcept">Mean Reciprocal Rank (MRR)</span></a>, both <span class="underline">MR and FRP offer the benefit of being straightforward and immediately interpretable</span>, making them easier to understand for stakeholders without technical backgrounds. However, MR and FRP can be heavily skewed by a few queries where relevant items appear very late in the ranking.
+<p>Compared to <a class="reference internal" href="#newconcept-mean_reciprocal_rank"><span class="refconcept">Mean Reciprocal Rank (MRR)</span></a> and <cite>Mean Expected Reciprocal Rank (MERR)</cite>, both <span class="underline">MR and FRP offer the benefit of being straightforward and immediately interpretable</span>, making them easier to understand for stakeholders without technical backgrounds. However, MR and FRP can be heavily skewed by a few queries where relevant items appear very late in the ranking.
 A simple technique to address this limitation is to calculate <strong>MR&#64;k</strong> and <strong>FRP&#64;k</strong>, which only consider items within the top-k positions. For FRP&#64;k specifically, a fixed constant “rank” value (e.g., k+1) can be assigned if no relevant item appears in the top-k results, creating a bounded metric while maintaining interpretability.</p>
+</section>
 </section>
 <section id="summary">
 <h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
@@ -395,7 +485,8 @@ A simple technique to address this limitation is to calculate <strong>MR&#64;k</
 <div><ul class="simple">
 <li><p><strong>Precision&#64;k</strong>: Proportion of relevant items in the top-k results</p></li>
 <li><p><strong>Recall&#64;k</strong>: Proportion of all relevant items found in the top-k results</p></li>
-<li><p><strong>Mean Reciprocal Rank (MRR)</strong> and <strong>First Relevant Position</strong>: Focuses on the position of the first relevant item</p></li>
+<li><p><strong>Mean Reciprocal Rank (MRR)</strong> and <strong>First Relevant Position (FRP)</strong>: Focuses on the position of the first relevant item</p></li>
+<li><p><strong>Mean Expected Reciprocal Rank (MERR)</strong>: Focuses on early-item relevance, and incorporates user behavior modeling</p></li>
 <li><p><strong>Hit&#64;k</strong>: Binary metric indicating if at least one relevant item appears in top-k</p></li>
 </ul>
 </div></blockquote>
@@ -425,8 +516,7 @@ A simple technique to address this limitation is to calculate <strong>MR&#64;k</
 <blockquote>
 <div><ul class="simple">
 <li><p>Choose metrics aligned with how users interact with results</p></li>
-<li><p>Consider the visibility constraints of the interface (e.g., mobile vs. desktop)</p></li>
-<li><p>Select appropriate k values based on typical user browsing behavior</p></li>
+<li><p>Consider the constraints of the interface (e.g., visibility constraints on mobile/smarthome devices)</p></li>
 </ul>
 </div></blockquote>
 </section>
@@ -438,6 +528,7 @@ A simple technique to address this limitation is to calculate <strong>MR&#64;k</
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="basic_evaluation.html" class="btn btn-neutral float-left" title="Basic Evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="diversity_evaluation.html" class="btn btn-neutral float-right" title="Diversity Evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

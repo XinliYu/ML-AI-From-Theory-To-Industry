@@ -1,10 +1,9 @@
 Basic Evaluation
 ================
 
-In evaluating the performance of Machine Learning (ML) and Artificial Intelligence (AI) systems, :newconcept:`precision` and :newconcept:`recall` are foundational metrics that quantify how well a system retrieves or recommends relevant items. These metrics originated in :newconcept:`information retrieval (IR)` and :newconcept:`recommender/ranking systems (RecSys)`, but are now widely applied across various ML and AI tasks. 
+In evaluating the performance of Machine Learning (ML) and Artificial Intelligence (AI) systems, :newconcept:`precision` and :newconcept:`recall` are foundational metrics that quantify how well a system retrieves or recommends relevant items. These metrics originated in :newconcept:`information retrieval (IR)` and :newconcept:`recommender/ranking systems (RecSys)`, but are now widely applied across various ML and AI tasks, including LLM (Large Language Model)-driven AI tasks. 
 
 For simplicity without loss of generality, we adopt standard terminology from IR and RecSys, focusing on :newconcept:`ground truth based evaluation` in this section — where labeled data provides the reference standard for assessing model predictions.
-
 
 Dataset & Ground Truth
 ----------------------
@@ -13,13 +12,16 @@ A :newconcept:`dataset` consists of three essential components, :newconcept:`que
 * The terms "**query**" and "**document**" are generic concepts in IR. They can take many concrete forms in practice. For example, a query can be a user profie, and a document can be a Song, Movie, or Ad. In practice, we often refer to a "document" as a "**candidate item**" to be recommended by the ML/AI system.
 * Each annotation $a=(q, d, l)\\in A$ is a triplet consiting of a query $q$, a document $d$ and a :newconcept:`label` $l\\in\\{0, 1\\}$ where the :newconcept:`positive label` "$1$" means $d$ is relevant to $q$ and :newconcept:`negative label` "$0$" means otherwise. Each annotation is sometimes also referred to as a :newconcept:`data sample`.
 
-.. note::  
-   The annotations provide information known to be factually accurate because it has been verified or labeled by humans or reliable processes. It :ul:`serves as the reference` standard against which predictions or measurements are compared. It is :ul:`context-specific` and represents the "correct answer" for a particular machine learning or AI application, :ul:`may still contain some mistakes or subjectivity`, but is treated as correct for evaluation purposes.
+The annotations provide information known to be factually accurate because it has been verified or labeled by humans or reliable processes. It :ul:`serves as the reference` standard against which predictions or measurements are compared. It is :ul:`context-specific` and represents the "correct answer" for a particular machine learning or AI application, :ul:`may still contain some mistakes or subjectivity`, but is treated as correct for evaluation purposes.
 
-.. note::
-   The concept of "query" and "documents" even generalize to scenarios beyond classic IR an RecSys. For example, in modern NLP tasks like generative summarization or translation, the "query" is the original text pieces, and the "documents" is an infinite set of possible candidates. :ul:`The annotations can be provided "on-the-fly" using an annotator model`.
+In this chapter we assume annotations with :newconcept:`binary relevance scores` (i.e., the label is either 0 or 1). In practice, :newconcept:`graded relevance scores` are also common, such as Amazon product review ratings (1-5 stars). It is usually difficult to ask humans to assign a continuous and normalized :newconcept:`probabilistic relevance score` from 0 to 1, but it is more common with model-based ground truth (e.g., using a ecoder model to compute embeddings between the query and candidate item, and treat their embeeding similarity as the ground-truth relevance score). LLMs are also frequently used to simulate human annotations and produce various relevance scores. The graded/probabilistic relevance scores can be mapped to binary relevance scores through a threshold or more complex rules. The graded/probabilistic relevance scores will be more involved in :refconcept:`Ranking Evaluation` and :refconcept:`Diversity Evaluation`.
 
-Given a query $q$, a :newconcept:`model` $M(q, d)$ is a function generating a :newconcept:`relevance score` for every candidate $d \\in D$. We choose a :newconcept:`threshold` $t$ and all items $d$ such that $M(q, d) \> t$ are considered relevant or recommended.
+The concept of "query" and "documents" even generalize to scenarios beyond classic IR an RecSys. For example, in modern NLP tasks like generative summarization or translation, the "query" is the original text pieces, and the "documents" is an infinite set of possible candidates. :ul:`The annotations can be provided "on-the-fly" using a model`.
+
+Groud Truth
+~~~~~~~~~~~
+
+Given a query $q$, a :newconcept:`model` $M(q, d)$ is a function generating a :newconcept:`predicted relevance score` for every candidate $d \\in D$. We choose a :newconcept:`threshold` $t$ and all items $d$ such that $M(q, d) \> t$ are considered relevant or recommended.
 
 Given a query $q$, its :newconcept:`Ground Truth`, denoted by $A_q$ where $A_q \\subset \\{q\\} \\times D \\times \\{0, 1\\} \\subset A$, is all annotations associated with $q$. Ground truth in practice often only provides positive labels for a subset of $D$, with the remaining items from $D$ assumed to be negatively labeled. Ground truth can be broken down in two ways, as shown in :numref:`fig-ground-truth`.
 
@@ -271,9 +273,7 @@ Analagous to PR Curve, and AUC-PR, there is :newconcept:`Recall-Precision Curve`
    The comparison between the two models reveals important performance differences:
 
    * **Model B excels in high-precision scenarios**: At the 0.8 threshold, Model B significantly outperforms Model A in precision (96.2% vs 88.3%) although with slightly lower recall (52.0% vs 58.0%). This makes Model B substantially more suitable for contexts where false positives are particularly costly.
-   
    * **Model B maintains precision advantage at medium recall levels**: In the mid-range of recall values (around 0.4-0.7), Model B maintains a precision advantage, indicating better discrimination ability in this common operational range.
-   
    * **Model A performs better at very high recall**: At the highest recall levels (above 0.9), Model A begins to outperform Model B in precision, which might be preferred in scenarios where catching every possible spam email is the absolute priority.
 
    **Operational Considerations:**

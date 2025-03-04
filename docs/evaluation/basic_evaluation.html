@@ -53,6 +53,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Evaluation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Basic Evaluation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dataset-ground-truth">Dataset &amp; Ground Truth</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#groud-truth">Groud Truth</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#confusion-matrix">Confusion Matrix</a></li>
 </ul>
 </li>
@@ -93,6 +94,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="ranking_evaluation.html">Ranking Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diversity_evaluation.html">Diversity Evaluation</a></li>
 </ul>
 </li>
 </ul>
@@ -124,7 +126,7 @@
              
   <section id="basic-evaluation">
 <h1>Basic Evaluation<a class="headerlink" href="#basic-evaluation" title="Link to this heading"></a></h1>
-<p>In evaluating the performance of Machine Learning (ML) and Artificial Intelligence (AI) systems, <span class="target" id="newconcept-precision"></span><span class="newconcept">precision</span> and <span class="target" id="newconcept-recall"></span><span class="newconcept">recall</span> are foundational metrics that quantify how well a system retrieves or recommends relevant items. These metrics originated in <span class="target" id="newconcept-information_retrieval"></span><span class="newconcept">information retrieval (IR)</span> and <span class="target" id="newconcept-recommender/ranking_systems"></span><span class="newconcept">recommender/ranking systems (RecSys)</span>, but are now widely applied across various ML and AI tasks.</p>
+<p>In evaluating the performance of Machine Learning (ML) and Artificial Intelligence (AI) systems, <span class="target" id="newconcept-precision"></span><span class="newconcept">precision</span> and <span class="target" id="newconcept-recall"></span><span class="newconcept">recall</span> are foundational metrics that quantify how well a system retrieves or recommends relevant items. These metrics originated in <span class="target" id="newconcept-information_retrieval"></span><span class="newconcept">information retrieval (IR)</span> and <span class="target" id="newconcept-recommender/ranking_systems"></span><span class="newconcept">recommender/ranking systems (RecSys)</span>, but are now widely applied across various ML and AI tasks, including LLM (Large Language Model)-driven AI tasks.</p>
 <p>For simplicity without loss of generality, we adopt standard terminology from IR and RecSys, focusing on <span class="target" id="newconcept-ground_truth_based_evaluation"></span><span class="newconcept">ground truth based evaluation</span> in this section — where labeled data provides the reference standard for assessing model predictions.</p>
 <section id="dataset-ground-truth">
 <h2>Dataset &amp; Ground Truth<a class="headerlink" href="#dataset-ground-truth" title="Link to this heading"></a></h2>
@@ -133,15 +135,12 @@
 <li><p>The terms “<strong>query</strong>” and “<strong>document</strong>” are generic concepts in IR. They can take many concrete forms in practice. For example, a query can be a user profie, and a document can be a Song, Movie, or Ad. In practice, we often refer to a “document” as a “<strong>candidate item</strong>” to be recommended by the ML/AI system.</p></li>
 <li><p>Each annotation $a=(q, d, l)\in A$ is a triplet consiting of a query $q$, a document $d$ and a <span class="target" id="newconcept-label"></span><span class="newconcept">label</span> $l\in\{0, 1\}$ where the <span class="target" id="newconcept-positive_label"></span><span class="newconcept">positive label</span> “$1$” means $d$ is relevant to $q$ and <span class="target" id="newconcept-negative_label"></span><span class="newconcept">negative label</span> “$0$” means otherwise. Each annotation is sometimes also referred to as a <span class="target" id="newconcept-data_sample"></span><span class="newconcept">data sample</span>.</p></li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
 <p>The annotations provide information known to be factually accurate because it has been verified or labeled by humans or reliable processes. It <span class="underline">serves as the reference</span> standard against which predictions or measurements are compared. It is <span class="underline">context-specific</span> and represents the “correct answer” for a particular machine learning or AI application, <span class="underline">may still contain some mistakes or subjectivity</span>, but is treated as correct for evaluation purposes.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The concept of “query” and “documents” even generalize to scenarios beyond classic IR an RecSys. For example, in modern NLP tasks like generative summarization or translation, the “query” is the original text pieces, and the “documents” is an infinite set of possible candidates. <span class="underline">The annotations can be provided “on-the-fly” using an annotator model</span>.</p>
-</div>
-<p>Given a query $q$, a <span class="target" id="newconcept-model"></span><span class="newconcept">model</span> $M(q, d)$ is a function generating a <span class="target" id="newconcept-relevance_score"></span><span class="newconcept">relevance score</span> for every candidate $d \in D$. We choose a <span class="target" id="newconcept-threshold"></span><span class="newconcept">threshold</span> $t$ and all items $d$ such that $M(q, d) &gt; t$ are considered relevant or recommended.</p>
+<p>In this chapter we assume annotations with <span class="target" id="newconcept-binary_relevance_scores"></span><span class="newconcept">binary relevance scores</span> (i.e., the label is either 0 or 1). In practice, <span class="target" id="newconcept-graded_relevance_scores"></span><span class="newconcept">graded relevance scores</span> are also common, such as Amazon product review ratings (1-5 stars). It is usually difficult to ask humans to assign a continuous and normalized <span class="target" id="newconcept-probabilistic_relevance_score"></span><span class="newconcept">probabilistic relevance score</span> from 0 to 1, but it is more common with model-based ground truth (e.g., using a ecoder model to compute embeddings between the query and candidate item, and treat their embeeding similarity as the ground-truth relevance score). LLMs are also frequently used to simulate human annotations and produce various relevance scores. The graded/probabilistic relevance scores can be mapped to binary relevance scores through a threshold or more complex rules. The graded/probabilistic relevance scores will be more involved in <a class="reference external" href="ranking_evaluation.html#newconcept-ranking_evaluation"><span class="refconcept">Ranking Evaluation</span></a> and <a class="reference external" href="diversity_evaluation.html#newconcept-diversity_evaluation"><span class="refconcept">Diversity Evaluation</span></a>.</p>
+<p>The concept of “query” and “documents” even generalize to scenarios beyond classic IR an RecSys. For example, in modern NLP tasks like generative summarization or translation, the “query” is the original text pieces, and the “documents” is an infinite set of possible candidates. <span class="underline">The annotations can be provided “on-the-fly” using a model</span>.</p>
+<section id="groud-truth">
+<h3>Groud Truth<a class="headerlink" href="#groud-truth" title="Link to this heading"></a></h3>
+<p>Given a query $q$, a <span class="target" id="newconcept-model"></span><span class="newconcept">model</span> $M(q, d)$ is a function generating a <span class="target" id="newconcept-predicted_relevance_score"></span><span class="newconcept">predicted relevance score</span> for every candidate $d \in D$. We choose a <span class="target" id="newconcept-threshold"></span><span class="newconcept">threshold</span> $t$ and all items $d$ such that $M(q, d) &gt; t$ are considered relevant or recommended.</p>
 <p>Given a query $q$, its <span class="target" id="newconcept-ground_truth"></span><span class="newconcept">Ground Truth</span>, denoted by $A_q$ where $A_q \subset \{q\} \times D \times \{0, 1\} \subset A$, is all annotations associated with $q$. Ground truth in practice often only provides positive labels for a subset of $D$, with the remaining items from $D$ assumed to be negatively labeled. Ground truth can be broken down in two ways, as shown in <a class="reference internal" href="#fig-ground-truth"><span class="std std-numref">Fig. 1</span></a>.</p>
 <figure class="align-default" id="fig-ground-truth">
 <a class="reference internal image-reference" href="../_images/ground_truth_breakdown.png"><img alt="Break Down of Ground Truth showing TP, FP, TN, and FN categories" src="../_images/ground_truth_breakdown.png" style="width: 100%;" />
@@ -171,6 +170,7 @@
 </ul>
 </li>
 </ul>
+</section>
 <section id="confusion-matrix">
 <h3>Confusion Matrix<a class="headerlink" href="#confusion-matrix" title="Link to this heading"></a></h3>
 <p>A confusion matrix is a structured way to evaluate a model’s performance by categorizing its predictions into four possible outcomes:</p>

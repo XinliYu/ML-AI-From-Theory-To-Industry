@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Novelty Metrics &mdash; MLAI 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=211db8cb" />
+
+  
+    <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/evaluation/novelty_evaluation.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/foldable_admonitions.js?v=7eeb6e3d"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Evaluation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Novelty Metrics</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/evaluation/novelty_evaluation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="novelty-metrics">
+<h1>Novelty Metrics<a class="headerlink" href="#novelty-metrics" title="Link to this heading"></a></h1>
+<p>Closely related to diversity is the concept of <span class="target" id="newconcept-novelty"></span><span class="newconcept">novelty</span>, which focuses on exposing users to previously unseen or unusual items rather than just providing variety within a single result set.</p>
+<section id="expected-popularity-complement-epc">
+<h2>Expected Popularity Complement (EPC)<a class="headerlink" href="#expected-popularity-complement-epc" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-expected_popularity_complement"></span><span class="newconcept">Expected Popularity Complement (EPC)</span> measures the average unpopularity of recommended items:</p>
+<div class="math notranslate nohighlight">
+\[\text{EPC}&#64;k = \frac{1}{k} \sum_{i=1}^{k} (1 - pop(i))\]</div>
+<p>Where $pop(i)$ is the normalized popularity of the item at position $i$, typically defined as the number of users who have interacted with the item divided by the total number of users.</p>
+</section>
+<section id="expected-intra-list-novelty-ein">
+<h2>Expected Intra-List Novelty (EIN)<a class="headerlink" href="#expected-intra-list-novelty-ein" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-expected_intra-list_novelty"></span><span class="newconcept">Expected Intra-List Novelty</span> measures the novelty of items relative to what a user has already seen in the ranked list:</p>
+<div class="math notranslate nohighlight">
+\[\text{EIN}&#64;k = \frac{1}{k} \sum_{i=1}^{k} \frac{1}{i-1} \sum_{j=1}^{i-1} d(i,j)\]</div>
+<p>Where $d(i,j)$ is a distance function between items at positions $i$ and $j$. This metric rewards lists where each new item is substantially different from previously seen items.</p>
+</section>
+</section>
+<section id="calibrated-diversity">
+<h1>Calibrated Diversity<a class="headerlink" href="#calibrated-diversity" title="Link to this heading"></a></h1>
+<p><span class="target" id="newconcept-calibrated_diversity"></span><span class="newconcept">Calibrated Diversity</span> aims to match the diversity level to user expectations or needs, rather than simply maximizing diversity:</p>
+<div class="math notranslate nohighlight">
+\[\text{Calibrated Diversity}&#64;k = 1 - |D_{observed}&#64;k - D_{expected}&#64;k|\]</div>
+<p>Where:
+* $D_{observed}&#64;k$ is the observed diversity in the top-k results
+* $D_{expected}&#64;k$ is the expected or desired diversity level, which might be:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Based on user history</p></li>
+<li><p>Derived from the query itself</p></li>
+<li><p>Set according to application-specific requirements</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="personalized-diversity">
+<h1>Personalized Diversity<a class="headerlink" href="#personalized-diversity" title="Link to this heading"></a></h1>
+<p><span class="target" id="newconcept-personalized_diversity"></span><span class="newconcept">Personalized Diversity</span> metrics consider individual user preferences when evaluating diversity:</p>
+<section id="user-specific-topic-coverage-ustc">
+<h2>User-Specific Topic Coverage (USTC)<a class="headerlink" href="#user-specific-topic-coverage-ustc" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-user-specific_topic_coverage"></span><span class="newconcept">User-Specific Topic Coverage</span> measures how well the results cover topics of interest to a specific user:</p>
+<div class="math notranslate nohighlight">
+\[\text{USTC}&#64;k = \frac{|\cup_{i=1}^{k} topics(i) \cap topics_{user}|}{|topics_{user}|}\]</div>
+<p>Where:
+* $topics(i)$ is the set of topics covered by the item at position $i$
+* $topics_{user}$ is the set of topics the user is interested in</p>
+</section>
+<section id="unexpectedness">
+<h2>Unexpectedness<a class="headerlink" href="#unexpectedness" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-unexpectedness"></span><span class="newconcept">Unexpectedness</span> measures the proportion of recommended items that deviate from a user’s expected items:</p>
+<div class="math notranslate nohighlight">
+\[\text{Unexpectedness}&#64;k = \frac{|\{i \in R_k: i \notin E\}|}{k}\]</div>
+<p>Where:
+* $R_k$ is the set of top-k recommendations
+* $E$ is the set of expected items (often derived from a baseline recommender)</p>
+<div class="example-green admonition">
+<p class="admonition-title">Example: Personalized Diversity in Music Recommendations</p>
+<p>Consider a music streaming service that recommends songs to a user with known preferences for rock, indie, and electronic music. The system evaluates two recommendation strategies:</p>
+<p><strong>User Profile:</strong>
+- Preferred genres: Rock (60% of listening history), Indie (30%), Electronic (10%)
+- Recently played artists: The Strokes, Arctic Monkeys, Tame Impala</p>
+<p><strong>Recommendation Set A:</strong>
+1. “Last Nite” by The Strokes (Rock)
+2. “Do I Wanna Know?” by Arctic Monkeys (Rock)
+3. “Reptilia” by The Strokes (Rock)
+4. “Why’d You Only Call Me When You’re High?” by Arctic Monkeys (Rock)
+5. “Someday” by The Strokes (Rock)</p>
+<p><strong>Recommendation Set B:</strong>
+6. “Fluorescent Adolescent” by Arctic Monkeys (Rock)
+7. “Let It Happen” by Tame Impala (Psychedelic/Indie)
+8. “Midnight City” by M83 (Electronic)
+9. “Little Dark Age” by MGMT (Indie/Electronic)
+10. “The Less I Know The Better” by Tame Impala (Psychedelic/Indie)</p>
+<p><strong>Calibrated Diversity Calculation:</strong></p>
+<p>Expected genre distribution based on user history: Rock (60%), Indie (30%), Electronic (10%)</p>
+<p>Observed genre distribution in Set A: Rock (100%), Indie (0%), Electronic (0%)
+Calibrated Diversity(A) = 1 - (<a href="#id1"><span class="problematic" id="id2">|1.0-0.6|</span></a> + <a href="#id3"><span class="problematic" id="id4">|0.0-0.3|</span></a> + <a href="#id5"><span class="problematic" id="id6">|0.0-0.1|</span></a>)/2 = 1 - 0.4 = 0.6</p>
+<p>Observed genre distribution in Set B: Rock (20%), Indie/Psychedelic (60%), Electronic (20%)
+Calibrated Diversity(B) = 1 - (<a href="#id7"><span class="problematic" id="id8">|0.2-0.6|</span></a> + <a href="#id9"><span class="problematic" id="id10">|0.6-0.3|</span></a> + <a href="#id11"><span class="problematic" id="id12">|0.2-0.1|</span></a>)/2 = 1 - 0.3 = 0.7</p>
+<p><strong>Unexpectedness Calculation:</strong></p>
+<p>Assuming the expected items are songs by The Strokes, Arctic Monkeys, and Tame Impala:</p>
+<p>Unexpectedness(A) = 0/5 = 0 (all recommendations are from expected artists)</p>
+<p>Unexpectedness(B) = 2/5 = 0.4 (2 recommendations from unexpected artists: M83 and MGMT)</p>
+<p><strong>Analysis:</strong></p>
+<p>Set B provides better personalized diversity than Set A:
+- It more closely matches the user’s historical genre distribution (better calibrated diversity)
+- It introduces unexpected artists while maintaining connection to the user’s preferences
+- It balances familiarity (artists the user knows) with discovery (new artists in genres the user enjoys)</p>
+<p>This example illustrates how personalized diversity metrics can capture the quality of recommendations beyond simply maximizing variety, focusing instead on meaningful diversity that aligns with user preferences.</p>
+</div>
+</section>
+</section>
+<section id="trade-offs-between-relevance-and-diversity">
+<h1>Trade-offs Between Relevance and Diversity<a class="headerlink" href="#trade-offs-between-relevance-and-diversity" title="Link to this heading"></a></h1>
+<p>Optimizing for diversity often involves trade-offs with relevance metrics:</p>
+<ol class="arabic simple">
+<li><p><strong>Relevance-Diversity Balance</strong>: Increasing diversity may require including less relevant items for underrepresented aspects</p></li>
+<li><p><strong>Application-Specific Priorities</strong>: News platforms may prioritize diversity more than specialized technical search engines</p></li>
+<li><p><strong>User Intent Clarity</strong>: Diversity matters more for ambiguous queries and less for highly specific ones</p></li>
+</ol>
+<p>Many systems employ a hybrid approach where top positions prioritize relevance while ensuring reasonable diversity across the complete result set.</p>
+</section>
+<section id="evaluation-challenges">
+<h1>Evaluation Challenges<a class="headerlink" href="#evaluation-challenges" title="Link to this heading"></a></h1>
+<p>Evaluating diversity presents several unique challenges:</p>
+<section id="subjective-nature">
+<h2>Subjective Nature<a class="headerlink" href="#subjective-nature" title="Link to this heading"></a></h2>
+<p>Diversity is inherently subjective and context-dependent. What constitutes appropriate diversity varies by:
+* Query type (navigational vs. exploratory)
+* User experience level (novices may prefer more diversity than experts)
+* Domain (news benefits from diverse viewpoints, technical documentation less so)</p>
+</section>
+<section id="annotation-complexity">
+<h2>Annotation Complexity<a class="headerlink" href="#annotation-complexity" title="Link to this heading"></a></h2>
+<p>Creating ground truth for diversity evaluation requires:
+* Identifying all possible subtopics or interpretations
+* Annotating items with multiple subtopic relevance judgments
+* Determining appropriate weights or importance for each subtopic</p>
+</section>
+<section id="metric-selection">
+<h2>Metric Selection<a class="headerlink" href="#metric-selection" title="Link to this heading"></a></h2>
+<p>Different metrics capture different aspects of diversity:
+* Coverage metrics (S-Recall) focus on breadth
+* Intent-aware metrics (α-nDCG) balance relevance and diversity
+* Distance-based metrics (ILD) focus on dissimilarity between items</p>
+</section>
+<section id="online-vs-offline-evaluation">
+<h2>Online vs. Offline Evaluation<a class="headerlink" href="#online-vs-offline-evaluation" title="Link to this heading"></a></h2>
+<p>Offline diversity metrics may not fully capture user satisfaction:
+* Users might prefer less diverse but more relevant results in specific contexts
+* The perceived value of diversity can vary based on task and user intent
+* A/B testing with explicit diversity interventions may be necessary to validate metric improvements</p>
+</section>
+</section>
+<section id="selection-of-an-appropriate-diversity-metric">
+<h1>Selection of an Appropriate Diversity Metric<a class="headerlink" href="#selection-of-an-appropriate-diversity-metric" title="Link to this heading"></a></h1>
+<p>The choice of diversity metric should align with application requirements:</p>
+<ul class="simple">
+<li><p><strong>Intent-aware metrics</strong> (α-nDCG, ERR-IA): Best when subtopic annotations are available and interpretations are well-defined</p></li>
+<li><p><strong>Explicit diversity metrics</strong> (ILD, S-Recall): Suitable when item similarity or categorization is available</p></li>
+<li><p><strong>Balance metrics</strong> (Proportionality, Gini): Appropriate when category distribution targets are known</p></li>
+</ul>
+<p>A common practice is to evaluate both relevance and diversity metrics in parallel, looking for optimal configurations that maintain strong relevance while improving diversity.</p>
+<div class="code-grey admonition">
+<p class="admonition-title">Code: Implementing Basic Diversity Metrics</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics.pairwise</span> <span class="kn">import</span> <span class="n">cosine_similarity</span>
+
+<span class="k">def</span> <span class="nf">subtopic_recall</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">subtopics</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate Subtopic Recall@k</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    results : list of dicts</span>
+<span class="sd">        Ranked results with &#39;id&#39; and &#39;subtopics&#39; fields</span>
+<span class="sd">    subtopics : set</span>
+<span class="sd">        Set of all possible subtopics for the query</span>
+<span class="sd">    k : int</span>
+<span class="sd">        Number of top results to consider</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    float</span>
+<span class="sd">        S-Recall@k value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">covered_subtopics</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))):</span>
+        <span class="n">covered_subtopics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;subtopics&#39;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">covered_subtopics</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">subtopics</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">intra_list_diversity</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate Intra-List Diversity@k using cosine distance</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    results : list</span>
+<span class="sd">        Ranked result IDs</span>
+<span class="sd">    embeddings : dict</span>
+<span class="sd">        Mapping from item ID to vector representation</span>
+<span class="sd">    k : int</span>
+<span class="sd">        Number of top results to consider</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">    float</span>
+<span class="sd">        ILD@k value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Get embeddings for top-k results</span>
+    <span class="n">vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">embeddings</span><span class="p">[</span><span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">)])</span>
+
+    <span class="c1"># Calculate similarity matrix</span>
+    <span class="n">sim_matrix</span> <span class="o">=</span> <span class="n">cosine_similarity</span><span class="p">(</span><span class="n">vectors</span><span class="p">)</span>
+
+    <span class="c1"># Convert to distance and sum off-diagonal elements</span>
+    <span class="n">dist_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sim_matrix</span><span class="p">)</span> <span class="o">-</span> <span class="n">k</span>  <span class="c1"># Subtract diagonal elements (self-similarity)</span>
+
+    <span class="c1"># Normalize by number of pairs</span>
+    <span class="k">return</span> <span class="n">dist_sum</span> <span class="o">/</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="practical-applications">
+<h1>Practical Applications<a class="headerlink" href="#practical-applications" title="Link to this heading"></a></h1>
+<p>Different applications prioritize diversity in distinct ways:</p>
+<section id="search-engines">
+<h2>Search Engines<a class="headerlink" href="#search-engines" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Web search</strong>: Diverse results for ambiguous queries (e.g., “jaguar” → car, animal, sports team)</p></li>
+<li><p><strong>E-commerce</strong>: Category diversity to showcase product range</p></li>
+<li><p><strong>Academic search</strong>: Viewpoint diversity to present multiple scholarly perspectives</p></li>
+</ul>
+</section>
+<section id="recommendation-systems">
+<h2>Recommendation Systems<a class="headerlink" href="#recommendation-systems" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Media streaming</strong>: Genre and mood diversity to prevent fatigue</p></li>
+<li><p><strong>News aggregators</strong>: Source and viewpoint diversity to reduce filter bubbles</p></li>
+<li><p><strong>E-commerce</strong>: Price point and brand diversity to provide comparison options</p></li>
+</ul>
+</section>
+<section id="feed-ranking">
+<h2>Feed Ranking<a class="headerlink" href="#feed-ranking" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Social media</strong>: Topic diversity to maintain engagement</p></li>
+<li><p><strong>Content platforms</strong>: Creator diversity to support broader ecosystem</p></li>
+<li><p><strong>News feeds</strong>: Temporal diversity to balance breaking news with evergreen content</p></li>
+</ul>
+</section>
+</section>
+<section id="summary">
+<h1>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h1>
+<p>Diversity evaluation extends traditional relevance-based assessment to measure how well ML/AI systems present varied, comprehensive results.</p>
+<section id="key-diversity-metrics">
+<h2>Key Diversity Metrics<a class="headerlink" href="#key-diversity-metrics" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Intent-Aware Metrics</strong>: α-nDCG and ERR-IA incorporate subtopic coverage</p></li>
+<li><p><strong>Explicit Diversity Metrics</strong>: Intra-List Diversity and Subtopic Recall directly measure variety</p></li>
+<li><p><strong>Balance Metrics</strong>: Proportionality and Gini Coefficient evaluate categorical representation</p></li>
+<li><p><strong>Novelty Metrics</strong>: Expected Popularity Complement and Intra-List Novelty measure exposure to unusual items</p></li>
+<li><p><strong>Personalized Metrics</strong>: User-Specific Topic Coverage and Unexpectedness adapt to individual preferences</p></li>
+</ul>
+</section>
+<section id="diversity-relevance-balance">
+<h2>Diversity-Relevance Balance<a class="headerlink" href="#diversity-relevance-balance" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Trade-offs</strong>: Often necessary to sacrifice some relevance for improved diversity</p></li>
+<li><p><strong>Calibration</strong>: Matching diversity levels to user expectations rather than maximizing</p></li>
+<li><p><strong>Application-Specific</strong>: Different domains require different diversity approaches</p></li>
+</ul>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Hybrid Evaluation</strong>: Assess both relevance and diversity metrics</p></li>
+<li><p><strong>User Studies</strong>: Validate diversity metrics with explicit user feedback</p></li>
+<li><p><strong>Contextual Approach</strong>: Adjust diversity expectations based on query type and user intent</p></li>
+<li><p><strong>Appropriate Metrics</strong>: Select diversity measures aligned with application goals</p></li>
+</ul>
+<p>Effective diversity evaluation requires understanding the specific dimensions of variety that matter most to users in a given context, then developing metrics that accurately capture those dimensions while maintaining strong overall result quality.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tony.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

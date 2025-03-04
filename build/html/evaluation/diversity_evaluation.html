@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diversity Evaluation &mdash; MLAI 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=211db8cb" />
+
+  
+    <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/evaluation/diversity_evaluation.html" />
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/foldable_admonitions.js?v=7eeb6e3d"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Ranking Evaluation" href="ranking_evaluation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Evaluation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic_evaluation.html">Basic Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ranking_evaluation.html">Ranking Evaluation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Diversity Evaluation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subtopic-diversity-metrics">Subtopic Diversity Metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#subtopic-recall-s-recall">Subtopic Recall (S-Recall)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#subtopic-entropy-total-variation-distance">Subtopic Entropy (Total Variation Distance)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gini-coefficient">Gini Coefficient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#proportionality">Proportionality</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#intent-aware-ranking-metrics">Intent-Aware Ranking Metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ndcg">α-nDCG</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#intent-aware-expected-reciprocal-rank-err-ia">Intent-Aware Expected Reciprocal Rank (ERR-IA)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#similarity-based-diversity-metrics">Similarity-Based Diversity Metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#intra-list-diversity-ild">Intra-List Diversity (ILD)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#expected-intra-list-diversity-eild">Expected Intra-List Diversity (EILD)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Subtopic Diversity Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Intent-Aware Ranking Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5">Similarity-Based Diversity Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Evaluation</a></li>
+      <li class="breadcrumb-item active">Diversity Evaluation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/evaluation/diversity_evaluation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="diversity-evaluation">
+<h1>Diversity Evaluation<a class="headerlink" href="#diversity-evaluation" title="Link to this heading"></a></h1>
+<p>Many ML/AI ranking systems aim not only to surface relevant items but also to provide diverse results that cover multiple aspects of a task. <span class="target" id="newconcept-diversity_evaluation"></span><span class="newconcept">Diversity Evaluation</span> assesses how well a system presents varied, non-redundant items that collectively satisfy different user needs or interpretations.</p>
+<p>Unlike precision and recall which focus on relevance, diversity metrics evaluate the breadth of coverage across different subtopics, categories, or interpretations. Diversity is particularly valuable in:</p>
+<ol class="arabic simple">
+<li><p><strong>Ambiguous queries</strong>: When a query has multiple valid interpretations (e.g., “apple” could refer to a fruit or a technology company)</p></li>
+<li><p><strong>Exploratory search</strong>: When users are exploring a topic without a specific information need</p></li>
+<li><p><strong>Recommendation systems</strong>: Where users benefit from varied suggestions rather than similar items</p></li>
+<li><p><strong>Risk mitigation</strong>: To reduce the chance of completely missing user intent</p></li>
+<li><p><strong>Filter bubble reduction</strong>: To avoid exposing users only to content similar to what they’ve previously consumed</p></li>
+<li><p><strong>User satisfaction</strong>: To provide a more engaging experience through content variety</p></li>
+</ol>
+<section id="subtopic-diversity-metrics">
+<h2>Subtopic Diversity Metrics<a class="headerlink" href="#subtopic-diversity-metrics" title="Link to this heading"></a></h2>
+<section id="subtopic-recall-s-recall">
+<h3>Subtopic Recall (S-Recall)<a class="headerlink" href="#subtopic-recall-s-recall" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-subtopic_recall"></span><span class="newconcept">Subtopic Recall</span> measures the proportion of subtopics covered in the top-k results (focusing solely on coverage breadth rather than relevance or position):</p>
+<div class="math notranslate nohighlight">
+\[\text{S-Recall}&#64;k = \frac{|\cup_{i=1}^{k} \text{subtopics}(i)|}{|S|}\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p>$\text{subtopics}(i)$ is the set of subtopics covered by the item at position $i$</p></li>
+<li><p>$|S|$ is the total number of subtopics for the query</p></li>
+</ul>
+</section>
+<section id="subtopic-entropy-total-variation-distance">
+<h3>Subtopic Entropy (Total Variation Distance)<a class="headerlink" href="#subtopic-entropy-total-variation-distance" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-s-entropy"></span><span class="newconcept">S-Entropy</span> measures how evenly items are distributed across subtopics:</p>
+<div class="math notranslate nohighlight">
+\[\text{Entropy} = -\sum_{j=1}^{|S|} P(j) \log P(j)\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p>$S$ is the set of all subtopics</p></li>
+<li><p>$P(j)$ is the proportion of subtopic $j$ in the ranked results</p></li>
+</ul>
+<p>Higher entropy indicates a more balanced distribution across categories. Maximum entropy occurs when all categories are equally represented, while minimum entropy (0) occurs when all items belong to a single category.</p>
+</section>
+<section id="gini-coefficient">
+<h3>Gini Coefficient<a class="headerlink" href="#gini-coefficient" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-gini_coefficient"></span><span class="newconcept">Gini Coefficient</span> measures inequality in representation across subtopics:</p>
+<div class="math notranslate nohighlight">
+\[\text{Gini} = \frac{1}{2} \times \frac{\sum_{i=1}^{|S|} \sum_{j=1}^{|S|} |s_i - s_j|}{|S|\sum_{i=1}^{|S|} s_i}\]</div>
+<p>where</p>
+<ul>
+<li><p>$s_i$ is the number of items from subtopic $i$ in the results.</p></li>
+<li><p>Lower values (approaching 0) indicate more equal representation. Imaging the items are evenly distributed to all subtopics, then every $s_i$ is equal to $s_j$, and above value is surely zero.</p></li>
+<li><p>Higher values (approaching 1) indicate dominance by fewer categories. In the extreme case, if one subtopic $x$ takes all items, then $\sum_{i=1}^{|S|} s_i = 0+…+s_x+0+…=s_x$. Also,</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\begin{split}|s_i - s_j| =
+\begin{cases}
+0, &amp; \text{if } i = j \\
+N, &amp; \text{if } i = x \text{ and } j \neq x \\
+N, &amp; \text{if } i \neq x \text{ and } j = x \\
+0, &amp; \text{if } i \neq x \text{ and } j \neq x
+\end{cases}\end{split}\]</div>
+</div></blockquote>
+<p>As a result,</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\sum_{j=1}^{|S|} |s_i - s_j| = 2 \times |S-1| \times s_x\]</div>
+</div></blockquote>
+<p>and therefore</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\text{Gini} = \frac{1}{2} \times \frac{2 \times (|S|-1) \times N}{|S| \times N} = \frac{(|S|-1)}{|S|} = 1 - \frac{1}{|S|}\]</div>
+</div></blockquote>
+<p>If there is only one subtopic, Gini Coefficient is still 0. With more subtopics $|S| = 2, 3, 4, …$, the Gini Coefficient will go up to $0.5, 0.67, 0.75, …$, indicating more inequality.</p>
+</li>
+</ul>
+</section>
+<section id="proportionality">
+<h3>Proportionality<a class="headerlink" href="#proportionality" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-proportionality"></span><span class="newconcept">Proportionality</span> measures how well the distribution of items across categories in the results matches a target distribution. It is based on Total Variation Distance (TVD) between two distributions,</p>
+<div class="math notranslate nohighlight">
+\[\text{Proportionality}&#64;k = 1 - \text{TVD}(P_\text{T}, P_\text{R})\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\text{TVD}(P_\text{T}, P_\text{R}) = \frac{1}{2} \sum_{j=1}^{|S|} |P_\text{T}(j) - P_\text{R}(j)|\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p>$P_\text{T}(j)$ is the target proportion for subtopic $j$</p></li>
+<li><p>$P_\text{R}(j)$ is the actual proportion of subtopic $j$ in results</p></li>
+<li><p>The $\frac{1}{2}$ coefficient is due to the max value of $∑|P_{\text{T}}(j) - P_{\text{R}}(j)|$ is 2, in extreme cases like $P_\text{T} = (1, 0, 0)$ and $P_\text{R} = (0, 1, 0)$.</p></li>
+</ul>
+<p>A Proportionality value of 1 indicates perfect alignment with the target distribution, while 0 indicates maximum divergence.</p>
+</section>
+</section>
+<section id="intent-aware-ranking-metrics">
+<h2>Intent-Aware Ranking Metrics<a class="headerlink" href="#intent-aware-ranking-metrics" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-intent-aware"></span><span class="newconcept">Intent-Aware</span> ranking metrics extend traditional relevance-based ranking metrics by incorporating subtopic or aspect coverage.</p>
+<ul class="simple">
+<li><p>Traditionally, this requires a pre-defined set of subtopics $S$.</p></li>
+<li><p>Recently, LLM-driven AI systems can help dynamically generate varying subtopics for each query.</p></li>
+</ul>
+<section id="ndcg">
+<h3>α-nDCG<a class="headerlink" href="#ndcg" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-α-ndcg"></span><span class="newconcept">α-nDCG</span> (Alpha-nDCG) extends <a class="reference external" href="ranking_evaluation.html#newconcept-normalized_discounted_cumulative_gain"><span class="refconcept">Normalized Discounted Cumulative Gain (NDCG)</span></a> by penalizing redundancy across subtopics. It is replacing the <a href="#id1"><span class="problematic" id="id2">:refconcet:`gain function`</span></a> $\text{rel}(i)$ in the original DCG formula $\text{DCG}(k) = \sum_{i=1}^{k} \frac{\text{rel}(i)}{\log_2(i+1)}$ by new topic-aware abd topic-coverage dependent score $\sum_{j=1}^{|S|}g(i,j)$.</p>
+<div class="math notranslate nohighlight">
+\[\alpha\text{-DCG}&#64;k = \sum_{i=1}^{k} (\frac{1}{\log_2(i+1)} \times G(i, S))\]</div>
+<p>where $G(i, S)$ is a <span class="target" id="newconcept-subtopics-aware_gain_function"></span><span class="newconcept">subtopics-aware gain function</span> considering the set of all subtopics $S$. One example of such function is</p>
+<div class="math notranslate nohighlight">
+\[G(i, S) = \frac{\sum_{j=1}^{|S|} g(i,j)}{|S|}\]</div>
+<p>where $|S|$ is the number of topics, and $g(i,j)$ is the gain for subtopic $j$ at position $i$, typically defined as:</p>
+<div class="math notranslate nohighlight">
+\[g(i,j) = \text{rel}(i,j) \cdot (1-\alpha)^{r(i-1,j)}\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p>$\text{rel}(i,j)$ is the relevance of item at position $i$ to subtopic $j$.</p></li>
+<li><p>$r(i-1,j)$ is the number of items relevant to subtopic $j$ that appear before position $i$.</p></li>
+<li><p>$\alpha$ is the <span class="target" id="newconcept-redundancy_penality_parameter"></span><span class="newconcept">redundancy penality parameter</span> (typically 0.5).</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Understanding the Redundancy Penalty</p>
+<p>The gain function $g(i,j) = \text{rel}(i,j) \cdot (1-\alpha)^{r(i-1,j)}$ is specifically designed to penalize redundancy across subtopics:</p>
+<ul class="simple">
+<li><p>The first component, $\text{rel}(i,j)$, represents the basic relevance value of the item at position $i$ to subtopic $j$.</p></li>
+<li><p>The second component, $(1-\alpha)^{r(i-1,j)}$, is a discount factor that decreases exponentially as more items covering the same subtopic appear earlier in the ranking.</p></li>
+</ul>
+<p>When the first item covering subtopic $j$ appears:</p>
+<ul class="simple">
+<li><p>$r(i-1,j) = 0$ (no previous items cover this subtopic)</p></li>
+<li><p>$(1-\alpha)^0 = 1$ (no penalty applied)</p></li>
+<li><p>$g(i,j) = \text{rel}(i,j)$ (full relevance value)</p></li>
+</ul>
+<p>For subsequent items covering the same subtopic:</p>
+<ul class="simple">
+<li><p>Each additional item receives an increasingly severe penalty</p></li>
+<li><p>With $\alpha = 0.5$, the second item relevant to subtopic $j$ gets a 50% discount, the third gets a 75% discount, and so on</p></li>
+</ul>
+<p>This mathematical formulation elegantly captures the diminishing returns property: <strong class="underline-bold">while the first result about a subtopic is highly valuable, subsequent results on the same subtopic provide decreasing additional value to users</strong>.</p>
+<p>The $\alpha$ parameter allows system designers to tune how strongly to enforce diversity:</p>
+<ul class="simple">
+<li><p>Higher values of $\alpha$ (closer to 1) create stronger penalties for redundancy, encouraging more diverse rankings</p></li>
+<li><p>Lower values (closer to 0) apply milder penalties, allowing more items from the same subtopic when they’re highly relevant</p></li>
+</ul>
+</div>
+<p>Similar to NDCG, α-nDCG is normalized by dividing by the ideal α-DCG value:</p>
+<div class="math notranslate nohighlight">
+\[\alpha\text{-nDCG}&#64;k = \frac{\alpha\text{-DCG}&#64;k}{\alpha\text{-IDCG}&#64;k}\]</div>
+</section>
+<section id="intent-aware-expected-reciprocal-rank-err-ia">
+<h3>Intent-Aware Expected Reciprocal Rank (ERR-IA)<a class="headerlink" href="#intent-aware-expected-reciprocal-rank-err-ia" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-err-ia"></span><span class="newconcept">ERR-IA</span> adapts <a class="reference external" href="ranking_evaluation.html#newconcept-expected_reciprocal_rank"><span class="refconcept">Expected Reciprocal Rank (ERR)</span></a> to account for multiple intents:</p>
+<div class="math notranslate nohighlight">
+\[\text{ERR-IA}&#64;k = \sum_{j=1}^{|S|} P(j) \times \text{ERR}(q, j)\]</div>
+<p>where $\text{ERR}(q, j)$ is the ERR metric of query $q$ with respect to subtopic $j$:</p>
+<div class="math notranslate nohighlight">
+\[\sum_{i=1}^{n} \frac{1}{i} \cdot \text{rel}(i,j) \cdot \prod_{l=1}^{i-1} (1-\text{rel}(l,j))\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p>$P(j)$ is the probability or importance of subtopic $j$</p></li>
+<li><p>$\text{rel}(i,j)$ is the relevance of item at position $i$ to subtopic $j$</p></li>
+</ul>
+<p>Similar to <a class="reference external" href="ranking_evaluation.html#newconcept-expected_reciprocal_rank"><span class="refconcept">Expected Reciprocal Rank (ERR)</span></a>, we assume $\text{rel}(i,j) \in [0, 1]$ represents the probability that the user finds the document at position $i$ relevant to subtopic $j$. For relevance scores not in the range $[0, 1]$, normalization is needed.</p>
+</section>
+</section>
+<section id="similarity-based-diversity-metrics">
+<h2>Similarity-Based Diversity Metrics<a class="headerlink" href="#similarity-based-diversity-metrics" title="Link to this heading"></a></h2>
+<p>These metrics measure diversity based on item similarities without requiring intent or subtopic definitions and annotations.</p>
+<section id="intra-list-diversity-ild">
+<h3>Intra-List Diversity (ILD)<a class="headerlink" href="#intra-list-diversity-ild" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-intra-list_diversity"></span><span class="newconcept">Intra-List Diversity</span> measures the average dissimilarity between all pairs of items in the ranked list:</p>
+<div class="math notranslate nohighlight">
+\[\text{ILD}&#64;k = \frac{1}{k(k-1)} \sum_{i=1}^{k} \sum_{j=1, j \neq i}^{k} d(i,j)\]</div>
+<p>Where $d(i,j)$ is a distance or dissimilarity function between items at positions $i$ and $j$.</p>
+</section>
+<section id="expected-intra-list-diversity-eild">
+<h3>Expected Intra-List Diversity (EILD)<a class="headerlink" href="#expected-intra-list-diversity-eild" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-expected_intra-list_diversity"></span><span class="newconcept">Expected Intra-List Diversity</span> extends ILD by incorporating rank and relevance awareness:</p>
+<div class="math notranslate nohighlight">
+\[\text{EILD}&#64;k = \sum_{i=1}^{k} \sum_{j=1, j \neq i}^{k} P(i) \times P(j) \times d(i,j)\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p>$P(i)$ is the probability of user examing item $i$, and $P(i) \times P(j)$ can be interpreted as the probability user examining both item $i$ and item $j$. Similar to <a class="reference external" href="ranking_evaluation.html#newconcept-expected_reciprocal_rank"><span class="refconcept">Expected Reciprocal Rank (ERR)</span></a>, it can be simply $P(i) = text{rel}(i)$ given that the relevance score is or can be normalized as probabilistic (i.e., in range $[0, 1]$).</p></li>
+<li><p>$d(i,j)$ is the same dissimilarity function used in ILD</p></li>
+</ul>
+<p>EILD gives a more user-centric view of diversity by considering the probability user actually examing the items.</p>
+</section>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p>This chapter examined diversity evaluation metrics for ML/AI systems that aim to present varied results covering multiple aspects of a query.</p>
+<section id="id3">
+<h3>Subtopic Diversity Metrics<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Subtopic Recall (S-Recall)</strong>: Measures the proportion of subtopics covered in the top-k results</p></li>
+<li><p><strong>Subtopic Entropy</strong>: Quantifies how evenly items are distributed across subtopics</p></li>
+<li><p><strong>Gini Coefficient</strong>: Measures inequality in representation across subtopics</p></li>
+<li><p><strong>Proportionality</strong>: Assesses alignment between actual and target subtopic distributions</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Intent-Aware Ranking Metrics<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>α-nDCG</strong>: Extends NDCG by penalizing redundancy across subtopics using a diminishing returns model</p></li>
+<li><p><strong>ERR-IA</strong>: Adapts Expected Reciprocal Rank to account for multiple user intents</p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>Similarity-Based Diversity Metrics<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Intra-List Diversity (ILD)</strong>: Measures average dissimilarity between all pairs of items</p></li>
+<li><p><strong>Expected Intra-List Diversity (EILD)</strong>: Extends ILD by incorporating user examination probabilities</p></li>
+</ul>
+</section>
+<section id="best-practices">
+<h3>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Balance diversity with relevance</strong>: Optimize for both metrics based on application context</p></li>
+<li><p><strong>Choose appropriate metrics</strong>: Select diversity measures that align with specific diversity goals</p></li>
+<li><p><strong>Consider query ambiguity</strong>: Apply higher diversity requirements for ambiguous or exploratory queries</p></li>
+<li><p><strong>Calibrate to user expectations</strong>: Adapt diversity levels to match user needs and application context</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ranking_evaluation.html" class="btn btn-neutral float-left" title="Ranking Evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tony.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

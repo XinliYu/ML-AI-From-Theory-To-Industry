@@ -55,9 +55,9 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Diversity Evaluation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#subtopic-diversity-metrics">Subtopic Diversity Metrics</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#subtopic-recall-s-recall">Subtopic Recall (S-Recall)</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#subtopic-entropy-total-variation-distance">Subtopic Entropy (Total Variation Distance)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#subtopic-entropy">Subtopic Entropy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#gini-coefficient">Gini Coefficient</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#proportionality">Proportionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#proportionality-total-variation-distance">Proportionality (Total Variation Distance)</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#intent-aware-ranking-metrics">Intent-Aware Ranking Metrics</a><ul>
@@ -133,8 +133,8 @@
 <li><p>$|S|$ is the total number of subtopics for the query</p></li>
 </ul>
 </section>
-<section id="subtopic-entropy-total-variation-distance">
-<h3>Subtopic Entropy (Total Variation Distance)<a class="headerlink" href="#subtopic-entropy-total-variation-distance" title="Link to this heading"></a></h3>
+<section id="subtopic-entropy">
+<h3>Subtopic Entropy<a class="headerlink" href="#subtopic-entropy" title="Link to this heading"></a></h3>
 <p><span class="target" id="newconcept-s-entropy"></span><span class="newconcept">S-Entropy</span> measures how evenly items are distributed across subtopics:</p>
 <div class="math notranslate nohighlight">
 \[\text{Entropy} = -\sum_{j=1}^{|S|} P(j) \log P(j)\]</div>
@@ -179,8 +179,8 @@ N, &amp; \text{if } i \neq x \text{ and } j = x \\
 </li>
 </ul>
 </section>
-<section id="proportionality">
-<h3>Proportionality<a class="headerlink" href="#proportionality" title="Link to this heading"></a></h3>
+<section id="proportionality-total-variation-distance">
+<h3>Proportionality (Total Variation Distance)<a class="headerlink" href="#proportionality-total-variation-distance" title="Link to this heading"></a></h3>
 <p><span class="target" id="newconcept-proportionality"></span><span class="newconcept">Proportionality</span> measures how well the distribution of items across categories in the results matches a target distribution. It is based on Total Variation Distance (TVD) between two distributions,</p>
 <div class="math notranslate nohighlight">
 \[\text{Proportionality}&#64;k = 1 - \text{TVD}(P_\text{T}, P_\text{R})\]</div>

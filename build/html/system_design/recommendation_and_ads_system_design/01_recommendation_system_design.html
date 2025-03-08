@@ -1,0 +1,543 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recommendation ML/AI System Design &mdash; MLAI 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=e159ab47" />
+
+  
+    <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html" />
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/foldable_admonitions.js?v=351fa817"></script>
+      <script src="../../_static/js/mathjax-config.js?v=c54ad740"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Modeling" href="../../modeling/index.html" />
+    <link rel="prev" title="Recommendation &amp; Ads System Design" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ML/AI Systen Design</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Recommendation &amp; Ads System Design</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Recommendation ML/AI System Design</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reactive-recommendation">Reactive Recommendation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#staged-recommendation-system">Staged Recommendation System</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#model-ensemble-latency-management">Model Ensemble &amp; Latency Management</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#multi-modal-cross-funtional-recommendation">Multi-Modal &amp; Cross-Funtional Recommendation</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#multi-modal-fusion">Multi-Modal Fusion</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#scaling-recommendation-system-for-billions-of-users">Scaling Recommendation System For Billions Of Users</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modeling/index.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../evaluation/index.html">Evaluation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ML/AI Systen Design</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Recommendation &amp; Ads System Design</a></li>
+      <li class="breadcrumb-item active">Recommendation ML/AI System Design</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/system_design/recommendation_and_ads_system_design/01_recommendation_system_design.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="recommendation-ml-ai-system-design">
+<h1>Recommendation ML/AI System Design<a class="headerlink" href="#recommendation-ml-ai-system-design" title="Link to this heading"></a></h1>
+<p>Recommendation tasks can be generally categorized into three types:</p>
+<ul class="simple">
+<li><p><strong>Reactive</strong>: Responding to explicit user actions or queries</p></li>
+<li><p><strong>Proactive</strong>: Anticipating user needs without explicit prompting</p></li>
+<li><p><strong>Feed</strong>: Combining elements of both in a curated content stream</p></li>
+</ul>
+<p>All recommendation tasks, regardless of whether they are reactive, proactive, or feed-based, consist of four major components:</p>
+<ul class="simple">
+<li><p><strong>Task Understanding</strong>: Interpreting user intent and needs through explicit queries, implicit signals, or predicted interests to determine what content would be most valuable in the current context.</p></li>
+<li><p><strong>Contextual Awareness</strong>: Incorporating session data, location, time, device information, and other situational factors to enhance relevance and personalization of recommendations.</p></li>
+<li><p><strong>Delivery</strong>: Creating a ranked list of items that best match the interpreted task and context, optimizing for user engagement, satisfaction, and business objectives.</p></li>
+<li><p><strong>Evaluation &amp; Feedback</strong>: Measuring recommendation performance through metrics, A/B testing, and user feedback to continuously improve the system and adapt to changing preferences and behaviors.</p></li>
+</ul>
+<section id="reactive-recommendation">
+<h2>Reactive Recommendation<a class="headerlink" href="#reactive-recommendation" title="Link to this heading"></a></h2>
+<p>Reactive recommendation systems respond to explicit user actions or queries, delivering personalized results, and often based on immediate context and historical behavior. It consists of the following core components for success.</p>
+<ul class="simple">
+<li><p><strong>Query Understanding</strong>: Interpreting user intent through natural language processing, query expansion, and entity recognition, etc.</p></li>
+<li><p><strong>Contextual Awareness</strong>: Incorporating session data, location, time, and device information</p></li>
+<li><p><strong>Response Generation</strong>: Creating a ranked list of items that best match the interpreted query</p></li>
+<li><p><strong>Real-time Delivery</strong>: Serving recommendations with minimal latency (typically &lt;500ms end-to-end latency)</p></li>
+</ul>
+<section id="staged-recommendation-system">
+<h3>Staged Recommendation System<a class="headerlink" href="#staged-recommendation-system" title="Link to this heading"></a></h3>
+<p>Multi-pass recommendation employs a staged filtering approach that progressively narrows down candidate items to achieve both computational efficiency and recommendation quality.</p>
+<ul class="simple">
+<li><p>The <span class="target" id="newconcept-sourcing_layer"></span><span class="newconcept">Sourcing Layer</span> acquires potential candidates from diverse sources, makes proper storage and indexing before formal retrieval begins.</p>
+<ul>
+<li><p><strong class="underline-bold">Integrates various data sources</strong> (e.g., databases, vector stores, service APIs) for the recommendation task and establish the initial candidate pool.</p>
+<ul>
+<li><p>The initial candidate pool size can range from thousands to tens of millions.</p></li>
+<li><p>The data sources could be 1P (including user-generated content), 2P (partner content), or 3P (non-partner external content).</p></li>
+</ul>
+</li>
+<li><p>May involve both <strong class="underline-bold">pre-indexed data</strong> (e.g., pre-indexed catalog, articles/posts/reviews, web data, etc.) and <strong class="underline-bold">real-time data</strong> (e.g., on-sale products, real-time prices, trending news/topics).</p></li>
+<li><p>Some feasible quick business filter rules could be applied (e.g., by market region/locale, contingent upon the data source’s native support).</p></li>
+<li><p>Typically requires very high recall (typically 95%+).</p></li>
+<li><p>Usually takes 5% to 20% of total allowable e2e latency.</p></li>
+</ul>
+</li>
+<li><p>The <span class="target" id="newconcept-recall_layer"></span><span class="newconcept">Recall Layer</span> retrieves a manageable subset of potentially relevant items from a vast sourced candidate pool.</p>
+<ul>
+<li><p>Typically aims at <strong class="underline-bold">reducing candidate pool to a manageable size</strong> of thousands or less.</p></li>
+<li><p><strong class="underline-bold">For pre-indexed content, recall layer can leverage large-scale search tools</strong>, including embedding-based Approximate Nearest Neighbor (ANN) search tools like using HNSW, FAISS or ScaNN (assuming the query and content both can be properly encoded), text search tools (e.g., Elasticsearch), or collaborative filtering tools (e.g., graph walk on user-item graph).</p></li>
+<li><p><strong class="underline-bold">For real-time content, simpler but quicker methods are applied</strong> (because system does not yet have time to index real-time content), such as keyword matching, graph-walk based collaborative filtering.</p></li>
+<li><p>Can <strong class="underline-bold">manage computational complexity</strong> through dimensionality reduction techniques (e.g., PCA); can <strong class="underline-bold">reduce memory footprint</strong> through quantization.</p></li>
+<li><p>Typically requires high recall (typically 80%~95%).</p></li>
+<li><p>Usually takes 10% to 30% of total allowable e2e latency.</p></li>
+</ul>
+</li>
+<li><p>The <span class="target" id="newconcept-integrity_layer"></span><span class="newconcept">Integrity Layer</span> ensures candidates passing to the precision layer meet business rules, quality standards, and policy requirements.</p>
+<ul>
+<li><p>Applied <strong class="underline-bold">after the recall layer</strong> because it requires a manageable candidate size (thousands not millions).</p></li>
+<li><p>Applied <strong class="underline-bold">before the precision layer</strong> because it can reduce both noise and workload for the precision layer, as the precision layer could be the most complex and computational intense layer in the recommendation flow.</p></li>
+<li><p>Typically implemented as lightweight filters/validation streams running in parallel .</p></li>
+<li><p>Designed for high throughput with minimal latency impact.</p></li>
+</ul>
+</li>
+<li><p>The <span class="target" id="newconcept-precision_layer"></span><span class="newconcept">Precision Layer</span> applies sophisticated ranking to the filtered candidate set to identify the most relevant recommendations.</p>
+<ul>
+<li><p>Typically processes hundreds of candidates to produce dozens of final recommendations; focus is on precision (accuracy of ranking) rather than recall at this stage.</p></li>
+<li><p>Employs <strong class="underline-bold">complex</strong> machine learning models including deep neural networks (e.g., Transformers) or gradient boosted decision trees (XGBoost, LightGBM, CatBoost).</p></li>
+<li><p>Uses <strong class="underline-bold">rich feature sets</strong> combining user, item, and contextual signals for fine-grained personalization.</p></li>
+<li><p>Often implements <strong class="underline-bold">multi-objective optimization</strong> balancing relevance, diversity, freshness, and business metrics.</p></li>
+<li><p>May incorporate <strong class="underline-bold">ensemble</strong> methods combining multiple ranking signals for more robust predictions.</p></li>
+<li><p>Usually takes 30% to 60% of total allowable e2e latency, as it performs the <strong class="underline-bold">most computation-intensive</strong> work.</p></li>
+</ul>
+</li>
+</ul>
+<figure class="align-default" id="fig-multi-stage-recommendation">
+<a class="reference internal image-reference" href="../../_images/staged_recommendation.png"><img alt="Multi-Stage Recommendation System" src="../../_images/staged_recommendation.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Figure 1 </span><span class="caption-text">An example of a staged recommendation system showing the progressive filtering from millions of candidates to dozens of recommendations through multiple specialized layers.</span><a class="headerlink" href="#fig-multi-stage-recommendation" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <strong class="underline-bold">boundary between “sourcing layer” and “recall layer” is ambiguous</strong> in practice, and sometimes they are referred to as just the “recall layer”. We prefer a more clear cut in above description, that “source layer” focuses on integrating data sources for the recommendation task.</p>
+<p>Some feasible quick business rules can be applied (e.g., by market region/locale) given that a data source natively supports it. For example, consider a vector store, if the data is already separated according to region/local, or it supports atttribute-based filter (e.g., Amazon Bedrock Knowledge Bases), then a quick region/local based filter can be performed at the sourcing stage; otherwise, such filter might not be feasible until after the recall layer.</p>
+</div>
+<section id="model-ensemble-latency-management">
+<h4>Model Ensemble &amp; Latency Management<a class="headerlink" href="#model-ensemble-latency-management" title="Link to this heading"></a></h4>
+<p>Model ensemble techniques can be effectively applied to both recall and precision layers to enhance recommendation quality while managing computational constraints.</p>
+<ul class="simple">
+<li><p>Individual models can output binary decisions and scores for candidate items.</p>
+<ul>
+<li><p>Model scores often use different scales and distributions. Each model can in addition provide normalized confidence categorization (e.g., high, medium, low) to enable more effective ensemble decision-making.</p></li>
+</ul>
+</li>
+<li><p><strong>Recall Layer Ensemble</strong>: prioritizes capturing potential relevant items over precision to ensure valuable candidates aren’t prematurely filtered out.</p>
+<ul>
+<li><p>Implements more lenient inclusion criteria to maintain high recall</p></li>
+<li><p>Uses simple aggregation rules such as: include items recommended by one model with high confidence, or by multiple models with medium confidence</p></li>
+</ul>
+</li>
+<li><p><strong>Precision Layer Ensemble</strong>: employs more strict criteria focused on ranking accuracy</p>
+<ul>
+<li><p>Can utilize majority voting for final ranking decisions, or incorporate lightweight meta-models (e.g., decision trees) that combine outputs from multiple ranking models.</p></li>
+</ul>
+</li>
+</ul>
+<p>In production environments, effective latency management is critical for recommendation systems, with each processing layer constrained by strict time budgets. The system can <strong class="underline-bold">only incorporates model results that return within allocated time windows</strong> into ensemble decisions. The time budget constraint requires ensemble mechanisms to gracefully <strong class="underline-bold">handle missing or delayed outputs from component models</strong>. Rule-based ensemble (e.g., hierarchical fallback), majority voting, weighted dynamic voting and Bayesian mean average can satisfy this requirement.</p>
+<p>To further reduce latency, <span class="target" id="newconcept-speculative_inference"></span><span class="newconcept">Speculative Inference</span> techniques can be employed, generating preliminary recommendations using faster, approximate models while awaiting results from more accurate, resource-intensive and computation-intensive models. This approach is particularly beneficial in scenarios where delivering timely responses is critical:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Serve Preliminary Recommendation</strong>: There are scenarios where we can serve users with prelminary recommendations in a natural way, for example</p>
+<ul>
+<li><p><strong>Ads</strong>: In digital advertising platforms, promptly presenting ads is essential to capture early user attention, especially when users open a website or app. Speculative inference allows the system to quickly display initial ad recommendations using lightweight models. These preliminary ads engage users immediately, while more sophisticated models refine and update the ad content shortly thereafter, ensuring both speed and relevance.</p></li>
+<li><p><strong>Voice Assistant</strong>: For voice assistants, responsiveness is key to user satisfaction. When a user requests “recommend me a new song”, the assistant can promptly suggest a track using a lightweight model, such as, “Would you like to try ‘That’s So True’ by Gracie Abraham, a current top song on Billboard?” Concurrently, more advanced models analyze the user’s personal profile and interaction history to generate a more tailored recommendation. If the user does not respond, or declines the initial suggestion, the system can offer the refined option, e.g., “How about ‘Eyes Open’? As a Taylor Swift fan, you might enjoy her latest release.”</p></li>
+</ul>
+</li>
+<li><p><strong>Taking Advantage Of Downstream Latency</strong>: In other scenarios, speculative inference remains valuable, <strong class="underline-bold">particularly when downstream processes involve substantial latency</strong>, and faster models can adequately serve the majority of user requests. For instance, if the fastest precision layer model requires 80ms and the most accurate model needs 300ms, with downstream result delivery taking an additional 200ms, the optimal model’s results would be ready before the entire pipeline completes. We will compare the outputs of both models before the final delivery, if they align, the system can confidently present the faster model’s results without delay. If they differ, initiating result delivery for the optimal model adds 200ms. However, if the faster model effectively addresses 80% of user requests, this strategy reduces overall latency without compromising recommendation quality. The remaining 20% of requests, typically being more complex, may justify the additional latency, as users might anticipate and tolerate longer response time.</p></li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Techniques similar to “speculative inference” is a common pratcice in industry, not just for recommendation. A faster model gives preliminary response while a more advanced model to follow up or refine the previous answer given slightly more time. Again in the Voice Assistant case, when user asks “tell me about last week’s flight accident”, the faster model can generate a preliminary response with a high-level summary. The more detailed response by an advanced model can be prepared while voice assistant is delivering the initial answer. The voice assistant can even ask user “Do you want to know more?” to naturally earn more time for the advanced model.</p>
+</div>
+<p>For best utilization of latency budget and responsiveness, the <strong class="underline-bold">staged recommendation infra often needs to support streamlined and parallelled processing with buffering mechanism</strong>. Items passed the previous layer will be pushed to the next layer without waiting for all items being processed at the current layer. The items are queued and stored in a buffer residing in the next layer, and the next layer will examine the buffer at some cadence, and process batches of items in parallel.</p>
+<ul class="simple">
+<li><p>For example, if the combined latency budget for the recall and integrity layers is 100ms, and the precision layer has a 300ms budget, the precision layer can examine the buffer every 10ms. The precision layer can decide whether to process available items according to a pre-defined rule (such as processing at least 10 items at a time), or can also make dynamic decision based on its current workload. This strategy potentially reduces the latency for delivering the first recommendation by up to 90ms, achieving best responsiveness.</p></li>
+</ul>
+</section>
+</section>
+<section id="multi-modal-cross-funtional-recommendation">
+<h3>Multi-Modal &amp; Cross-Funtional Recommendation<a class="headerlink" href="#multi-modal-cross-funtional-recommendation" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-data_modality"></span><span class="newconcept">Data Modality</span> refers to a specific type of data representation or information channel that captures a particular aspect of the task being modeled. Each modality typically has its own structure, format, encoding method, and semantic meaning. <span class="target" id="newconcept-multi-modal_learning"></span><span class="newconcept">Multi-Modal Learning</span> systems process and integrate diverse data types to create a richer understanding across different data modalities. Typical data modalities include:</p>
+<ul class="simple">
+<li><p>Multimedia</p>
+<ul>
+<li><p><strong>Text</strong>: Catalog, articles/posts/reviews, query, source code (e.g., HTML), metadata, etc.</p></li>
+<li><p><strong>Images</strong>: Product visuals, user-uploaded content, thumbnails, etc.</p></li>
+<li><p><strong>Video</strong>: Content previews, trailers, instructional material, etc.</p></li>
+<li><p><strong>Audio</strong>: Music, podcasts, voice interactions, etc.</p></li>
+</ul>
+</li>
+<li><p>Personalization &amp; Context Awareness</p>
+<ul>
+<li><p><span class="target" id="newconcept-user_profiles"></span><span class="newconcept">User Profiles</span>: demographic information, user preferences (declared/explicit or implicit), account history, subscription status, etc.</p></li>
+<li><p><span class="target" id="newconcept-user_activities_&amp;_analytics"></span><span class="newconcept">User Activities &amp; Analytics</span>: Clicks, purchases, page views &amp; time, reviews &amp; ratings (not just shopping products, thumbs up/down on like music/video recommendations are also strong rating signals), engagement patterns, behavioral analytics, etc.</p></li>
+<li><p><span class="target" id="newconcept-context_signals"></span><span class="newconcept">Context Signals</span>: Temporal context (time, date, season), spatial context (location, proximity), device context (e.g., device type), situational context (e.g., weather, current screen contents, the current song/video being played, active timers/alarms/reminders, etc., and other ongoing activities), session context (conversation, click path, etc.)</p></li>
+</ul>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong class="underline-bold">Data of the same type is not necessarily a single modality</strong>. For example, conversation context, user profile, code, etc., are all text-based, but technically they can be treated as separated modalities. A modality can be a type of data that serve a distinguished purpose.</p>
+</div>
+<p>If categorizing by if the data is pre-indexed, we might have</p>
+<ul class="simple">
+<li><p>Pre-Indexed Data</p>
+<ul>
+<li><p><span class="target" id="newconcept-text_catalog_&amp;_contents"></span><span class="newconcept">Text Catalog &amp; Contents</span> (item catalog, articles, posts, reviews, etc., and their metadata).</p></li>
+<li><p><span class="target" id="newconcept-media_catalog_&amp;_contents"></span><span class="newconcept">Media Catalog &amp; Contents</span> (images, videos, audio, etc., and their metadata).</p></li>
+<li><p><a class="reference internal" href="#newconcept-user_profiles"><span class="refconcept">User Profiles</span></a> as mentioned above.</p></li>
+<li><p><span class="target" id="newconcept-historical_user_activities_&amp;_analytics"></span><span class="newconcept">Historical User Activities &amp; Analytics</span> (<a class="reference internal" href="#newconcept-user_activities_&amp;_analytics"><span class="refconcept">User Activities &amp; Analytics</span></a> from user past interactions with the system)</p></li>
+</ul>
+</li>
+<li><p>Real-Time Data</p>
+<ul>
+<li><p><span class="target" id="newconcept-real-time_user_activities_&amp;_analytics"></span><span class="newconcept">Real-Time User Activities &amp; Analytics</span> (<a class="reference internal" href="#newconcept-user_activities_&amp;_analytics"><span class="refconcept">User Activities &amp; Analytics</span></a> from user interactions with the system in the current interaction session)</p></li>
+<li><p><a class="reference internal" href="#newconcept-context_signals"><span class="refconcept">Context Signals</span></a> as mentioned above.</p></li>
+<li><p><span class="target" id="newconcept-real-time_contents_&amp;_information"></span><span class="newconcept">Real-Time Contents &amp; Information</span> (e.g., <span class="target" id="newconcept-real-time_ugc"></span><span class="newconcept">Real-Time UGC (User Generated Content)</span>, popular &amp; trending items, on-sale items, real-time prices)</p></li>
+</ul>
+</li>
+</ul>
+<p>In modern times, we are typically looking at the following key qualities for multi-modal learning,</p>
+<ol class="arabic simple">
+<li><p><strong>Unified Representations</strong>: The modality-specific features can be transformed into a unified representation space, not only that the transformed embeddings are comparable (e.g., an image can compare to a piece of text), but also enabling models to handle diverse inputs seamlessly.</p></li>
+<li><p><strong>Multitasking Capabilities</strong>: Models can efficiently handle diverse tasks such as chatting, question answering, image generation, audio captioning, etc.</p></li>
+<li><p><strong>Robustness to Missing Modalities</strong>: Effective multimodal systems can maintain performance even when some modalities are absent or incomplete.</p></li>
+<li><p><strong>Scalability and Flexibility</strong>: As the diversity and volume of multimodal data grow, models must scale efficiently and adapt to new modalities.</p></li>
+</ol>
+<p>In industry, multi-modal learning is also referred to as the <span class="target" id="newconcept-cross-functional_learning"></span><span class="newconcept">cross-functional learning</span>. This naming emphasizes the integration of diverse skills and knowledge across various departments to achieve common organizational goals. By fostering cross-functional collaboration, organizations can enhance innovation, improve problem-solving, and adapt more effectively to complex and changing market demands.</p>
+<section id="multi-modal-fusion">
+<h4>Multi-Modal Fusion<a class="headerlink" href="#multi-modal-fusion" title="Link to this heading"></a></h4>
+<p>How to integrate information from multiple modalities is a critical step for multi-modal recommendation. We assume that features can be extracted by an encoder for each modality.</p>
+<ul class="simple">
+<li><p>The embedding dimensions of different modalities can be different.</p></li>
+<li><p>A specialized <span class="target" id="newconcept-missing_modality_embedding"></span><span class="newconcept">Missing Modality Embedding</span> can be reserved for each modality to represent “missing modality”. For example, adding one more dimension to embedding, with it being 1 meaning the modality is missing.</p></li>
+</ul>
+<p>Traditionally, there are three types of <span class="target" id="newconcept-modality_feature_fusion"></span><span class="newconcept">Modality Feature Fusion</span> strategies depending on when the modality features are integrated.</p>
+<ol class="arabic simple">
+<li><p><span class="target" id="newconcept-early_fusion"></span><span class="newconcept">Early Fusion</span>: Raw data from various modalities are first processed through their respective encoders to extract features. These <strong class="underline-bold">modality features are immediately combined</strong> — typically through concatenation or another lightweight integration method (e.g., cross-modal attention) — before being input into the main model for further processing.</p></li>
+<li><p><span class="target" id="newconcept-intermediate_fusion"></span><span class="newconcept">Intermediate Fusion</span>: <strong class="underline-bold">The modality features are fused at a deeper stage</strong> within the main model, after some independent processing (e.g., <span class="target" id="newconcept-modality-specific_subnets"></span><span class="newconcept">Modality-Specific Subnets</span>). The fusion at a deeper stage can force the modality specific subnets learn to transform each modality into a unified representation space.</p>
+<ul class="simple">
+<li><p>The <strong class="underline-bold">“modality-speicific subsets” is part of the main model</strong>, and they are trained through the learning process. On the contrary, “modality encoders” are usually off-the-shelf models not part of the learning process.</p></li>
+</ul>
+</li>
+<li><p><span class="target" id="newconcept-late_fusion"></span><span class="newconcept">Late fusion</span> <strong class="underline-bold">Each modality is handled separately</strong>, allowing for decoupled and tailored processing pipelines optimized for the unique characteristics of each modality. The <strong class="underline-bold">outputs from each modality pipeline are combined using lightweight techniques</strong>, such as averaging, majority voting, or a lightweight model (e.g., a decision tree, or a GBDT model), to arrive at a final prediction.</p>
+<ul class="simple">
+<li><p>An outstanding disadvantage of late fusion is potentially missing complex cross-modal correlations. <strong class="underline-bold">A simple but effective mitation could be to also take convenient meta data and numerical signals from each modality</strong>, consider them together with modality outputs, and develop a quick GBDT model. This appraoch has minimum impact on the key advantages of late fusion - decoupled development, less blocking, and relatively lightweight fusion at the end - but could significantly mitigate the issue of missing modality correlations. However, it does require additional engineer efforts to pass modality signals to the decision layer, in addition to the modality outputs.</p></li>
+</ul>
+</li>
+</ol>
+<p>For both early/intermediate fusion, <strong class="underline-bold">task heads can be added</strong> for multi-task training, as studies found they help with the unified representation across modalities (e.g., <a class="reference external" href="https://arxiv.org/abs/2102.10772">UniT: Multimodal Multitask Learning with a Unified Transformer</a>).</p>
+<p>In the context of LLM, integrating non-text modalities involves converting them into a format compatible with text-based processing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="target" id="newconcept-prompt-based_fusion"></span><span class="newconcept">Prompt-Based Fusion</span>: This approach involves converting all modalities into text and combining them into a single prompt, allowing the use of pre-trained LLMs without additional training for non-text signals. This approach more aligns with “Early Fusion”.</p></li>
+<li><p><span class="target" id="newconcept-token-based_fusion"></span><span class="newconcept">Token-Based Fusion</span> Non-text modalities are projected into “tokens” in the same embedding space as the text token embeddings, through modality encoders plus lightweight adapters. Special tokens are used to mark the boundary between different modalities (e.g., “&lt;image&gt; … &lt;/image&gt;&lt;audio&gt; … &lt;/audio&gt;&lt;text&gt; … &lt;/text&gt;”). This approach more alignes with “Intermediate Fusion”. For example,</p>
+<ul>
+<li><p>An <strong>image</strong> is processed by a pre-trained image encoder to extract visual features. These features are then transformed into embeddings that align with the token embeddings used by the LLM. A lightweight adapter, such as a small multilayer perceptron (MLP), is often employed to map the image features to the appropriate token dimension. This allows the LLM to integrate visual information seamlessly alongside textual data.</p></li>
+<li><p>Processing <strong>videos</strong> is more complex due to the temporal dimension. Typically, videos are segmented into shorter clips. Each segment is processed by a video encoder to extract spatiotemporal features, which are then converted into token embeddings compatible with the LLM. Techniques like <span class="target" id="newconcept-video_moment_retrieval"></span><span class="newconcept">Video Moment Retrieval</span> can be involves identifying specific segments within a video that correspond to the user inputs, enhancing the LLM’s ability to understand and respond to user inputs with long videos.</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<figure class="align-default" id="fig-multimodal-fusion-strategies">
+<span id="fig-fusion-strategies"></span><a class="reference internal image-reference" href="../../_images/multimodal_fusion_strategies.png"><img alt="Multi-Modal Fusion Strategies" src="../../_images/multimodal_fusion_strategies.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Figure 2 </span><span class="caption-text">Illustrations of of multi-modal fusion strategies.</span><a class="headerlink" href="#fig-multimodal-fusion-strategies" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The best strategy needs to consider both technology and business (operational) factors. “Early fusion” and “intermediate fusion” share many pros and cons in common, in contrast to “late fusion”. The following is a comparison.</p>
+<table class="docutils">
+  <tr>
+    <th></th>
+    <th colspan="2">Pros</th>
+    <th colspan="2">Cons</th>
+  </tr>
+  <tr>
+    <td><b>Early Fusion</b></td>
+    <td rowspan="2">
+      <strong>Technical:</strong><br />
+      • Enable deeper cross-modal interactions to complex relationships<br />
+      • Unified representation learning<br />
+      <br />
+      <strong>Operational:</strong><br />
+      • Single-team ownership of the main model; other teams provide modality-specific encoders and features<br />
+      • Simpler to maintain the main model with faster model development cycles<br />
+      • Raw data distribution change is typically more gradual and less frequent than "outputs" in late fusion, thus less maintainance coordination<br />
+    </td>
+    <td>
+      <strong>Technical:</strong><br />
+      • Simpler architecture than intermediate fusion with lower computational cost and latency<br />
+    </td>
+    <td rowspan="2">
+      <strong>Technical:</strong><br />
+      • Higher computational requirements than post fusion<br />
+      <br />
+      <strong>Operational:</strong><br />
+      • "Big bang" deployments instead of incremental<br />
+      • Centralized team must maintain the main model, and the team may require expertise across all modalities<br />
+      • Risk of single-point (single-team) failure
+    </td>
+    <td>
+      <strong>Technical:</strong><br />
+      • High-dimensional inputs can lead to overfitting<br />
+      • If fusion is unweighted, then it might ignores modality importance<br />
+    </td>
+  </tr>
+  <tr>
+    <td><b>Intermediate Fusion</b></td>
+    <td>
+      <strong>Technical:</strong><br />
+      • More flexible architecture than early fusion<br />
+      • Allows to reduce dimensionality before fusion<br />
+      <br />
+      <strong>Operational:</strong><br />
+      • Specialized teams can help experiment and develop modality-specific subnet architecture
+    </td>
+    <td>
+      <strong>Technical:</strong><br />
+      • More complex architecture than early fusion with computational cost and latency<br />
+      • Integration point needs careful consideration and experiments<br />
+      <br />
+      <strong>Operational:</strong><br />
+      • If subnets are developed by specialized teams, then it requires more cross-team coordination
+    </td>
+  </tr>
+  <tr>
+    <td><b>Late Fusion</b></td>
+    <td colspan="2">
+      <strong>Technical:</strong><br />
+      • Usually lightweight techniques to combine outputs from different modalities and thus easier for launch and less risk for failure<br />
+      <br />
+      <strong>Operational:</strong><br />
+      • Minimum distruption to existing teams; only a small team is needed for the lightweight decision layer<br />
+      • Best for parallel development with minimal blocking <br />
+      • Suitable for bias for action to launch multi-modal recommendation user experience soon without potential reorganization and heavy model development, if the urgent business need is justified
+    </td>
+    <td colspan="2">
+      <strong>Technical:</strong><br />
+      • Only shallow integration of modalities and thus may miss complex cross-modal interactions (mitigation possible to integrate convenient modality signals at decision layer, but still suboptimal)<br />
+      • The decision layer is often fitted to the current "modailty outputs" and not robust against upstream changes.<br />
+      <br />
+      <strong>Operational:</strong><br />
+      • May form modality silos because each team develops their own modality models and pipelines.<br />
+      • Higher post-lauch maintainance effort. The decision layer learns the "modality outputs", and any abrupt changes in upstream models might break the decision layer.<br />
+    </td>
+  </tr>
+</table><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In practice, the naming can vary (some people lump early+intermediate together), and many real‐world pipelines actually employ hybrids (e.g., partial early/late fusion). The above three categories are reference points on a spectrum, and teams in practice often pick and choose what works best operationally.</p>
+</div>
+</section>
+</section>
+<section id="scaling-recommendation-system-for-billions-of-users">
+<h3>Scaling Recommendation System For Billions Of Users<a class="headerlink" href="#scaling-recommendation-system-for-billions-of-users" title="Link to this heading"></a></h3>
+<p>A cross-functional recommendation system that scales to billions of users must optimize infrastructure, data processing, model inference, and feedback loops while ensuring cost-effective operations. The following provides an overview of things that matter for scalability of a recommendation system. A majority of recommendation system scalability are defined by the data infrastructure and efficiency.</p>
+<figure class="align-default" id="id1">
+<span id="fig-multimodal-recommendation-architecture"></span><a class="reference internal image-reference" href="../../_images/multimodal_recommendation_architecture.png"><img alt="Multi-Modal Recommendation System Architecture" src="../../_images/multimodal_recommendation_architecture.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Figure 3 </span><span class="caption-text">A high-level multi-modal recommendation system architecture illustrating a framework for a scalable recommendation system, including data ingestion layers, real-time and pre-indexed data processing, real-time data analytics, the staged recommendation pipeline designed, and the serving &amp; feedback layer to support logging, experiments and feedback loop.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong class="underline-bold">Globally Distributed Architecture</strong>:</p>
+<ul class="simple">
+<li><p><strong>Regional Deployment</strong>: Deploy services in data centers strategically located near major user populations to minimize latency. Implement edge computing solutions to handle latency-sensitive tasks, ensuring rapid response times for end-users.​</p></li>
+<li><p><strong>Data Residency Compliance</strong>: Adhere to regional data protection regulations (e.g., GDPR, CCPA) by partitioning data storage and processing geographically. This ensures compliance and builds user trust.​</p></li>
+<li><p><strong>Traffic Management</strong>: Utilize global load balancing techniques to distribute incoming requests based on factors like server capacity, current load, and proximity to the user, optimizing both performance and resource utilization.​</p></li>
+<li><p><strong>Cross-Region Consistency</strong>: Implement eventual consistency models to synchronize user profiles and recommendation data across regions, balancing data accuracy with system performance.</p></li>
+</ul>
+<p><strong class="underline-bold">Data Sharding Strategies</strong>:</p>
+<ul class="simple">
+<li><p><strong>User-Based Sharding</strong>: User-based sharding is a database partitioning strategy that distributes user data across multiple servers to achieve balanced workloads and facilitate horizontal scaling. This approach assigns each user’s data to a specific shard, ensuring that no single server becomes a bottleneck.​</p>
+<ul>
+<li><p><span class="target" id="newconcept-hash-based_sharding"></span><span class="newconcept">Hash-Based Sharding</span>: A common method involves applying a hash function to a user’s unique identifier (e.g., user ID or username). The hash function’s output determines the shard where the user’s data will reside. For example, computing hash(user_id) % number_of_shards assigns the data to a specific shard. This technique promotes an even distribution of users across shards, enhancing load balancing.</p></li>
+<li><p><span class="target" id="newconcept-consistent_hashing"></span><span class="newconcept">Consistent Hashing</span>: To accommodate dynamic changes in the number of shards (such as adding or removing servers), <a class="reference external" href="https://en.wikipedia.org/wiki/Consistent_hashing">consistent hashing</a> is employed. Unlike traditional hashing methods that may require extensive data redistribution when the number of shards changes, consistent hashing ensures that only a minimal portion of data needs to be moved. This efficiency is achieved by mapping both data and servers to a <span class="target" id="newconcept-hash_ring"></span><span class="newconcept">hash ring</span>, allowing for scalable and flexible data distribution. ​</p></li>
+</ul>
+</li>
+<li><p><strong>Item-Based Sharding</strong>: <span class="target" id="newconcept-item-based_sharding"></span><span class="newconcept">Item-based sharding</span> (a.k.a. <span class="target" id="newconcept-attrbiute-based_sharding"></span><span class="newconcept">attrbiute-based sharding</span>) is a database partitioning strategy that distributes data (typically retrieval targets) across multiple shards based on key attributes (e.g., category, popularity, name) from the items. This approach aims to enhance data retrieval efficiency and manageability by logically grouping related items together.</p></li>
+<li><p><strong>Temporal Partitioning</strong>: Differentiate storage solutions for historical and recent data, optimizing based on access patterns and storage costs.​</p></li>
+<li><p><strong>Activity-Based Allocation</strong>: Allocate computational resources dynamically, focusing on active users to maintain responsiveness while efficiently managing inactive user data.</p></li>
+</ul>
+<p><strong class="underline-bold">Data Storage Optimization</strong>:</p>
+<ul class="simple">
+<li><p><strong>Tiered Storage Architecture</strong>: Implementing a hierarchical <span class="target" id="newconcept-tiered_storage_system"></span><span class="newconcept">Tiered Storage System</span> that balances between data retrieval and storage costs. For example:</p>
+<ul>
+<li><p><strong>Hot Tier</strong>: In-memory databases (e.g., Redis, Memcached) provide rapid access to active session data.​</p></li>
+<li><p><strong>Warm Tier</strong>: SSDs store recent user interactions and frequently accessed items, balancing speed and cost.​</p></li>
+<li><p><strong>Cold Tier</strong>: HDDs or object storage solutions archive infrequently accessed data, optimizing cost-efficiency.</p></li>
+</ul>
+</li>
+<li><p><strong>Utilizing Specialized Databases</strong>:</p>
+<ul>
+<li><p><strong>Vector Databases</strong>: Solutions like FAISS or Milvus efficiently store and retrieve high-dimensional embeddings, crucial for storing pre-computed text or multimedia features, and facilitating similarity searches.​</p></li>
+<li><p><strong>Document databases</strong>: Store, retrieve, and manage semi-structured data as documents, using formats like JSON (JavaScript Object Notation) or XML to represent data, allowing for flexible and scalable data modeling.​</p></li>
+<li><p><strong>Temporal (Time-Series) Databases</strong>: Databases designed for temporal data effectively manage and query time-dependent user interactions.​</p></li>
+<li><p><strong>Graph Databases</strong>: Graph databases model and query complex relationships between users and items, enhancing recommendation accuracy.</p></li>
+</ul>
+</li>
+</ul>
+<p><strong class="underline-bold">Data Ingestion Pipeline</strong>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Event Streaming Architecture</strong>: Implementing a robust event streaming architecture is essential for <span class="target" id="newconcept-real-time_data_ingestion"></span><span class="newconcept">real-time data ingestion</span>. Platforms like <strong>Apache Kafka</strong> and <strong>Amazon Kinesis</strong> facilitate the continuous collection and streaming of data, ensuring low-latency data availability for downstream applications, and enabling diverse data format support, scalability, fault tolerance, etc.</p></li>
+<li><p><strong>Buffering and Backpressure</strong>: To handle sudden increases in log data, the ingestion pipeline incorporates a <span class="target" id="newconcept-ingestion_buffer"></span><span class="newconcept">ingestion buffer</span> — a temporary storage area that holds and queues input data before it’s processed. This buffer absorbs spikes in data volume, allowing the system to process logs at a consistent and manageable rate. When the buffer reaches its capacity, <span class="target" id="newconcept-backpressure"></span><span class="newconcept">backpressure</span> mechanisms signal the upstream to slow down or pause data ingestion, preventing buffer overflow and potential data loss. This ensures that the system remains stable even under high load conditions.</p></li>
+<li><p><strong>Priority-Based Processing</strong>: Prioritizing critical user interactions (e.g., clicks, purchases) in the data processing pipeline ensures timely critical updates to recommendation models.​</p></li>
+<li><p><strong>Offline Batch Processing</strong>: Scheduling regular <span class="target" id="newconcept-etl"></span><span class="newconcept">ETL (Extract, Transform, Load)</span> jobs during off-peak hours processes large volumes of data (e.g., for analysis, feed-back learning and offline experiment purposes) without impacting system performance.</p></li>
+</ul>
+</div></blockquote>
+<p><strong class="underline-bold">Hierarchical Data Caching</strong>: A hierarchical caching system employs multiple levels of caches, each designed to store data based on access frequency and proximity to the user. This multi-tiered approach ensures that frequently accessed data is readily available, reducing latency and server load.​</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>L1 Cache (<span class="target" id="newconcept-on-server_cache"></span><span class="newconcept">On-Server Cache</span>): This is the closest cache residing within the same server as the application. It stores recently accessed data, enabling rapid retrieval for repeated requests without the need for network calls. This proximity significantly reduces access time and alleviates pressure on downstream caches or databases.​</p></li>
+<li><p>L2 Cache (<span class="target" id="newconcept-distributed_cache"></span><span class="newconcept">Distributed Cache</span>):</p>
+<ul>
+<li><p>As application traffic grows, relying on a single cache can lead to bottlenecks. Distributed caching allows data to be stored across multiple servers or nodes, enabling the system to handle increased load by adding more cache servers without disrupting existing operations. ​:newconcept:<cite>Content Delivery Networks (CDNs)</cite> is a common method for implementing distributed caching.</p></li>
+<li><p>In a distributed cache system, if one cache server fails, requests can be rerouted to another server, ensuring continuous availability of cached data. This redundancy enhances the system’s fault tolerance and reliability.</p></li>
+<li><p>The cached data can be spread across multiple nodes or servers, often located in various data centers worldwide.</p></li>
+<li><p>A <span class="target" id="newconcept-regional_cache"></span><span class="newconcept">regional cache</span> (also sometimes called “L3 Cache”) is a subset of a distributed cache, strategically placed within a specific geographic area to serve users in that region for optimizing localized performance and complying with local data residency regulations and privacy laws.</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<p><a class="reference internal" href="#staged-recommendation-system">Staged Recommendation System</a> as described in the earlier section, with techniques including like <strong>model ensemble</strong>, <strong>speculative inference</strong>, <strong>streamlined and parallel processing</strong> to scale the system.</p>
+<p><strong class="underline-bold">Effective &amp; Efficient Feedback Processing</strong>: Essential for refining recommendation systems, either dynamically adapting swiftly to runtime user behaviors and preferences signals, or preserving log data for offline model/pipeline improvements. Key components include:​</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Real-Time Experimentation &amp; Testing</strong>: Implementing a robust experimentation framework allows for continuous optimization of the recommendation system:</p>
+<ul>
+<li><p><strong>A/B Testing</strong>: Developing a scalable A/B Testing infra to enable controlled experiments on variations of recommendation algorithms and relevance factors. This infrastructure must support high-throughput traffic allocation while maintaining statistical validity and minimizing latency impact.</p>
+<ul>
+<li><p>The infra needs to support traffic allocation control during the experiment. The experiment can start with allocating a small amount of live traffic (e.g., 5%) for a test run on the updated recommendation pipeline to catpure any unexpected consequences. If everything turns out good, the A/B testing can gradually allocate more users to experiment the update, e.g., from 10% to 30%, to max 50%. Once the experiment concludes the udpated recommendation pipeline statistically outperform the old version in a significant way, the allocation will change to 100% (full launch).</p></li>
+</ul>
+</li>
+<li><p><strong>Interleaved Testing</strong>: A real-time evaluation technique helping developers directly compare different models or the updated/old pipeline under the same user. <span class="target" id="newconcept-interleaved_testing"></span><span class="newconcept">Interleaved Testing</span> will present items from different recommendation algorithms within a single results list and measures which algorithm/pipeline’s recommendations receive more engagement, or alternatively it present results from a different model/pipeline each time.</p>
+<ul>
+<li><p>This approach requires fewer users than traditional A/B testing while providing direct comparative insights (becasue there are comparable results associated with the same user).</p></li>
+<li><p>Interleaved Testing is usually conducted before the large-scale A/B Testing to make sense of the performance gap, observe the results and make any further improvement if possible.</p></li>
+<li><p>This testing can also be leveraged to collect user preference feedback, presenting results from different models/pipelines, and asking user help to annotate.</p></li>
+</ul>
+</li>
+<li><p><strong>Multi-Armed Bandit Testing</strong>: Unlike traditional A/B testing, Multi-Armed Bandit approaches dynamically adjust traffic allocation based on real-time performance, optimizing for exploration (testing new variants) and exploitation (leveraging successful variants). This methodology is particularly valuable for recommendation systems where user preferences change rapidly.</p></li>
+</ul>
+</li>
+<li><p><strong>Distributed Logging &amp; Signal Aggregation</strong>: Implementing scalable logging systems is crucial for capturing user interactions. Combining feedback signals from various sources—such as clicks, purchases, and dwell time—provides a holistic understanding of user engagement.</p></li>
+<li><p><span class="target" id="newconcept-near_real-time__analytics"></span><span class="newconcept">Near Real-Time (NRT) Analytics</span>: Processing feedback data as it arrives allows the system to quickly adapt to changing user behaviors. Stream processing frameworks such as <strong>Apache Kafka</strong> and <strong>Amazon Kinesis</strong> enable NRT analytics on multiple data streams, supporting timely updates to recommendation pipeline and models.</p>
+<ul>
+<li><p>For example, one of the model ensemble method <strong>weighted dynamic voting</strong> needs runtime signals of each model’s success rate or failure rate (e.g., when there is strong signal showing user accepted or denied that recommendation). NRT analytics ensure the model ensemble weights can be promptly updated.</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>“<strong>near real-time</strong>” and “<strong>real-time</strong>” are terms frequently used exechangeably for recommendation pipelines. That “real‐time” data can actually be slightly behind (e.g., seconds to a few minutes) due to stream‐processing lags or micro‐batch intervals.</p>
+<p>If absolute sub‐second freshness is critical (as in trending‐news scenarios), you often have to engineer faster specialized paths that bypass the usual stream‐processing buffers. If an application truly requires hard real-time guarantees (e.g., single-digit milliseconds or microseconds, strict deadlines for control systems, etc.), you would typically use a specialized real-time system or direct in-memory message passing. But for most recommendation and analytics use cases—such as updating model signals or feeding a near real-time dashboard—Kafka and Kinesis suffice and are widely used.</p>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Recommendation &amp; Ads System Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../modeling/index.html" class="btn btn-neutral float-right" title="Modeling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tony.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

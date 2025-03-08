@@ -2,9 +2,11 @@ Machine Learning & AI Metrics
 =============================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 6
    :caption: Contents:
    
+   system_design/index
+   modeling/index
    evaluation/index
    glossary
 

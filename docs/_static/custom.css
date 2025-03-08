@@ -19,6 +19,137 @@
     font-weight: bold;
 }
 
+code.literal {
+    display: inline !important;
+    white-space: normal !important;
+}
+
+/* Table styling for both auto-fit and text wrapping */
+.docutils {
+    width: 100%;
+    border-collapse: collapse;
+    display: table;
+    overflow-x: auto; /* Allow horizontal scrolling when needed */
+}
+
+/* Detect tables with longer content and apply fixed layout */
+.docutils:has(td:first-child > p, td > ul, td > ol, td > p, td li) {
+    table-layout: fixed;
+}
+
+/* Simple tables with short content can use auto layout */
+.docutils:not(:has(td:first-child > p, td > ul, td > ol, td > p, td li)) {
+    table-layout: auto;
+}
+
+/* First column auto-fits to content when possible */
+.docutils th:first-child,
+.docutils td:first-child {
+    width: min-content; /* Take minimum width needed */
+    white-space: nowrap; /* Keep short labels on one line */
+}
+
+/* Content columns have wrapping text */
+.docutils th:not(:first-child),
+.docutils td:not(:first-child) {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+/* All cells get proper padding and vertical alignment */
+.docutils th, 
+.docutils td {
+    padding: 8px;
+    vertical-align: top;
+    border: 1px solid #e1e4e5;
+    min-width: 50px; /* Prevent columns from becoming too narrow */
+}
+
+/* Fallback for browsers that don't support :has() */
+@supports not (selector(:has(*))) {
+    .docutils {
+        table-layout: fixed;
+    }
+    
+    .docutils th:first-child,
+    .docutils td:first-child {
+        width: 15%;
+    }
+}
+
+/* Media query for responsive behavior */
+@media screen and (max-width: 992px) {
+    /* Switch to fixed layout on smaller screens to ensure wrapping */
+    .docutils {
+        table-layout: fixed;
+    }
+    
+    /* Allow all cells to wrap on smaller screens */
+    .docutils td:first-child {
+        white-space: normal;
+    }
+}
+
+.table-wrapper {
+    margin-top: 0em;
+    margin-bottom: 0em;
+}
+
+.table-caption {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 0.0em;
+    font-size: 0.9em;
+}
+
+/* Make sure the table fills its container */
+.table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Style table cells consistently */
+.table-wrapper th,
+.table-wrapper td {
+    border: 1px solid #e1e4e5;
+    padding: 8px;
+    vertical-align: top;
+    word-wrap: break-word;
+}
+
+/* Style table headers */
+.table-wrapper th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* region Foldable Code Blocks
+ * CSS for styling collapsible code blocks in documentation.
+ * Used together with the JavaScript that adds folding functionality.
+ */
+ 
+ .code-folding-wrapper {
+    margin: 1em 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  .code-folding-header {
+    padding: 0.5em;
+    background: #f8f8f8;
+    cursor: pointer;
+  }
+  .code-folding-toggle {
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    margin-right: 0.5em;
+  }
+  .code-folding-content {
+    padding: 0.5em;
+  }
+  /* endregion Foldable Code Blocks */
+
 /* Adjust page width for better readability */
 .wy-nav-content {
     max-width: 1200px !important;  /* Increase from default 800px */

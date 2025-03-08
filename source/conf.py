@@ -1,10 +1,12 @@
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxRole, SphinxDirective
+from docutils.parsers.rst.directives.tables import Table
 from sphinx.environment.collectors import EnvironmentCollector
 from sphinx.directives.admonitions import BaseAdmonition
 import re
-
+import logging
+logger = logging.getLogger(__name__)
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -43,7 +45,9 @@ myst_enable_extensions = [
     "colon_fence", # For code blocks with colons
     "tasklist",    # For task lists
     "deflist",     # For definition lists
-    "html_admonition", # For admonitions
+    "html_admonition", # For admonitions,
+    'sphinx.ext.autosectionlabel',  # This helps with automatic section labeling
+    'sphinx.ext.intersphinx',       # This helps with cross-project references
 ]
 
 source_suffix = {
@@ -51,7 +55,7 @@ source_suffix = {
     '.md': 'markdown',
 }
 myst_parse_rst = True
-
+autosectionlabel_prefix_document = True
 templates_path = ['_templates']
 html_js_files = ['js/mathjax-config.js']
 exclude_patterns = []
@@ -66,9 +70,140 @@ html_static_path = ['_static']
 html_use_index = True
 html_baseurl = 'https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/'  # Important for GitHub Pages
 html_use_relative_paths = True
+html_theme_options = {
+    'navigation_depth': 6,  # Increase this number to show deeper levels
+}
 numfig = True
+numfig_format = {
+    'table': 'Table %s',
+    'figure': 'Figure %s',
+    'code-block': 'Listing %s',
+    'section': 'Section %s',
+}
 
-
+class HtmlTable(SphinxDirective, Table):
+    """
+    Enhanced version of the standard table directive that supports raw HTML content.
+    """
+    def run(self):
+        # Check if there's raw HTML content
+        has_raw_html = any('.. raw:: html' in line for line in self.content)
+        
+        if not has_raw_html:
+            # If no raw HTML, process as normal table
+            return super().run()
+        
+        # Create a container node to properly maintain document structure
+        container = nodes.container()
+        container['classes'] = ['html-table-container']
+        
+        # Create a table node
+        table = nodes.table()
+        container += table
+        
+        # Handle title and automatic numbering
+        if self.arguments:
+            title_text = self.arguments[0]
+            table['title'] = title_text
+            
+            # Generate the table number - use Sphinx's built-in numbering
+            env = self.env
+            if hasattr(env, 'docname') and self.config.numfig:
+                figtype = 'table'
+                
+                # Register the table with Sphinx's figure collector
+                if not hasattr(env, '_table_counter'):
+                    env._table_counter = {}
+                
+                docname = env.docname
+                if docname not in env._table_counter:
+                    env._table_counter[docname] = 0
+                
+                table_num = env._table_counter[docname] = env._table_counter[docname] + 1
+                
+                # Format with numfig format if available
+                if hasattr(self.config, 'numfig_format') and figtype in self.config.numfig_format:
+                    caption_text = self.config.numfig_format[figtype] % table_num + ": " + title_text
+                else:
+                    caption_text = f"Table {table_num}: {title_text}"
+            else:
+                caption_text = title_text
+            
+            # Create caption for both the node and HTML
+            caption_html = f'<div class="table-caption">{caption_text}</div>'
+        else:
+            caption_text = ''
+            caption_html = ''
+        
+        # Handle options
+        if 'name' in self.options:
+            self.options['name'] = nodes.fully_normalize_name(self.options['name'])
+            self.add_name(table)
+        
+        if 'class' in self.options:
+            table['classes'] += self.options['class']
+        
+        if 'width' in self.options:
+            table['width'] = self.options['width']
+        
+        if 'align' in self.options:
+            table['align'] = self.options['align']
+        
+        # Extract the raw HTML content
+        raw_content = []
+        in_raw_block = False
+        
+        for i, line in enumerate(self.content):
+            if '.. raw:: html' in line:
+                in_raw_block = True
+                continue
+            elif in_raw_block and not line.strip() and i < len(self.content) - 1 and all(not l.strip() for l in self.content[i:]):
+                # End of content
+                break
+                
+            if in_raw_block:
+                # Remove the indentation (if any)
+                if line.startswith('   '):  # Standard rst indentation
+                    raw_content.append(line[3:])
+                else:
+                    raw_content.append(line)
+        
+        raw_html = '\n'.join(raw_content)
+        
+        # Create a wrapper with caption OUTSIDE the table
+        if caption_html:
+            # Place caption before the table HTML
+            raw_html = f'''
+            <div class="table-wrapper">
+                {caption_html}
+                {raw_html}
+            </div>
+            '''
+        else:
+            raw_html = f'''
+            <div class="table-wrapper">
+                {raw_html}
+            </div>
+            '''
+        
+        # Create raw node and add it to the table
+        raw_node = nodes.raw('', raw_html, format='html')
+        table += raw_node
+        
+        # Register the table in Sphinx's environment for list of tables
+        if self.arguments and hasattr(env, 'docname'):
+            if not hasattr(env, 'table_list'):
+                env.table_list = {}
+            env.table_list.setdefault((env.docname, 'table'), [])
+            env.table_list[(env.docname, 'table')].append(
+                (table['ids'][0] if 'ids' in table and table['ids'] else '',
+                 caption_text))
+        
+        # Add a paragraph node after the table to ensure proper section separation
+        after_node = nodes.paragraph()
+        container += after_node
+        
+        return [container]
 class CustomNoteDirective(BaseAdmonition):
     """
     Custom note directive that supports more flexible title formatting
@@ -97,7 +232,7 @@ class CustomNoteDirective(BaseAdmonition):
                 admonition_node.replace(title_node, new_title)
         
         return [admonition_node]
-    
+
 class NewConceptRole(SphinxRole):
     def run(self):
         text = self.text
@@ -290,6 +425,7 @@ def setup(app):
     app.add_role('ub', underline_bold_role)
     app.add_css_file('custom.css')
     app.add_js_file("foldable_admonitions.js")
+    app.add_directive('htmltable', HtmlTable)
     app.add_directive('note', CustomNoteDirective)
     
     # Register the environment collector properly

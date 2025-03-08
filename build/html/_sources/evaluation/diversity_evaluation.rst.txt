@@ -31,8 +31,8 @@ where
 * $|S|$ is the total number of subtopics for the query
 
 
-Subtopic Entropy (Total Variation Distance)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Subtopic Entropy
+~~~~~~~~~~~~~~~~
 
 :newconcept:`S-Entropy` measures how evenly items are distributed across subtopics:
 
@@ -87,10 +87,10 @@ where
   If there is only one subtopic, Gini Coefficient is still 0. With more subtopics $\|S\| = 2, 3, 4, ...$, the Gini Coefficient will go up to $0.5, 0.67, 0.75, ...$, indicating more inequality.
 
 
-Proportionality
-~~~~~~~~~~~~~~~
+Proportionality (Total Variation Distance)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:newconcept:`Proportionality` measures how well the distribution of items across categories in the results matches a target distribution. It is based on Total Variation Distance (TVD) between two distributions,
+:newconcept:`Proportionality` measures how well the distribution of items across categories in the results matches a target distribution. It is based on :newconcept:`Total Variation Distance (TVD)` between two distributions,
 
 .. math::
 

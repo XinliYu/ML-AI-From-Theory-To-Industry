@@ -2,7 +2,7 @@ Evaluation
 ==========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    
    basic_evaluation
    ranking_evaluation

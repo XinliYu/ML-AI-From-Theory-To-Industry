@@ -1,0 +1,550 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Preparation &mdash; MLAI 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=e159ab47" />
+
+  
+    <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/modeling/classic_modeling/01_data_preparation.html" />
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/foldable_admonitions.js?v=351fa817"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../_static/js/mathjax-config.js?v=c54ad740"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Evaluation" href="../../evaluation/index.html" />
+    <link rel="prev" title="Classic Modeling" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../system_design/index.html">ML/AI Systen Design</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modeling</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Classic Modeling</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Data Preparation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reward-function">Reward Function</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#reward-normalization-label-creation">Reward Normalization (Label Creation)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../evaluation/index.html">Evaluation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Modeling</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Classic Modeling</a></li>
+      <li class="breadcrumb-item active">Data Preparation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/modeling/classic_modeling/01_data_preparation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-preparation">
+<h1>Data Preparation<a class="headerlink" href="#data-preparation" title="Link to this heading"></a></h1>
+<p>In ML/AI systems for search, recommendation, and advertising, effective data preparation for offline model development is crucial. The retrieval system relies on various inputs, including user queries, user data, contextual signals and runtime analytics. Properly collecting, labeling, and balancing this data is critical model performance and user satisfaction.</p>
+<p>The runtime system will typically log the following information for offline development (see also <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html">Recommendation ML/AI System Design</a>).</p>
+<ul class="simple">
+<li><p><strong>User Queries</strong>: In search systems and reactive recommendation or advertising scenarios, user queries are primary inputs. While typically textual, queries can also be in the form of audio, images, or videos (e.g., the Amazon Shopping app allows users to search for products by taking pictures).</p></li>
+<li><p><strong>User Data</strong>: Proactive recommendations and ads heavily depend on user data, such as <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-user_profiles"><span class="refconcept">User Profiles</span></a> and <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-historical_user_activities_&amp;_analytics"><span class="refconcept">Historical User Activities &amp; Analytics</span></a>. This data is also valuable in search and reactive scenarios to personalize results.</p></li>
+<li><p><strong>Runtime Signals</strong> provide supplementary information that enhances input understanding, including <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-context_signals"><span class="refconcept">Context Signals</span></a> and <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-real-time_user_activities_&amp;_analytics"><span class="refconcept">Real-Time User Activities &amp; Analytics</span></a>.</p></li>
+</ul>
+<p>In additional to regular runtime user impressions and interactions, runtime exploration experiments can be conducted with intention to collect data.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="target" id="newconcept-exploration_sampling"></span><span class="newconcept">Exploration Sampling</span>: Occasionally presenting non-personalized or diverse items to gather feedback outside the current model’s preferences.</p></li>
+<li><p>A/B Testing: A/B testing to collect datapoint regarding different system variations.</p></li>
+<li><p>Multi-Armed Bandit Exploration: Using multi-armed bandit approaches to collect data on unexplored items/users.</p></li>
+</ul>
+</div></blockquote>
+<p>Constructing datasets from offline logs involves extracting relevant features and accurately labeling data for effective model development. Specifically, it’s essential to annotate whether a candidate is relevant (binary label) or assign graded relevance (categorical/numeric label). Accurate labeling ensures that models learn to distinguish between relevant and irrelevant items effectively.</p>
+<p>The process starts with <strong>collecting implicit feedback</strong>: <span class="target" id="newconcept-implicit_feedback"></span><span class="newconcept">Implicit Feedback</span> refers to data gathered from <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-user_activities_&amp;_analytics"><span class="refconcept">User Activities &amp; Analytics</span></a>. Examples include page views, click-through rates, time spent on contents (a.k.a. dwell time, or playback time for audio/video contents), navigation patterns (e.g., click path), and strong signals such as cart/purchase/order history.</p>
+<section id="reward-function">
+<h2>Reward Function<a class="headerlink" href="#reward-function" title="Link to this heading"></a></h2>
+<p>The next step is creating a reward function. At the beginning, it is usually a rule based function resulting from intuitive business requirements.</p>
+<p>Consider an e-commerce platform that recommends products to users. The platform collects various implicit feedback signals with increasing strength of user interest:</p>
+<ul class="simple">
+<li><p><strong>Impression (IMP)</strong>: User sees the recommendation</p></li>
+<li><p><strong>Click (CLK)</strong>: User clicks on the recommended product</p></li>
+<li><p><strong>Add-to-Cart (ATC)</strong>: User adds the product to their shopping cart</p></li>
+<li><p><strong>Purchase (PUR)</strong>: User completes the purchase</p></li>
+</ul>
+<p>There might be more than one reward functions, depending on the business scenario. For example, in case of shopping search, there can be an initial reward function assigning reward to interacted items at the shopping session. Later, when the user submit reviews, the initial reward can be corrected with a follow-up correction. The following is a comprehensive example.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">calculate_interaction_reward</span></code> - This is calculating rewards based on user interactions up to and including the purchase. It runs at the time of the shopping session, using immediate signals like clicks, cart actions, and purchases.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adjust_reward_with_rating</span></code> - This takes the initial reward value and adjusts it when a customer later submits a rating and review. This function can be called asynchronously whenever a review comes in, even if it’s days or weeks after the session.</p></li>
+</ul>
+<div class="folding highlight-python notranslate" id="calculate-interaction-reward"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">calculate_interaction_reward</span><span class="p">(</span><span class="n">user_signals</span><span class="p">,</span> <span class="n">time_thresholds</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Calculate the initial reward value based on user interaction signals</span>
+<span class="sd">     (This is the original reward function without ratings)</span>
+
+<span class="sd">     Parameters:</span>
+<span class="sd">     - user_signals: Dictionary containing signal flags and timestamps</span>
+<span class="sd">     {</span>
+<span class="sd">         &#39;impression&#39;: {&#39;occurred&#39;: bool, &#39;timestamp&#39;: datetime},</span>
+<span class="sd">         &#39;click&#39;: {&#39;occurred&#39;: bool, &#39;timestamp&#39;: datetime},</span>
+<span class="sd">         &#39;add_to_cart&#39;: {&#39;occurred&#39;: bool, &#39;timestamp&#39;: datetime},</span>
+<span class="sd">         &#39;remove_from_cart&#39;: {&#39;occurred&#39;: bool, &#39;timestamp&#39;: datetime},</span>
+<span class="sd">         &#39;save_for_later&#39;: {&#39;occurred&#39;: bool, &#39;timestamp&#39;: datetime},</span>
+<span class="sd">         &#39;purchase&#39;: {&#39;occurred&#39;: bool, &#39;timestamp&#39;: datetime},</span>
+<span class="sd">         &#39;dwell_time&#39;: float  # Time spent on product page in seconds</span>
+<span class="sd">     }</span>
+<span class="sd">     - time_thresholds: Dictionary of time thresholds</span>
+<span class="sd">     {</span>
+<span class="sd">         &#39;quick_bounce&#39;: float,  # seconds threshold for negative signal</span>
+<span class="sd">         &#39;good_engagement&#39;: float  # seconds threshold for positive signal</span>
+<span class="sd">     }</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">     - float: Calculated reward value</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c1"># Base reward initialization</span>
+     <span class="n">reward</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+     <span class="c1"># No impression or impression without click (negative signal)</span>
+     <span class="k">if</span> <span class="ow">not</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;impression&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+         <span class="n">reward</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span>
+         <span class="k">return</span> <span class="n">reward</span>
+
+     <span class="c1"># Calculate time between impression and click (if both occurred)</span>
+     <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;impression&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+         <span class="n">imp_to_click_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">-</span>
+                             <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;impression&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+         <span class="c1"># Quick clicks might indicate accidental clicks or misleading thumbnails</span>
+         <span class="k">if</span> <span class="n">imp_to_click_time</span> <span class="o">&lt;</span> <span class="n">time_thresholds</span><span class="p">[</span><span class="s1">&#39;quick_bounce&#39;</span><span class="p">]:</span>
+             <span class="n">reward</span> <span class="o">-=</span> <span class="mf">0.05</span>
+
+     <span class="c1"># Add reward components based on user engagement levels</span>
+     <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+         <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.2</span>
+
+         <span class="c1"># Penalize very short dwell times (likely bounce/irrelevant content)</span>
+         <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;dwell_time&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">time_thresholds</span><span class="p">[</span><span class="s1">&#39;quick_bounce&#39;</span><span class="p">]:</span>
+             <span class="n">reward</span> <span class="o">-=</span> <span class="mf">0.1</span>
+         <span class="c1"># Reward good engagement with content</span>
+         <span class="k">elif</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;dwell_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time_thresholds</span><span class="p">[</span><span class="s1">&#39;good_engagement&#39;</span><span class="p">]:</span>
+             <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.2</span>
+
+     <span class="c1"># Handle add-to-cart, save-for-later, and remove-from-cart scenarios</span>
+     <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;add_to_cart&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+         <span class="c1"># Case 1: Item was later removed from cart (strong negative signal)</span>
+         <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;remove_from_cart&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+             <span class="n">atc_to_rfc_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;remove_from_cart&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">-</span>
+                             <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;add_to_cart&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+             <span class="c1"># Check if removal was to save for later (more positive than pure removal)</span>
+             <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;save_for_later&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+                 <span class="c1"># Timing check to ensure save-for-later happened around the same time as removal</span>
+                 <span class="n">rfc_to_sfl_time</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;save_for_later&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">-</span>
+                                     <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;remove_from_cart&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+
+                 <span class="k">if</span> <span class="n">rfc_to_sfl_time</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>  <span class="c1"># Save-for-later immediately after removal (likely same action)</span>
+                     <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.2</span>  <span class="c1"># Moderate positive signal - still interested, just not right now</span>
+
+                     <span class="c1"># Additional reward if they spent significant time viewing the product first</span>
+                     <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;dwell_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time_thresholds</span><span class="p">[</span><span class="s1">&#39;good_engagement&#39;</span><span class="p">]:</span>
+                         <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.1</span>  <span class="c1"># Additional signal of genuine interest</span>
+             <span class="k">else</span><span class="p">:</span>
+                 <span class="c1"># Regular removal without saving for later (negative signal)</span>
+                 <span class="c1"># Immediate removal is a stronger negative signal than delayed removal</span>
+                 <span class="k">if</span> <span class="n">atc_to_rfc_time</span> <span class="o">&lt;</span> <span class="mi">60</span><span class="p">:</span>  <span class="c1"># Quick removal (within 1 minute)</span>
+                     <span class="n">reward</span> <span class="o">-=</span> <span class="mf">0.8</span>  <span class="c1"># Strong negative signal - likely misclick or immediate regret</span>
+                 <span class="k">elif</span> <span class="n">atc_to_rfc_time</span> <span class="o">&lt;</span> <span class="mi">300</span><span class="p">:</span>  <span class="c1"># Removal after some consideration (within 5 minutes)</span>
+                     <span class="n">reward</span> <span class="o">-=</span> <span class="mf">0.5</span>  <span class="c1"># Moderate negative signal - considered but rejected</span>
+                 <span class="k">else</span><span class="p">:</span>  <span class="c1"># Delayed removal</span>
+                     <span class="n">reward</span> <span class="o">-=</span> <span class="mf">0.3</span>  <span class="c1"># Milder negative signal - may be due to budget or other constraints</span>
+
+         <span class="c1"># Case 2: Item was directly saved for later without removal (meaning it was never in cart)</span>
+         <span class="k">elif</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;save_for_later&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;remove_from_cart&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+             <span class="c1"># Direct save-for-later is a positive signal, but weaker than add-to-cart</span>
+             <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.3</span>
+
+             <span class="c1"># Consider timing of save-for-later decision</span>
+             <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+                 <span class="n">click_to_sfl_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;save_for_later&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">-</span>
+                                     <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+                 <span class="k">if</span> <span class="n">click_to_sfl_time</span> <span class="o">&lt;</span> <span class="mi">45</span><span class="p">:</span>  <span class="c1"># Quick decision indicates stronger interest</span>
+                     <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.05</span>
+
+                 <span class="c1"># High dwell time before save-for-later suggests genuine interest</span>
+                 <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;dwell_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time_thresholds</span><span class="p">[</span><span class="s1">&#39;good_engagement&#39;</span><span class="p">]:</span>
+                     <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.1</span>
+
+         <span class="c1"># Case 3: Item remained in cart (most positive signal short of purchase)</span>
+         <span class="k">else</span><span class="p">:</span>
+             <span class="c1"># Item remained in cart (positive signal)</span>
+             <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.5</span>
+
+             <span class="c1"># Add time-based component: faster add-to-cart after click might</span>
+             <span class="c1"># indicate stronger interest</span>
+             <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+                 <span class="n">click_to_atc_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;add_to_cart&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">-</span>
+                                 <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;click&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+                 <span class="k">if</span> <span class="n">click_to_atc_time</span> <span class="o">&lt;</span> <span class="mi">30</span><span class="p">:</span>  <span class="c1"># Quick decision to add to cart</span>
+                     <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.1</span>
+
+     <span class="k">if</span> <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;purchase&#39;</span><span class="p">][</span><span class="s1">&#39;occurred&#39;</span><span class="p">]:</span>
+         <span class="c1"># Strongest signal of recommendation success</span>
+         <span class="n">reward</span> <span class="o">+=</span> <span class="mf">1.0</span>
+
+         <span class="c1"># If purchase happens in same session as impression</span>
+         <span class="k">if</span> <span class="p">(</span><span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;purchase&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">-</span>
+             <span class="n">user_signals</span><span class="p">[</span><span class="s1">&#39;impression&#39;</span><span class="p">][</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">1800</span><span class="p">:</span>  <span class="c1"># 30 minutes</span>
+             <span class="n">reward</span> <span class="o">+=</span> <span class="mf">0.2</span>
+
+     <span class="k">return</span> <span class="n">reward</span>
+</pre></div>
+</div>
+<div class="folding highlight-python notranslate" id="adjust-reward-with-rating"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">adjust_reward_with_rating</span><span class="p">(</span><span class="n">initial_reward</span><span class="p">,</span> <span class="n">purchase_timestamp</span><span class="p">,</span> <span class="n">rating_info</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Adjust the initial reward value based on customer ratings and reviews that arrive later</span>
+
+<span class="sd">     Parameters:</span>
+<span class="sd">     - initial_reward: float, the reward value calculated from the interaction function</span>
+<span class="sd">     - purchase_timestamp: datetime, when the purchase occurred</span>
+<span class="sd">     - rating_info: Dictionary containing rating information</span>
+<span class="sd">     {</span>
+<span class="sd">         &#39;rating_value&#39;: float,  # Customer rating (e.g., 1-5 stars)</span>
+<span class="sd">         &#39;rating_timestamp&#39;: datetime,  # When the rating was submitted</span>
+<span class="sd">         &#39;review_length&#39;: int,  # Length of review text (if applicable)</span>
+<span class="sd">         &#39;has_photo&#39;: bool,  # Whether the review includes photos</span>
+<span class="sd">         &#39;has_video&#39;: bool,  # Whether the review includes videos</span>
+<span class="sd">         &#39;verified_purchase&#39;: bool,  # Whether the review is from a verified purchase</span>
+<span class="sd">         &#39;helpful_votes&#39;: int  # Optional: number of helpful votes (if applicable)</span>
+<span class="sd">     }</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">     - float: Adjusted reward value incorporating rating information</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c1"># Start with the initial reward</span>
+     <span class="n">adjusted_reward</span> <span class="o">=</span> <span class="n">initial_reward</span>
+
+     <span class="c1"># Scale rating to a range from -1.0 to 1.0 (for a 1-5 star system)</span>
+     <span class="c1"># This makes 3-star neutral, 1-star a significant penalty, and 5-star a significant boost</span>
+     <span class="n">normalized_rating</span> <span class="o">=</span> <span class="p">(</span><span class="n">rating_info</span><span class="p">[</span><span class="s1">&#39;rating_value&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+     <span class="c1"># Base rating impact on reward</span>
+     <span class="n">rating_adjustment</span> <span class="o">=</span> <span class="n">normalized_rating</span> <span class="o">*</span> <span class="mf">1.0</span>  <span class="c1"># Scaling factor (adjust as needed)</span>
+
+     <span class="c1"># Add extra weight to ratings with more detailed feedback</span>
+     <span class="k">if</span> <span class="n">rating_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;review_length&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>  <span class="c1"># Substantial text review</span>
+         <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">1.2</span>
+
+     <span class="c1"># Reviews with media are typically more informative and valuable</span>
+     <span class="k">if</span> <span class="n">rating_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;has_photo&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+         <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">1.1</span>
+     <span class="k">if</span> <span class="n">rating_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;has_video&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+         <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">1.2</span>
+
+     <span class="c1"># Verified purchase reviews are more reliable</span>
+     <span class="k">if</span> <span class="n">rating_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verified_purchase&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+         <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">1.3</span>
+
+     <span class="c1"># Consider community validation if available</span>
+     <span class="k">if</span> <span class="s1">&#39;helpful_votes&#39;</span> <span class="ow">in</span> <span class="n">rating_info</span> <span class="ow">and</span> <span class="n">rating_info</span><span class="p">[</span><span class="s1">&#39;helpful_votes&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="c1"># Logarithmic scaling for helpful votes to prevent outliers from dominating</span>
+         <span class="n">vote_factor</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">rating_info</span><span class="p">[</span><span class="s1">&#39;helpful_votes&#39;</span><span class="p">]),</span> <span class="mf">2.0</span><span class="p">)</span>
+         <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="n">vote_factor</span>
+
+     <span class="c1"># Timing of rating after purchase can provide insight</span>
+     <span class="k">if</span> <span class="s1">&#39;rating_timestamp&#39;</span> <span class="ow">in</span> <span class="n">rating_info</span><span class="p">:</span>
+         <span class="n">purchase_to_rating_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">rating_info</span><span class="p">[</span><span class="s1">&#39;rating_timestamp&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">purchase_timestamp</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+         <span class="c1"># Very quick ratings (&lt; 1 day) might be less reliable/thoughtful</span>
+         <span class="k">if</span> <span class="n">purchase_to_rating_time</span> <span class="o">&lt;</span> <span class="mi">86400</span><span class="p">:</span>  <span class="c1"># 24 hours</span>
+             <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">0.8</span>
+
+         <span class="c1"># Ratings after significant product use time (e.g., 1 week+) might be more informative</span>
+         <span class="k">elif</span> <span class="n">purchase_to_rating_time</span> <span class="o">&gt;</span> <span class="mi">604800</span><span class="p">:</span>  <span class="c1"># 7 days</span>
+             <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">1.2</span>
+
+         <span class="c1"># Extremely delayed ratings (e.g., 30+ days) might indicate strong sentiment</span>
+         <span class="k">if</span> <span class="n">purchase_to_rating_time</span> <span class="o">&gt;</span> <span class="mi">2592000</span><span class="p">:</span>  <span class="c1"># 30 days</span>
+             <span class="c1"># For positive ratings, this is a strong positive signal</span>
+             <span class="k">if</span> <span class="n">rating_info</span><span class="p">[</span><span class="s1">&#39;rating_value&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">:</span>
+                 <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">1.3</span>
+             <span class="c1"># For negative ratings, this is a strong negative signal</span>
+             <span class="k">elif</span> <span class="n">rating_info</span><span class="p">[</span><span class="s1">&#39;rating_value&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+                 <span class="n">rating_adjustment</span> <span class="o">*=</span> <span class="mf">1.3</span>
+
+     <span class="c1"># Add rating adjustment to the initial reward</span>
+     <span class="n">adjusted_reward</span> <span class="o">+=</span> <span class="n">rating_adjustment</span>
+
+     <span class="k">return</span> <span class="n">adjusted_reward</span>
+</pre></div>
+</div>
+<p>In practice, reward functions also often incorporate business priorities beyond user engagement/ratings:</p>
+<div class="folding highlight-python notranslate" id="business-adjusted-reward"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">business_adjusted_reward</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="n">product_data</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Adjust reward based on business priorities</span>
+
+<span class="sd">     Parameters:</span>
+<span class="sd">     - reward: Float value from normalize_reward function</span>
+<span class="sd">     - product_data: Dictionary with product business information</span>
+<span class="sd">       {</span>
+<span class="sd">         &#39;margin&#39;: float,  # Profit margin percentage</span>
+<span class="sd">         &#39;inventory_status&#39;: str,  # &#39;overstocked&#39;, &#39;normal&#39;, &#39;limited&#39;</span>
+<span class="sd">         &#39;strategic_category&#39;: bool,  # Whether product is in a strategic category</span>
+<span class="sd">         &#39;new_product&#39;: bool  # Whether product is newly launched</span>
+<span class="sd">       }</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">     - float: Business-adjusted reward</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="n">adjusted_reward</span> <span class="o">=</span> <span class="n">reward</span>
+
+     <span class="c1"># Boost high-margin products</span>
+     <span class="k">if</span> <span class="n">product_data</span><span class="p">[</span><span class="s1">&#39;margin&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.3</span><span class="p">:</span>  <span class="c1"># 30% margin</span>
+         <span class="n">adjusted_reward</span> <span class="o">*=</span> <span class="mf">1.1</span>
+
+     <span class="c1"># Prioritize overstocked items</span>
+     <span class="k">if</span> <span class="n">product_data</span><span class="p">[</span><span class="s1">&#39;inventory_status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;overstocked&#39;</span><span class="p">:</span>
+         <span class="n">adjusted_reward</span> <span class="o">*=</span> <span class="mf">1.15</span>
+
+     <span class="c1"># Boost strategic category products</span>
+     <span class="k">if</span> <span class="n">product_data</span><span class="p">[</span><span class="s1">&#39;strategic_category&#39;</span><span class="p">]:</span>
+         <span class="n">adjusted_reward</span> <span class="o">*=</span> <span class="mf">1.2</span>
+
+     <span class="c1"># Promote new products to gain market insights</span>
+     <span class="k">if</span> <span class="n">product_data</span><span class="p">[</span><span class="s1">&#39;new_product&#39;</span><span class="p">]:</span>
+         <span class="n">adjusted_reward</span> <span class="o">*=</span> <span class="mf">1.1</span>
+
+     <span class="c1"># Ensure the final reward is still within [0,1]</span>
+     <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">adjusted_reward</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Above reward functions incorporate several important principles to keep it <span class="underline">clear and straightforward</span>:</p>
+<ol class="arabic simple">
+<li><p><strong>Signal Strength Hierarchy</strong>: Stronger signals of intent (purchase &gt; add-to-cart &gt; save-for-later &gt; click &gt; impression) receive higher reward components, while negative signals (remove-from-cart) receive appropriate penalties.</p></li>
+<li><p><strong>Temporal Factors</strong>: The timing between signals affects the reward value (e.g., quick bounces are penalized, quick add-to-cart after click is rewarded, immediate cart removal is penalized more heavily than delayed removal).</p></li>
+<li><p><strong>Engagement Quality</strong>: Dwell time is used to distinguish between genuine engagement and accidental or unsatisfied interactions, with additional bonuses for high engagement before save-for-later actions.</p></li>
+<li><p><strong>Session Continuity</strong>: Completing the full funnel from impression to purchase in a single session receives additional reward.</p></li>
+<li><p><strong>Intent Classification</strong>: The function distinguishes between different user intents by analyzing action sequences (e.g., add-to-cart followed by remove-from-cart vs. add-to-cart followed by save-for-later), providing more nuanced feedback signals.</p></li>
+</ol>
+<section id="reward-normalization-label-creation">
+<h3>Reward Normalization (Label Creation)<a class="headerlink" href="#reward-normalization-label-creation" title="Link to this heading"></a></h3>
+<p>For many machine learning algorithms, it’s beneficial to normalize the reward values to a standard range, (e.g., <span class="math notranslate nohighlight">\([0,1]\)</span>). Different normalization techniques offer various advantages depending on your specific recommendation system needs. <strong>Min-Max Normalization</strong> and <strong>Sigmoid Normalization</strong> are two most common normalization methods for rewards.</p>
+<p><span class="target" id="newconcept-min-max_normalization"></span><span class="newconcept">Min-Max Normalization</span> linearly scales values to a range ($[0, 1]$ in the following) and is straightforward to implement and interpret. Cutoffs are usually set for extreme quantiles (i.e., <span class="target" id="newconcept-quantile-capped_min-max_normalization"></span><span class="newconcept">Quantile-Capped Min-Max Normalization</span>) to ensure the scaling more robust while maintaining the interpretability of linear scaling:</p>
+<div class="folding highlight-python notranslate" id="quantile-capped-normalize"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">quantile_capped_normalize</span><span class="p">(</span><span class="n">raw_reward</span><span class="p">,</span> <span class="n">reward_distribution</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">lower_quantile</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">upper_quantile</span><span class="o">=</span><span class="mf">0.95</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Normalize using min-max scaling with quantile cutoffs to handle outliers</span>
+
+<span class="sd">     Parameters:</span>
+<span class="sd">     - raw_reward: Float value from calculate_reward function</span>
+<span class="sd">     - reward_distribution: Optional list of representative reward values</span>
+<span class="sd">                           to calculate quantiles from</span>
+<span class="sd">     - lower_quantile: Percentile below which values are capped to 0 (default: 5%)</span>
+<span class="sd">     - upper_quantile: Percentile above which values are capped to 1 (default: 95%)</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">     - float: Normalized reward between 0 and 1</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+     <span class="c1"># If no distribution is provided, use default bounds</span>
+     <span class="k">if</span> <span class="n">reward_distribution</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+         <span class="c1"># Default bounds based on the reward function design</span>
+         <span class="n">min_val</span> <span class="o">=</span> <span class="mf">0.0</span>
+         <span class="n">max_val</span> <span class="o">=</span> <span class="mf">1.0</span>
+     <span class="k">else</span><span class="p">:</span>
+         <span class="c1"># Calculate quantile bounds from the empirical distribution</span>
+         <span class="n">min_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reward_distribution</span><span class="p">,</span> <span class="n">lower_quantile</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+         <span class="n">max_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reward_distribution</span><span class="p">,</span> <span class="n">upper_quantile</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+
+     <span class="c1"># Cap the raw_reward to the quantile bounds</span>
+     <span class="n">capped_reward</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_val</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">raw_reward</span><span class="p">,</span> <span class="n">max_val</span><span class="p">))</span>
+
+     <span class="c1"># Apply min-max normalization on the capped value</span>
+     <span class="k">if</span> <span class="n">max_val</span> <span class="o">&gt;</span> <span class="n">min_val</span><span class="p">:</span>  <span class="c1"># Avoid division by zero</span>
+         <span class="n">normalized</span> <span class="o">=</span> <span class="p">(</span><span class="n">capped_reward</span> <span class="o">-</span> <span class="n">min_val</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_val</span> <span class="o">-</span> <span class="n">min_val</span><span class="p">)</span>
+     <span class="k">else</span><span class="p">:</span>
+         <span class="n">normalized</span> <span class="o">=</span> <span class="mf">0.5</span>  <span class="c1"># Default if min and max are the same</span>
+
+     <span class="k">return</span> <span class="n">normalized</span>
+</pre></div>
+</div>
+<p>This quantile-capped min-max approach offers several benefits for recommendation systems:</p>
+<ul class="simple">
+<li><p><strong class="underline-bold">Outlier Resistance</strong>: By using percentile-based boundaries instead of absolute min/max values, the normalization becomes significantly more robust to extreme values in the reward distribution.</p></li>
+<li><p><strong class="underline-bold">Adaptability</strong>: The cutoff points can adjust when the reward distribution changes as you collect more data or modify your reward function.</p></li>
+<li><p><strong class="underline-bold">Focus on Relevant Range</strong>: By concentrating the normalization on the middle 90% (above code by default exclude top 5% and bottom 5%, or whatever range you choose) of reward values, you improve the resolution where it matters most.</p></li>
+<li><p><strong class="underline-bold">Interpretability</strong>: Unlike some other outlier-resistant methods, it preserves the linear relationship between values within the accepted range.</p></li>
+</ul>
+<p>One major weakness of min-max normalization is the inability to control the “midpoint”. In practice, there is a <span class="target" id="newconcept-meaningful_interaction_midpoint"></span><span class="newconcept">Meaningful Interaction Midpoint</span> (a.k.a. <span class="target" id="newconcept-neutral_point"></span><span class="newconcept">Neutral Point</span>) representing a raw reward score threshold when high-value user interaction starts to happen (e.g., long dwell time, being added to cart). The definition of this “meaningful midpoint” itself is a business decision. A possible example could be 5% quantile of reward scores associated with items at least being added to the cart. Intutively, <strong class="underline-bold">we should boost reward from this “Meaningful Interaction Midpoint” on</strong>. However,</p>
+<ul class="simple">
+<li><p>It is <strong class="underline-bold">not straightforward for min-max normalization to capture the “Meaningful Interaction Midpoint”</strong>. This requires careful engineering of the reward function to match the raw score distribution. In the following Figure <a class="reference internal" href="#fig-reward-normalization"><span class="std std-numref">Figure 4</span></a>, this midpoint is mapped to reward 0.56, although not unreasonable, it is at least hard to interpret.</p></li>
+<li><p>Min-max normalization uses linear scale, and there is <strong class="underline-bold">no reward boost after “Meaningful Interaction Midpoint”</strong>.</p></li>
+<li><p>The extreme quantile cutoffs are rigid, and <strong class="underline-bold">deciding the quantile thresholds adds additional business complexity</strong>. This quantile thresholds might need a revisit when data distribution shifts.</p></li>
+</ul>
+<p><span class="target" id="newconcept-sigmoid_normalization"></span><span class="newconcept">Sigmoid Normalization</span> uses the logistic function to map values to the <span class="math notranslate nohighlight">\([0,1]\)</span> range. It offers several advantages:</p>
+<ul>
+<li><p><strong class="underline-bold">Naturally handles Meaningful Interaction Midpoint and easy to control reward boost around the midpoint</strong>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">midpoint</span></code> parameter determines which raw reward value maps to 0.5, essentially setting the “Meaningful Interaction Midpoint” of your reward system.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">steepness</span></code> parameter controls how quickly values transition from low to high around the “Meaningful Interaction Midpoint”, allowing you to emphasize differences and create sharper classifications.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><strong class="underline-bold">Handles outliers gracefully</strong>: Unlike min-max normalization using quantile cutoffs, sigmoid is less affected by extreme values or outliers in the raw reward distribution.</p></li>
+</ul>
+<p>Although not always, Sigmoid Normalization is indeed more commonly used than min-max normalization. In practice, you might experiment with both approaches to see which produces better results for your specific search/recommendation/Ads task and model architecture.</p>
+<ul class="simple">
+<li><p><strong>Use quantile-capped min-max normalization when</strong>:</p>
+<ul>
+<li><p>You need linear scaling for interpretability</p></li>
+<li><p>You want to handle outliers while maintaining linear properties within the relevant range</p></li>
+<li><p>Your recommendation model performs better with a linear transformations</p></li>
+<li><p>Computational efficiency is critically important (simpler calculation than sigmoid)</p></li>
+</ul>
+</li>
+<li><p><strong>Use sigmoid normalization when</strong>:</p>
+<ul>
+<li><p>Your reward function produces a wide or unpredictable range of values</p></li>
+<li><p>You want to emphasize differences around a certain threshold (controlled by midpoint)</p></li>
+<li><p>You need to flexibly adjust the “Meaningful Interaction Midpoint” (by adjusting logistic function midpoint parameter)</p></li>
+<li><p>You need to flexibly adjust the sensitivity of the normalization (by adjusting logistic function steepness parameter)</p></li>
+<li><p>Your recommendation model performs better with smooth non-linear transformations</p></li>
+<li><p>You prefer a probabilistic interpretation of reward values</p></li>
+</ul>
+</li>
+</ul>
+<div class="folding highlight-python notranslate" id="sigmoid-normalize-reward"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">sigmoid_normalize_reward</span><span class="p">(</span><span class="n">raw_reward</span><span class="p">,</span> <span class="n">steepness</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">midpoint</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Normalize the raw reward value using a sigmoid function to a [0,1] range</span>
+
+<span class="sd">     Parameters:</span>
+<span class="sd">     - raw_reward: Float value from calculate_reward function</span>
+<span class="sd">     - steepness: Controls how steep the sigmoid curve is (higher = steeper transition)</span>
+<span class="sd">     - midpoint: The raw_reward value that should map to 0.5 after normalization</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">     - float: Normalized reward between 0 and 1</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="kn">import</span> <span class="nn">math</span>
+
+     <span class="c1"># Apply sigmoid normalization: 1 / (1 + e^(-steepness * (x - midpoint)))</span>
+     <span class="n">normalized</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">steepness</span> <span class="o">*</span> <span class="p">(</span><span class="n">raw_reward</span> <span class="o">-</span> <span class="n">midpoint</span><span class="p">)))</span>
+
+     <span class="k">return</span> <span class="n">normalized</span>
+</pre></div>
+</div>
+<figure class="align-left" id="id1">
+<span id="fig-reward-normalization"></span><a class="reference internal image-reference" href="../../_images/reward_normalization_comparison.png"><img alt="E-Commerce Reward Normalization: Min-Max vs. Sigmoid" src="../../_images/reward_normalization_comparison.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Figure 4 </span><span class="caption-text">The e-commerce reward distribution in the visualization shows four peaks because it’s modeling distinct clusters of user behaviors that commonly occur:
+<strong>1. First Peak</strong> (left, around -2.0): This represents negative interactions like cart removals and quick bounces. These are cases where users had some initial interest but then explicitly rejected items, perhaps by removing them from cart or clicking and then immediately leaving the page.
+<strong>2. Second Peak</strong> (middle, around -0.5): This largest peak represents the most common scenario - impressions without meaningful engagement. These are search results shown to users who either didn’t click at all or clicked but quickly left without significant engagement. This is typically the most frequent outcome in a search system.
+<strong>3. Third Peak</strong> (right, between 0.5-1.0): This represents moderate positive engagement, including clicks with longer dwell time and some interest shown. These are users who engaged with search results but didn’t take high-value actions like adding to cart or purchasing.
+<strong>4. Fourth Peak</strong> (furthest right, around 2.0-2.5): This represents the most valuable user interactions - completed purchases, especially those followed by positive ratings or reviews. These are the rarest but most valuable outcomes in an e-commerce recommendation system.
+<strong>In contrast</strong>, sigmoid normalization explicitly maps the “Meaningful Interaction Point” to 0.5, and it naturally boosts the reward after the midpoint. You may also adjust another <strong>steepness</strong> parameter to control the boost.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Do reward sign and range matter?</p>
+<p>The sign of the raw reward (positive vs. negative values) is indeed important in most learning algorithms. For example:</p>
+<ul class="simple">
+<li><p>In reinforcement learning, a positive reward encourages behavior while a negative reward discourages it</p></li>
+<li><p>In supervised learning with reward weighting, positive vs. negative rewards can determine whether to strengthen or weaken certain patterns</p></li>
+</ul>
+<p>When using normalization, a common practice is to map all values to the range <span class="math notranslate nohighlight">\([0,1]\)</span>, which means there are no negative numbers in the output. This creates a potential disconnect. The solution is to establish a <strong class="underline-bold">reference point</strong> within the <span class="math notranslate nohighlight">\([0,1]\)</span> range that represents “neutral”. Typically, this is 0.5 (for sigmoid normalization, this is by setting the logistic function’s midpoint to “Meaningful Interaction Midpoint”):</p>
+<ul class="simple">
+<li><p>Values above 0.5 represent positive rewards (positive, encouraging behaviors)</p></li>
+<li><p>Values below 0.5 represent negative rewards (negative, discouraging behaviors)</p></li>
+</ul>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Classic Modeling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../evaluation/index.html" class="btn btn-neutral float-right" title="Evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tony.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

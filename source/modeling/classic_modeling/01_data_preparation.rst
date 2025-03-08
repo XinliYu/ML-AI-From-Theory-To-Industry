@@ -20,8 +20,8 @@ Constructing datasets from offline logs involves extracting relevant features an
 The process starts with **collecting implicit feedback**: :newconcept:`Implicit Feedback` refers to data gathered from :refconcept:`User Activities & Analytics`. Examples include page views, click-through rates, time spent on contents (a.k.a. dwell time, or playback time for audio/video contents), navigation patterns (e.g., click path), and strong signals such as cart/purchase/order history.
 
 
-Reward Function
----------------
+Reward Function (Label Creation)
+--------------------------------
 
 The next step is creating a reward function. At the beginning, it is usually a rule based function resulting from intuitive business requirements.
 
@@ -300,8 +300,8 @@ Above reward functions incorporate several important principles to keep it :ul:`
 5. **Intent Classification**: The function distinguishes between different user intents by analyzing action sequences (e.g., add-to-cart followed by remove-from-cart vs. add-to-cart followed by save-for-later), providing more nuanced feedback signals.
 
 
-Reward Normalization (Label Creation)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Reward Normalization
+~~~~~~~~~~~~~~~~~~~~
 
 For many machine learning algorithms, it's beneficial to normalize the reward values to a standard range, (e.g., :math:`[0,1]`). Different normalization techniques offer various advantages depending on your specific recommendation system needs. **Min-Max Normalization** and **Sigmoid Normalization** are two most common normalization methods for rewards.
 

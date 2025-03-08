@@ -54,8 +54,8 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modeling</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Classic Modeling</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Data Preparation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#reward-function">Reward Function</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#reward-normalization-label-creation">Reward Normalization (Label Creation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reward-function-label-creation">Reward Function (Label Creation)</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#reward-normalization">Reward Normalization</a></li>
 </ul>
 </li>
 </ul>
@@ -112,8 +112,8 @@
 </div></blockquote>
 <p>Constructing datasets from offline logs involves extracting relevant features and accurately labeling data for effective model development. Specifically, it’s essential to annotate whether a candidate is relevant (binary label) or assign graded relevance (categorical/numeric label). Accurate labeling ensures that models learn to distinguish between relevant and irrelevant items effectively.</p>
 <p>The process starts with <strong>collecting implicit feedback</strong>: <span class="target" id="newconcept-implicit_feedback"></span><span class="newconcept">Implicit Feedback</span> refers to data gathered from <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-user_activities_&amp;_analytics"><span class="refconcept">User Activities &amp; Analytics</span></a>. Examples include page views, click-through rates, time spent on contents (a.k.a. dwell time, or playback time for audio/video contents), navigation patterns (e.g., click path), and strong signals such as cart/purchase/order history.</p>
-<section id="reward-function">
-<h2>Reward Function<a class="headerlink" href="#reward-function" title="Link to this heading"></a></h2>
+<section id="reward-function-label-creation">
+<h2>Reward Function (Label Creation)<a class="headerlink" href="#reward-function-label-creation" title="Link to this heading"></a></h2>
 <p>The next step is creating a reward function. At the beginning, it is usually a rule based function resulting from intuitive business requirements.</p>
 <p>Consider an e-commerce platform that recommends products to users. The platform collects various implicit feedback signals with increasing strength of user interest:</p>
 <ul class="simple">
@@ -377,8 +377,8 @@
 <li><p><strong>Session Continuity</strong>: Completing the full funnel from impression to purchase in a single session receives additional reward.</p></li>
 <li><p><strong>Intent Classification</strong>: The function distinguishes between different user intents by analyzing action sequences (e.g., add-to-cart followed by remove-from-cart vs. add-to-cart followed by save-for-later), providing more nuanced feedback signals.</p></li>
 </ol>
-<section id="reward-normalization-label-creation">
-<h3>Reward Normalization (Label Creation)<a class="headerlink" href="#reward-normalization-label-creation" title="Link to this heading"></a></h3>
+<section id="reward-normalization">
+<h3>Reward Normalization<a class="headerlink" href="#reward-normalization" title="Link to this heading"></a></h3>
 <p>For many machine learning algorithms, it’s beneficial to normalize the reward values to a standard range, (e.g., <span class="math notranslate nohighlight">\([0,1]\)</span>). Different normalization techniques offer various advantages depending on your specific recommendation system needs. <strong>Min-Max Normalization</strong> and <strong>Sigmoid Normalization</strong> are two most common normalization methods for rewards.</p>
 <p><span class="target" id="newconcept-min-max_normalization"></span><span class="newconcept">Min-Max Normalization</span> linearly scales values to a range ($[0, 1]$ in the following) and is straightforward to implement and interpret. Cutoffs are usually set for extreme quantiles (i.e., <span class="target" id="newconcept-quantile-capped_min-max_normalization"></span><span class="newconcept">Quantile-Capped Min-Max Normalization</span>) to ensure the scaling more robust while maintaining the interpretability of linear scaling:</p>
 <div class="folding highlight-python notranslate" id="quantile-capped-normalize"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">quantile_capped_normalize</span><span class="p">(</span><span class="n">raw_reward</span><span class="p">,</span> <span class="n">reward_distribution</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>

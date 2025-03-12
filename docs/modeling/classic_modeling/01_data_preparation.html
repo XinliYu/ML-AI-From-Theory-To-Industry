@@ -25,7 +25,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Evaluation" href="../../evaluation/index.html" />
+    <link rel="next" title="Transformer Models" href="02_transformer_models.html" />
     <link rel="prev" title="Classic Modeling" href="index.html" /> 
 </head>
 
@@ -54,12 +54,28 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modeling</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Classic Modeling</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Data Preparation</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#reward-function-label-creation">Reward Function (Label Creation)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#session-modeling">Session Modeling</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#basic-interaction-intent-labeling">Basic Interaction Intent Labeling</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#interaction-intent-clustering">Interaction Intent Clustering</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#data-creation">Data Creation</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#modeling">Modeling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#reward-function-ruled-based-label-creation">Reward Function (Ruled-Based Label Creation)</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#reward-normalization">Reward Normalization</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#meta-learning">Meta Learning</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#deep-reward-labeling-models">Deep Reward (Labeling) Models</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#preference-learning">Preference Learning</a></li>
 </ul>
 </li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="02_transformer_models.html">Transformer Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03_reinforcement_learning.html">Reinforcement Learning</a></li>
 </ul>
 </li>
 </ul>
@@ -112,9 +128,202 @@
 </div></blockquote>
 <p>Constructing datasets from offline logs involves extracting relevant features and accurately labeling data for effective model development. Specifically, it’s essential to annotate whether a candidate is relevant (binary label) or assign graded relevance (categorical/numeric label). Accurate labeling ensures that models learn to distinguish between relevant and irrelevant items effectively.</p>
 <p>The process starts with <strong>collecting implicit feedback</strong>: <span class="target" id="newconcept-implicit_feedback"></span><span class="newconcept">Implicit Feedback</span> refers to data gathered from <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-user_activities_&amp;_analytics"><span class="refconcept">User Activities &amp; Analytics</span></a>. Examples include page views, click-through rates, time spent on contents (a.k.a. dwell time, or playback time for audio/video contents), navigation patterns (e.g., click path), and strong signals such as cart/purchase/order history.</p>
-<section id="reward-function-label-creation">
-<h2>Reward Function (Label Creation)<a class="headerlink" href="#reward-function-label-creation" title="Link to this heading"></a></h2>
+<section id="session-modeling">
+<h2>Session Modeling<a class="headerlink" href="#session-modeling" title="Link to this heading"></a></h2>
+<p>A <span class="target" id="newconcept-session"></span><span class="newconcept">Session</span> is an ordered (typically by time) sequence of user interactions with an ML/AI system, where the interactions are potentially related to each other.</p>
+<p><span class="target" id="newconcept-session_identification"></span><span class="newconcept">Session Identification</span> is a fundamental preprocessing step that sequentially groups user interactions that likely share context or purpose. This grouping provides a consistent framework for downstream models to analyze user behavior and engagement patterns. Several rule-based approaches exist for identifying and defining user sessions:</p>
+<ul class="simple">
+<li><p><span class="target" id="newconcept-event-based_boundaries"></span><span class="newconcept">Event-Based Boundaries</span>: Rough session boundaries can be delineated by strong events.</p>
+<ul>
+<li><p><span class="target" id="newconcept-entry_events"></span><span class="newconcept">Entry Events</span>: Actions like beginning website/app visits, initial referral/campaign link clicks (including search referrals), etc., often signal a new session.</p></li>
+<li><p><span class="target" id="newconcept-exit_events"></span><span class="newconcept">Exit Events</span>: Activities such as logging out, or closing the website/app strongly mark session endings. For robustness against user accidentally logging out, closing website/app, etc.</p>
+<ul>
+<li><p>A time-based rule can be applied, such as user not re-login or re-opening within a pre-defined time gap (e.g., 1 min)</p></li>
+<li><p>Downstream models can consider previous few sessions from a time window as historical context to maintain continuity when user tasks are interrupted.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><span class="target" id="newconcept-time-based_windowing"></span><span class="newconcept">Time-Based Windowing</span>: The most widely used approach defines sessions based on a period of inactivity, combined with above event signals.</p>
+<ul>
+<li><p>Interactions between an entry event and exit event can be divided into sessions if user inactivity (idle time) exceeds a threshold, for example e-commerce (30 minutes), streaming content (1 hour), professional tools (2+ hours), voice assistant (1 min).</p></li>
+<li><p>This approach is simple to implement and works well for many applications, especially when explicitly defined start/end boundaries (like login/logout) are unavailable between sessions.</p></li>
+</ul>
+</li>
+</ul>
+<p>In reality, a session obtained from above rule-based approaches are usually complex and not streamlined.</p>
+<ul class="simple">
+<li><p><strong>Parallel Tasks</strong>: Users may conduct multiple tasks simultaneously, blurring session boundaries. For example:</p>
+<ul>
+<li><p>In e-commerce scenario, user might go shopping in multiple browser tabs, viewing multiple items, adding multiple items to carts, and then checkout altogether.</p></li>
+<li><p>In travel booking scenario, a user researches flights in one tab, hotels in another, and local activities in a third. They might switch between these tasks over hours or days before completing reservations.</p></li>
+<li><p>In social network scenario, user might maintain multiple conversation threads while simultaneously scrolling through feeds, checking notifications, and possibly creating content—all activities that appear interwoven but represent distinct engagement modes.</p></li>
+</ul>
+</li>
+<li><p><strong>Interrupted Sessions</strong>: External interruptions may cause artificial session breaks, e.g., accidental loging out, closing website/app due to computer slowdown, interruptions by real-life events, etc.</p></li>
+<li><p><strong>Cross-Device Usage</strong>: Users switching between devices (e.g., mobile to desktop) may appear as separate sessions despite continuing the same task.</p></li>
+</ul>
+<p>Rule-based techniques still provide a foundation for handling these complexities:</p>
+<ul class="simple">
+<li><p>Interactions from multiple tabs or devices can be merged into a single session when they occur within a pre-defined time window.</p></li>
+<li><p>Downstream search/recommendation/ads models can incorporate previous few sessions from a longer time window as historical context (e.g., up to three sessions from the past 24 hours) to maintain continuity when user tasks are interrupted.</p></li>
+</ul>
+<p>In contemporary systems with sophisticated downstream search/recommendation/ads models, rule-based session identification is typically sufficient despite its limitations. The underlying assumption is that <strong class="underline-bold">tasks performed within a single session (e.g., within a pre-defined time window) share latent relationships</strong>, even if not immediately apparent. To facilitate consitent feature representation and downstream development,</p>
+<ul>
+<li><p>Session data and analytics should be available for both offline and runtime for downstream use.</p></li>
+<li><p>Optionally, an <span class="target" id="newconcept-interaction_encoder"></span><span class="newconcept">interaction encoder</span> can be developed to integrate information for an interaction, potentially:</p>
+<ul class="simple">
+<li><p>Multi-modal (integrating various information types; see also <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#multi-modal-fusion">Multi-Modal Fusion</a>)</p></li>
+<li><p>Contextual (considering the whole session for offline, or consdering the interactions up to the last completed one for runtime)</p></li>
+<li><p>Multi-task (learning from major downstream tasks)</p></li>
+</ul>
+<p>The ecodings can serve as input for classic downstream ML, or serve as context tokens in downstream LLM (if the LLM is post-trained to support it).</p>
+</li>
+<li><p>Optionally, for LLM, a session information prompt template can be recommended for downstream LLMs to leverage (post-training not required).</p></li>
+</ul>
+<section id="basic-interaction-intent-labeling">
+<h3>Basic Interaction Intent Labeling<a class="headerlink" href="#basic-interaction-intent-labeling" title="Link to this heading"></a></h3>
+<p>Although sophisticated downstream models could often already discern patterns within noisy and interleaved sessions and effectively utilize this information, <span class="target" id="newconcept-interaction_analytics"></span><span class="newconcept">Interaction Analytics</span> can still offer valuable additional signals for downstream use, not just modeling, but also business analytics, facilitating more structured understanding of user behavior within sessions.</p>
+<p><span class="target" id="newconcept-basic_interaction_intent_labeling"></span><span class="newconcept">Basic Interaction Intent Labeling</span> assigns specific intent or task identifiers to individual interactions, helping to signal more coherent “sub-sessions” within a larger time-based session. Business analytics can leverage these signals to categorize interaction. Downstream models can leverage these additional intent/task labels to improve their modeling of user behavior patterns. While there’s no universal requirement for intent/task identifier format, following a consistent structured template or schema is recommended. For example:</p>
+<ul class="simple">
+<li><p><strong>Template format</strong>: <code class="docutils literal notranslate"><span class="pre">{domain}/{intent}/{action}/{item_type1:</span> <span class="pre">item1</span> <span class="pre">\|</span> <span class="pre">item_type2:</span> <span class="pre">item2</span> <span class="pre">\|</span> <span class="pre">...}</span></code>.</p>
+<ul>
+<li><p>The <span class="target" id="newconcept-domain"></span><span class="newconcept">domain</span>, <span class="target" id="newconcept-intent"></span><span class="newconcept">intent</span>, <span class="target" id="newconcept-action"></span><span class="newconcept">action</span> components form a complete <span class="target" id="newconcept-intent_type"></span><span class="newconcept">intent type</span> label</p></li>
+<li><p>For single-purpose website/app, “domain” component can be dropped and “intent” component is promoted as the “domain”. Sometimes “intent” and “action” are merged as a single label component. Either way, the template can be simplified as <code class="docutils literal notranslate"><span class="pre">{domain}/{intent}/{item_type1:</span> <span class="pre">item1</span> <span class="pre">\|</span> <span class="pre">item_type2:</span> <span class="pre">item2</span> <span class="pre">\|</span> <span class="pre">...}</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Concrete examples</strong>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">shopping/exploring/view_promotion/product_id:</span> <span class="pre">ABC123|promotion_id:</span> <span class="pre">SALE50</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">shopping/subscribe_and_save/cancel/product_id:</span> <span class="pre">XYZ789</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">instagram/content_discovery/browse_feed/hashtag:</span> <span class="pre">travel</span></code></p></li>
+</ul>
+</li>
+</ul>
+<p>In most cases, the website/app’s internal state information can deterministically provide most of the intent/task label. The currently active page and the user’s interaction with UI elements often contain sufficient information to determine the domain, intent, action, product IDs, and other relevant attributes.</p>
+<p>Such labeling provides basic categorical labels for business/modeling applications.</p>
+<ul class="simple">
+<li><p>Downstream search/recommendation/ads models might start simple with only a pre-defined subset of intents highly related to the downstream tasks, or at least exclude certain types of interactions (such as account management activities) from the session context to reduce context size and computational cost</p></li>
+<li><p>User Experience Analytics might leverage the intent labels to identify at which point user frictions often occur as feedback to development teams</p></li>
+</ul>
+</section>
+<section id="interaction-intent-clustering">
+<h3>Interaction Intent Clustering<a class="headerlink" href="#interaction-intent-clustering" title="Link to this heading"></a></h3>
+<p>However, the basic intent labeling derived from pure rule-based and website/app state-based approaches are limited. There are multiple difficulties,</p>
+<ul class="simple">
+<li><p>A session might have multiple parallel semantic tasks, and different semantic tasks often have their interactions interleaved in a session.</p>
+<ul>
+<li><p>Sometimes one semantic task is conducted on two devices (e.g., mobile and desktop), and time-based merging interaction sequences from different devices make such interleaving issue more serious. This problem significantly limits the application of intent labels in downstream business analytics and model development.</p></li>
+<li><p>As a concrete example, downstream models can train on a joint task to predict the next intent type to illustrate the model understands user behavior patterns. However, interleaved interaction sequence makes it difficult, as it not making sense to frequently ask the model to predict an ad-hoc next intent type.</p></li>
+</ul>
+</li>
+<li><p>One semantic task might consist of interactions of multiple basic intent types. For example,</p>
+<ul>
+<li><p>In ecommerce case, a user might be exploring multiple relevant items before concluding and purchasing a subset of them.</p></li>
+<li><p>In social network case, a user might perform multiple relevant visit_user_home, view_post and comment interactions as part of one exploration.</p></li>
+<li><p>However, because of the interaction interleaving issue, it is difficult to judge relevance of the next interaction based on the simple intent types.</p></li>
+</ul>
+</li>
+</ul>
+<p><span class="target" id="newconcept-interaction_intent_clustering"></span><span class="newconcept">Interaction Intent Clustering</span> is a valuable interaction analytics approach to identify and group related interactions into coherent flat or hierarchical clusters, even when activities appear fragmented across the session timeline. For example,</p>
+<ul class="simple">
+<li><p>A sequence of interactions might be clustered as task “buy:kid_clothing”.</p></li>
+<li><p>This sequence might be interleaved with a parallel purchase task for “buy:kid_drinks”.</p></li>
+<li><p>Both might be occasionally interrupted by subscription management interactions or other account management activities.</p></li>
+</ul>
+<section id="data-creation">
+<h4>Data Creation<a class="headerlink" href="#data-creation" title="Link to this heading"></a></h4>
+<p>The main challenge for learning intent clustering is session data labeling. There are two aspects for this labeling, we need to group interactions, and assign a semantic task label (such as “buy:kid_cloth”). The grouping aspect is more critical. The task label is usually also structured following certain pre-defined schema.</p>
+<ul>
+<li><p><strong class="underline-bold">Human Annotation</strong> on real user runtime sessions can provide high-quality labels but is resource-intensive and difficult to scale. This approach is often used to create:</p>
+<ul class="simple">
+<li><p>Gold standard evaluation datasets to measure model performance</p></li>
+<li><p>Initial training data to bootstrap the modeling process</p></li>
+<li><p>Targeted examples for edge cases and complex interaction patterns</p></li>
+</ul>
+<p>Modern approaches now <strong class="underline-bold">leverage LLMs to significantly reduce human annotation effort</strong>. LLMs can annotate according to instructions and few-shot examples, with multiple LLMs used for cross-validation. Sessions with low annotation confidence can be routed to human annotators for final determination. Additionally, human reviewers can verify a sample of LLM annotations to ensure quality. This hybrid approach enables the creation of substantially larger well-annotated datasets while maintaining quality standards.</p>
+</li>
+<li><p><strong class="underline-bold">Rule-Based</strong> approaches apply domain-specific heuristics to group interactions, providing a more scalable but less flexible alternative to manual annotation. Rules are usually strict to only apply to high-confidence behavior patterns. For example,</p>
+<ul class="simple">
+<li><p>In ecommerce case, a sequence consisting of exploring and purchasing interactions associated with the same product ID can be extracted as a task, with a label following schema “buy:{product_type}” attached. However, relevant in-between exploring interactions on other related products might be dropped.</p></li>
+<li><p>In social network case, grouping post-viewing and commenting interactions targetting the same topic as one task, with a label following schema “explore:{topic}” attached. However, relevant in-between exploring interactions on other related topics might be dropped.</p></li>
+<li><p>Rule-based grouping can help <strong class="underline-bold">estimate interleaving probabilities</strong>, such as how often a user buy products from two categories together, or how often user explore two topics together on social nework.</p></li>
+</ul>
+</li>
+<li><p><strong class="underline-bold">Synthetic Data Generation</strong> aims at creating artificial but realistic user sessions with intent labels. For example, to synthesize a sequence ending in purchasing kid cloth and drinks:</p>
+<ol class="arabic simple">
+<li><p><strong>Item Selection</strong>: Sample two items from “kid cloth” and “kid drinks” product categories, corresponding to “buy:kid_clothing” and “buy:kid_drinks” tasks.</p></li>
+<li><p><strong>Query and Interaction Simulation</strong>: For each item:</p>
+<ul class="simple">
+<li><p>Sample an associated query from historical data, optionally applying a rephrasing model for diversity.</p></li>
+<li><p>Either use historical interaction sequences that led to purchase of that item, or trigger actual product search API and navigate through results, applying <strong class="underline-bold">historical transition probabilities to simulate realistic interaction patterns</strong>.</p></li>
+</ul>
+</li>
+<li><p><strong>Sample or Simulate Noisy Interactions</strong>: Simulate common interactions that can be considered noisy to the “buy:kid_clothing” and “buy:kid_drinks” tasks, such as account management interactions. Again, either sample from real historical data, or simulate according to historical transition probabilities.</p></li>
+<li><p><strong>Multi-Task Simulation</strong>: Interleaving the interaction sequences for both “kid cloth”, “kid drinks”, as well as other noisy interactions. Interleaving them according to a historical traffic-based probability to simulate realistic multi-task behavior.</p></li>
+</ol>
+<p>Here is another example for synthesizing a session involving content discovery and creator engagement on social network:</p>
+<ol class="arabic simple">
+<li><p><strong>Topic Selection</strong>: Sample realistic hashtags or search terms from historical data that lead to different topics.</p></li>
+<li><p><strong>Engagement and Navigation Simulation</strong>: For the selected content:</p>
+<ul class="simple">
+<li><p>Either replay historical navigation patterns from users with similar interests, or use the platform’s prodcut recommendation pipeline to generate realistic content recommendations.</p></li>
+<li><p>Apply known engagement probability distributions (e.g., 60% view, 25% like, 10% comment, 5% share) based on content type and user segment.</p></li>
+</ul>
+</li>
+<li><p><strong>Social Interaction Simulation</strong>: Incorporate realistic social behaviors:</p>
+<ul class="simple">
+<li><p>Follow a creator after engaging with multiple pieces of their content.</p></li>
+<li><p>Simulate direct message interactions after certain engagement thresholds.</p></li>
+</ul>
+</li>
+<li><p><strong>Multi-Task Simulation</strong>: Interleaving the interaction sequences according to a historical traffic-based probability to simulate realistic multi-task behavior.</p></li>
+</ol>
+</li>
+</ul>
+</section>
+<section id="modeling">
+<h4>Modeling<a class="headerlink" href="#modeling" title="Link to this heading"></a></h4>
+<p>Given a session $S$ of $N$ interactions, where each interaction $i$ has a feature representation $\mathbf{x}_i$ produced by an interaction encoder (where multi-modal signals such as the interaction metadata, interaction results, basic intent labels, etc., have been integrated). This is fundamentally a <span class="target" id="newconcept-semantic_grouping_problem_for_sequence"></span><span class="newconcept">Semantic Grouping Problem For Sequence</span> (similar to sentence grouping by topics in a paragraph). As a common practice, they can be passed into a transformer architecture with pre-defined max session size, and eventually linked a <strong class="underline-bold">pairwise cross-entropy loss</strong> for every pair of items in the sequence.</p>
+<ul class="simple">
+<li><p>We are unable to pre-define the number of groups in a session due to its dynamic nature, therefore pairwise loss is more suitable than multi-class loss.</p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{pairwise}} = -\frac{1}{N \times (N-1)} \sum_{i=1}^{N}\sum_{j=1,j\neq i}^{N} \left[ y_{i,j} \log(p_{i,j}) + (1-y_{i,j}) \log(1-p_{i,j}) \right]\]</div>
+<p>where $p_{i,j}$ is the probability of interaction $i$ be in the same semantic task group as interaction $j$ after the transformers layer.</p>
+<p>If we want to consider the factor of <strong class="underline-bold">temporal proximity</strong>, we can add a <span class="target" id="newconcept-temporal_coherence_regularization"></span><span class="newconcept">temporal coherence regularization</span> term. For example, interactions within the same task often occur in close proximity even with interleaving, and we want to be conservative and ensure correctness of grouping of items near each other.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{temporal}} = \sum_{i=1}^{N}\sum_{j=1,j\neq i}^{N} w_{i,j}^{\text{time}} \cdot \text{temporal_penalty}(p_{i,j}, y_{i,j})\]</div>
+<p>where $w_{i,j}^{\text{time}}$ is a <span class="target" id="newconcept-temporal_weight"></span><span class="newconcept">temporal weight</span>, for example, $w_{i,j}^{\text{time}} = e^{-\frac{|t_i - t_j|}{\tau}}$, which decreases the weight as the time difference between interactions increases, and has a hyperparameter $\tau$ to adjust decreasing rate. One example of the <span class="target" id="newconcept-temporal_penality"></span><span class="newconcept">temporal penality</span> can be $\text{temporal_penality}(p_{i,j}, y_{i,j}) = p_{i,j} - y_{i,j}$, which is a linear penality. This encourages the model to prioritize correctly classifying temporally close interactions. Both the “temporal weight” and “temporal penality” can be tweaked according to experiment results. For example, we can increase the penalty for failing to identify related interactions beyond certain temporal distances to ensure the model doesn’t focus exclusively on proximate interactions.</p>
+<p>For the temporal penalty function that penalizes failures to identify related interactions more heavily as temporal distance increases:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{temporal_penalty}(p_{i,j}, y_{i,j}) =
+\begin{cases}
+|p_{i,j} - y_{i,j}| &amp; \text{if } |t_i - t_j| \leq \delta \\
+|p_{i,j} - y_{i,j}| \cdot (1 + \gamma \cdot \frac{|t_i - t_j| - \delta}{\delta_{\text{max}} - \delta}) &amp; \text{if } |t_i - t_j| &gt; \delta \text{ and } y_{i,j} = 1 \\
+|p_{i,j} - y_{i,j}| &amp; \text{if } |t_i - t_j| &gt; \delta \text{ and } y_{i,j} = 0
+\end{cases}\end{split}\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p>$\delta$ is the temporal distance threshold beyond which we apply the increased penalty for missed connections</p></li>
+<li><p>$\gamma$ is the scaling factor that determines how much extra penalty to apply for distant but related interactions</p></li>
+<li><p>$\delta_{\text{max}}$ is the maximum temporal distance to consider (can be set to the session length or another appropriate value)</p></li>
+</ul>
+<p>This formulation increases the penalty for failing to identify related interactions that are temporally distant, helping the model learn to recognize semantic connections even when they span across significant time gaps in the session.</p>
+<p>The final loss function combines the pairwise binary loss with the temporal coherence regularization:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{pairwise}} + \lambda_{\text{temporal}} \cdot \mathcal{L}_{\text{temporal}}\]</div>
+<p>where $\lambda_{\text{temporal}}$ is a hyperparameter controlling the influence of temporal coherence.</p>
+</section>
+</section>
+</section>
+<section id="reward-function-ruled-based-label-creation">
+<h2>Reward Function (Ruled-Based Label Creation)<a class="headerlink" href="#reward-function-ruled-based-label-creation" title="Link to this heading"></a></h2>
 <p>The next step is creating a reward function. At the beginning, it is usually a rule based function resulting from intuitive business requirements.</p>
+<ul class="simple">
+<li><p>Even with recent advancements <a class="reference internal" href="#deep-reward-labeling-models">Deep Reward (Labeling) Models</a>, the rule-based reward functions with <a class="reference internal" href="#meta-learning">Meta Learning</a> approache is still a common practice, especially helping swiftly establish labeling and evaluation tools especially when a product is starting up and there is not yet sufficient data. The downsides for this approache include the manual efforts for feature engineering, creating and maintaining the complex reward strucuture, various thresholds and weights.</p></li>
+<li><p>After sufficient data have been collected, <a class="reference internal" href="#deep-reward-labeling-models">Deep Reward (Labeling) Models</a> is an advanced techinque to reduce business complexity, ingest ever-growing complex data and signals, and better facility automated continuous model improvement.</p></li>
+</ul>
 <p>Consider an e-commerce platform that recommends products to users. The platform collects various implicit feedback signals with increasing strength of user interest:</p>
 <ul class="simple">
 <li><p><strong>Impression (IMP)</strong>: User sees the recommendation</p></li>
@@ -126,8 +335,9 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">calculate_interaction_reward</span></code> - This is calculating rewards based on user interactions up to and including the purchase. It runs at the time of the shopping session, using immediate signals like clicks, cart actions, and purchases.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">adjust_reward_with_rating</span></code> - This takes the initial reward value and adjusts it when a customer later submits a rating and review. This function can be called asynchronously whenever a review comes in, even if it’s days or weeks after the session.</p></li>
+<li><p>The following is still a simplified synthetic example, but <strong>shows how complex a manul reward function could be for a realistic business scenario</strong>.</p></li>
 </ul>
-<div class="folding highlight-python notranslate" id="calculate-interaction-reward"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">calculate_interaction_reward</span><span class="p">(</span><span class="n">user_signals</span><span class="p">,</span> <span class="n">time_thresholds</span><span class="p">):</span>
+<div class="folding highlight-python notranslate" id="calculate-interaction-reward"><span id="code-example-ecommerce-reward-function"></span><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">calculate_interaction_reward</span><span class="p">(</span><span class="n">user_signals</span><span class="p">,</span> <span class="n">time_thresholds</span><span class="p">):</span>
 <span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">     Calculate the initial reward value based on user interaction signals</span>
 <span class="sd">     (This is the original reward function without ratings)</span>
@@ -513,6 +723,166 @@
 </ul>
 </div>
 </section>
+<section id="meta-learning">
+<h3>Meta Learning<a class="headerlink" href="#meta-learning" title="Link to this heading"></a></h3>
+<p>Meta-learning approaches for reward function optimization represent a way to systematically improve the reward functions beyond manual tuning. Meta-learning in this context means creating a system that “learns how to learn” - specifically, it learns how to optimize the parameters of your reward function based on business outcomes. Instead of manually adjusting weights and thresholds through trial and error, you’re automatically discovers the optimal parameters.</p>
+<p>The first step is identifying all tunable parameters in the reward function (taking above <a class="reference internal" href="#code-example-ecommerce-reward-function"><span class="std std-ref">ecommerce reward function</span></a> for examle):</p>
+<ul>
+<li><p><strong>Base Signal Weights</strong>: The fundamental values assigned to each user action
+.. code-block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">impression_weight</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">click_weight</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">add_to_cart_weight</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">purchase_weight</span> <span class="o">=</span> <span class="mf">1.0</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Time Thresholds</strong>: The timing boundaries that categorize user behaviors
+.. code-block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">quick_bounce_threshold</span> <span class="o">=</span> <span class="mf">5.0</span>  <span class="c1"># seconds</span>
+<span class="n">good_engagement_threshold</span> <span class="o">=</span> <span class="mf">30.0</span>  <span class="c1"># seconds</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Temporal Modifiers</strong>: Adjustments based on timing between actions
+.. code-block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">quick_click_penalty</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.05</span>
+<span class="n">long_dwell_bonus</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">quick_atc_bonus</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">same_session_purchase_bonus</span> <span class="o">=</span> <span class="mf">0.2</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Normalization Parameters</strong>: Controls for reward scaling
+.. code-block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sigmoid_midpoint</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">sigmoid_steepness</span> <span class="o">=</span> <span class="mf">1.0</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>The second step is having clear business metrics to optimize against. These serve as the “ground truth” for evaluating reward function effectiveness:</p>
+<ul class="simple">
+<li><p><strong>Revenue or Profit</strong>: Direct financial impact</p></li>
+<li><p><strong>Conversion Rate</strong>: Percentage of users completing desired actions</p></li>
+<li><p><strong>User Retention</strong>: Return rate and engagement over time</p></li>
+<li><p><strong>Customer Lifetime Value</strong>: Long-term user value</p></li>
+<li><p><strong>User Satisfaction</strong>: Ratings, reviews, and feedback scores</p></li>
+</ul>
+<p>The goal in reward function optimization is typically to maximize the correlation between the calculated rewards and business metrics (like revenue or conversions). A high positive correlation indicates that the reward function is effectively predicting business outcomes. For multiple business objects, we can have a weighted combination of them. Although there is still manual weights in this combination, the number of manual parameters are significantly less than the reward function, significantly reducing business complexity.</p>
+<ul>
+<li><p>Traditionally, meta learning is performed using a representative medium-sized subsample of the whole dataset. A typical method is <span class="target" id="newconcept-l-bfgs-b"></span><span class="newconcept">L-BFGS-B (Limited-memory Broyden–Fletcher–Goldfarb–Shanno with Bounds)</span> for several specific reasons,</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Constrained optimization</strong>: The “B” in L-BFGS-B indicates it handles parameter bounds, which is critical when <strong class="underline-bold">optimizing reward function parameters that should remain within specific ranges</strong> (for example, we want to prevent reward/penality for user actions like adding to or removing from cart from going too extreme).</p></li>
+<li><p><strong>Memory efficiency</strong>: L-BFGS-B is <strong class="underline-bold">memoery-efficient for the meta-learning case</strong> without excessive memory requirements.</p></li>
+<li><p><strong>Second-order information</strong>: L-BFGS-B (a <cite>Quasi-Newton Method &lt;https://en.wikipedia.org/wiki/Quasi-Newton_method&gt;</cite>) approximates second derivatives, potentially leading to faster convergence compared to first-order methods.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>For an objective function that is hard to calculate the gradient formula, it</p>
+<ol class="arabic simple">
+<li><p>Compute the objective function value at the current point.</p></li>
+<li><p>Perturb each parameter slightly to approximate partial derivatives. Store the last $m$ pairs of position changes and gradient changes. Use these numerical approximations to estimate the gradient and how its gradient change (2nd order approximation).</p></li>
+<li><p>Apply the L-BFGS-B algorithm using these estimated gradients</p></li>
+</ol>
+</li>
+<li><p>This traditional method has a stochastic version that can handle dataset of a large size for robustness and reduce the complexity and workload on data sampling. However, if a more sophisticated approach is required to naturally integrate same level of diverse and complex information as in the runtime search/recommendation/Ads models, the a modern day approach is <a href="#id3"><span class="problematic" id="id4">`Deep Reward Models`_</span></a>.</p></li>
+</ul>
+<div class="folding highlight-python notranslate" id="meta-learning-example"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">meta_learning_multi_objective_function</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">revenue_metrics</span><span class="p">,</span> <span class="n">retention_metrics</span><span class="p">,</span> <span class="n">satisfaction_metrics</span><span class="p">):</span>
+     <span class="n">rewards</span> <span class="o">=</span> <span class="p">[</span><span class="n">calculate_reward</span><span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="k">for</span> <span class="n">interaction</span> <span class="ow">in</span> <span class="n">interactions</span><span class="p">]</span>
+
+     <span class="c1"># Calculate correlations with different business metrics</span>
+     <span class="n">revenue_corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="n">revenue_metrics</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+     <span class="n">retention_corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="n">retention_metrics</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+     <span class="n">satisfaction_corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="n">satisfaction_metrics</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+     <span class="c1"># Weighted combination based on business priorities</span>
+     <span class="n">combined_score</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">revenue_corr</span> <span class="o">+</span>
+                     <span class="mf">0.3</span> <span class="o">*</span> <span class="n">retention_corr</span> <span class="o">+</span>
+                     <span class="mf">0.2</span> <span class="o">*</span> <span class="n">satisfaction_corr</span><span class="p">)</span>
+
+     <span class="k">return</span> <span class="o">-</span><span class="n">combined_score</span>  <span class="c1"># Negative for minimization</span>
+
+ <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
+ <span class="n">result</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+     <span class="n">meta_learning_multi_objective_function</span><span class="p">,</span>
+     <span class="n">initial_params</span><span class="p">,</span>
+     <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">user_interactions</span><span class="p">,</span> <span class="n">business_metrics</span><span class="p">),</span>
+     <span class="n">method</span><span class="o">=</span><span class="s1">&#39;L-BFGS-B&#39;</span><span class="p">,</span>
+     <span class="n">bounds</span><span class="o">=</span><span class="n">parameter_bounds</span>
+ <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="deep-reward-labeling-models">
+<h3>Deep Reward (Labeling) Models<a class="headerlink" href="#deep-reward-labeling-models" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-deep_reward_models"></span><span class="newconcept">Deep Reward Models</span> is now a widely-used advanced approach to build a powerful labeling tool. It is the most critical module for a <span class="target" id="newconcept-self-improving_ml/ai_system"></span><span class="newconcept">Self-Improving ML/AI System</span> (meaning that the ML/AI system can continuously improve itself using real-time user feedback data with a <span class="target" id="newconcept-closed_feedback_learning_loop"></span><span class="newconcept">Closed Feedback Learning Loop</span>).</p>
+<ul class="simple">
+<li><p>They <strong class="underline-bold">directly learn the mapping from user interaction signals to reward values</strong>, bypassing the need for explicit feature engineering, rule-based reward function development, and manual parameter tuning.</p></li>
+<li><p>They still need <span class="target" id="newconcept-meta_rules"></span><span class="newconcept">Meta Rules</span> (or <span class="target" id="newconcept-meta_labels"></span><span class="newconcept">Meta Labels</span>), which only require much simpler <a class="reference internal" href="#newconcept-preference_rules"><span class="refconcept">Preference Rules</span></a> distinguishing a simple scenario - given interaction sequences $A$ and $B$, which one is prefered. For example, if interaction session $A$ leads to purchase, but interaction session $B$ only leads to adding item to cart, then obviously $A$ is more preferred for the user. In comparison the the complex manual reward structure shown in <a class="reference internal" href="#code-example-ecommerce-reward-function"><span class="std std-ref">ecommerce reward function</span></a>, such <strong class="underline-bold">preference rules are much more intuitive to develop and maintain</strong> for business. Annotation on the data points with such preference rules are called <span class="target" id="newconcept-preference_annotations"></span><span class="newconcept">Preference Annotations</span>.</p></li>
+<li><p>They are able to <strong class="underline-bold">ingest same level of complex data</strong> as the runtime search/recommendation/Ads models and incorporating multi-modal signals, because it is a deep model.</p></li>
+</ul>
+<p>In comparison to <span class="target" id="newconcept-runtime_models"></span><span class="newconcept">Runtime Models</span>, despite their similarities in data inputs, they serve fundamentally different purposes:</p>
+<ul class="simple">
+<li><p><strong class="underline-bold">Input Difference</strong>:</p>
+<ul>
+<li><p><strong>Reward Model</strong>: is solely based on <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-historical_user_activities_&amp;_analytics"><span class="refconcept">Historical User Activities &amp; Analytics</span></a>, has the advantage of information asymmetry of hindsight, able to access all post-interaction signals (how users actually responded to search results, recommendations or Ads, various analytics, etc.), and <strong class="underline-bold">has complete data for every session it evaluates</strong>.</p></li>
+<li><p><strong>Runtime Model</strong>: The runtime model must make predictions on the next action before signals for the next action exist. It has access to <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-historical_user_activities_&amp;_analytics"><span class="refconcept">Historical User Activities &amp; Analytics</span></a> for historical sessions, and <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-real-time_user_activities_&amp;_analytics"><span class="refconcept">Real-Time User Activities &amp; Analytics</span></a> for the current session, which is <strong class="underline-bold">partial in comparison to what the reward model has</strong>.</p>
+<ul>
+<li><p>During runtime model training, the model must simulate the partial information for the current session.</p></li>
+</ul>
+</li>
+<li><p>Think of it as a <strong class="underline-bold">teacher-student relationship</strong>. The reward model (teacher) evaluates performance with full historical information, creating learning signals (labels) to guide runtime model to improve, while the runtime model (student) learns from the teacher, but must also learn to make good predictions in real scenarios in the future.</p></li>
+</ul>
+</li>
+<li><p><strong class="underline-bold">Different Objectives</strong>:</p>
+<ul>
+<li><p><strong>Reward Model</strong>: Focuses on <strong class="underline-bold">offline</strong> evaluating the quality or relevance of recommendations after the fact without latency constraint :ub: <cite>without latency constraint</cite>. Given the sequence of actions happened before an action being evaluated, it learns to predict how valuable that user interaction was (through clicks, purchases, dwell time, etc.).</p></li>
+<li><p><strong>Runtime Model</strong>: Focuses on <strong class="underline-bold">real-time</strong> evaluating the quality or relevance and making the actual search/recommendations/Ads <strong class="underline-bold">with latency constraint</strong>.  Given the sequence of actions already happend during runtime, it predicts user’s next action (e.g., interaction with an item, clicking an ad).</p></li>
+</ul>
+</li>
+<li><p><strong class="underline-bold">Training Method Difference</strong>: Due to the difference in objectives,</p>
+<ul>
+<li><p><strong>Reward Model</strong> is usually <strong class="underline-bold">built with supervised training using preference annotations as the training targets</strong>.</p></li>
+<li><p><strong>Runtime Model</strong> is usually <strong class="underline-bold">built with reinforcement learning</strong></p></li>
+<li><p>Both reward model and runtime model updates can leverage continuous training (maintaining model training states, incorporating new data, dropping outdated data, and continuing the training with a small number of epoches).</p></li>
+</ul>
+</li>
+</ul>
+<figure class="align-left" id="id2">
+<a class="reference internal image-reference" href="../../_images/closed_learning_loop.png"><img alt="Self-Improving ML/AI System with Closed Feedback Learning Loop" src="../../_images/closed_learning_loop.png" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Figure 5 </span><span class="caption-text">Self-Improving ML/AI System with Closed Feedback Learning Loop: The deep reward model (teacher) creates learning signals using complete historical data and operates offline without latency constraints. The runtime model (student) learns from these signals to make real-time predictions for the future under strict latency requirements with partial information from a runtime seesion. The system features two distinct training pipelines: runtime model training using reinforcement learning (updated more frequently, e.g., daily) and reward model training using supervised preference learning (updated less frequently, e.g., weekly). Both implicit interactions and explicit feedback are captured to continuously improve the system.</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Traditionally, <span class="target" id="newconcept-inverse_reinforcement_learning"></span><span class="newconcept">Inverse Reinforcement Learning (IRL)</span> was a widely-used approach for building reward models in specific domains. IRL infers reward functions from <span class="target" id="newconcept-expert_demonstrations"></span><span class="newconcept">Expert Demonstrations</span> - sequences of states and actions that demonstrate optimal behavior.</p>
+<p>This approach has become less common in modern search/recommendation/ads systems for several key reasons:</p>
+<ul class="simple">
+<li><p><strong>Data Collection Challenges</strong>: As systems become more versatile, collecting comprehensive expert demonstrations across diverse scenarios becomes prohibitively expensive and often infeasible.</p></li>
+<li><p><strong>Unrealistic Assumptions</strong>: IRL assumes experts act optimally according to a consistent reward function. Human behavior frequently violates this assumption - people are inconsistent, make mistakes, and have mixed motives.</p></li>
+<li><p><strong>Computational Complexity</strong>: IRL requires repeatedly solving the forward RL problem during training, which becomes computationally prohibitive for large-scale models and complex state spaces.</p></li>
+</ul>
+<p>Today, <span class="target" id="newconcept-preference_learning"></span><span class="newconcept">Preference Learning</span> has become the predominant method for building reward models, as it requires only comparative judgments between alternatives rather than complete optimal demonstrations, making data collection more practical and scalable.</p>
+</div>
+<section id="preference-learning">
+<h4>Preference Learning<a class="headerlink" href="#preference-learning" title="Link to this heading"></a></h4>
+<p>The fundamental unit in preference learning is the <span class="target" id="newconcept-preference_pair"></span><span class="newconcept">Preference Pair</span>, derived from the pre-defined <span class="target" id="newconcept-preference_rules"></span><span class="newconcept">Preference Rules</span> - “given two interaction sequences, which one is preferred over the other”. For example, a preference rule can be “any interaction sequence ending in purchase has highest user preference”. As a result,</p>
+<ul class="simple">
+<li><p>Interaction Sequence A: View → Dwell → Add to Cart → Purchase</p></li>
+<li><p>Interaction Sequence B: View → Dwell → Saved For Later → View Different Product</p></li>
+<li><p>Preference: A &gt; B (A is preferred over B because it ends with a purchase interaction)</p></li>
+</ul>
+<p>In general, these preference pairs can be obtained by</p>
+<ul class="simple">
+<li><p><strong>Automatically generated</strong> using pre-defined preference rules based on implicit user behavior signals (purchases, cart additions, etc.)</p></li>
+<li><p><strong>Explicitly labeled</strong> by user feedback, or human annotators</p></li>
+</ul>
+</section>
+</section>
 </section>
 </section>
 
@@ -521,7 +891,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Classic Modeling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../../evaluation/index.html" class="btn btn-neutral float-right" title="Evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="02_transformer_models.html" class="btn btn-neutral float-right" title="Transformer Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

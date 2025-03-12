@@ -143,12 +143,12 @@
 <section id="groud-truth">
 <h3>Groud Truth<a class="headerlink" href="#groud-truth" title="Link to this heading"></a></h3>
 <p>Given a query $q$, a <span class="target" id="newconcept-model"></span><span class="newconcept">model</span> $M(q, d)$ is a function generating a <span class="target" id="newconcept-predicted_relevance_score"></span><span class="newconcept">predicted relevance score</span> for every candidate $d \in D$. We choose a <span class="target" id="newconcept-threshold"></span><span class="newconcept">threshold</span> $t$ and all items $d$ such that $M(q, d) &gt; t$ are considered relevant or recommended.</p>
-<p>Given a query $q$, its <span class="target" id="newconcept-ground_truth"></span><span class="newconcept">Ground Truth</span>, denoted by $A_q$ where $A_q \subset \{q\} \times D \times \{0, 1\} \subset A$, is all annotations associated with $q$. Ground truth in practice often only provides positive labels for a subset of $D$, with the remaining items from $D$ assumed to be negatively labeled. Ground truth can be broken down in two ways, as shown in <a class="reference internal" href="#fig-ground-truth"><span class="std std-numref">Figure 5</span></a>.</p>
+<p>Given a query $q$, its <span class="target" id="newconcept-ground_truth"></span><span class="newconcept">Ground Truth</span>, denoted by $A_q$ where $A_q \subset \{q\} \times D \times \{0, 1\} \subset A$, is all annotations associated with $q$. Ground truth in practice often only provides positive labels for a subset of $D$, with the remaining items from $D$ assumed to be negatively labeled. Ground truth can be broken down in two ways, as shown in <a class="reference internal" href="#fig-ground-truth"><span class="std std-numref">Figure 7</span></a>.</p>
 <figure class="align-default" id="fig-ground-truth">
 <a class="reference internal image-reference" href="../_images/ground_truth_breakdown.png"><img alt="Break Down of Ground Truth showing TP, FP, TN, and FN categories" src="../_images/ground_truth_breakdown.png" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 5 </span><span class="caption-text">Break Down of Ground Truth showing TP, FP, TN, and FN categories</span><a class="headerlink" href="#fig-ground-truth" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 7 </span><span class="caption-text">Break Down of Ground Truth showing TP, FP, TN, and FN categories</span><a class="headerlink" href="#fig-ground-truth" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Depending on if an item is relevant:</p>
@@ -230,12 +230,12 @@
 <p>Given <span class="math notranslate nohighlight">\(n\)</span> quantities <span class="math notranslate nohighlight">\(x_1, ..., x_n\)</span>, their <span class="target" id="newconcept-harmonic_mean"></span><span class="newconcept">harmonic mean</span> <span class="math notranslate nohighlight">\(H\)</span> is:</p>
 <div class="math notranslate nohighlight">
 \[H(x_1, ..., x_n) = \frac{n}{\sum_{i=1}^{n}{\frac{1}{x_i}}}\]</div>
-<p>where a key property is any one of <span class="math notranslate nohighlight">\(x_i, i=1, ..., n\)</span> approaches <span class="math notranslate nohighlight">\(0\)</span>, the mean approaches <span class="math notranslate nohighlight">\(0\)</span>. To obtain a reasonably high harmonic mean, none of the individual values should approach <span class="math notranslate nohighlight">\(0\)</span>, as shown in <a class="reference internal" href="#fig-harmonic-mean"><span class="std std-numref">Figure 6</span></a>. Intuitively, <span class="underline">this metric is giving more weights to low values</span>.</p>
+<p>where a key property is any one of <span class="math notranslate nohighlight">\(x_i, i=1, ..., n\)</span> approaches <span class="math notranslate nohighlight">\(0\)</span>, the mean approaches <span class="math notranslate nohighlight">\(0\)</span>. To obtain a reasonably high harmonic mean, none of the individual values should approach <span class="math notranslate nohighlight">\(0\)</span>, as shown in <a class="reference internal" href="#fig-harmonic-mean"><span class="std std-numref">Figure 8</span></a>. Intuitively, <span class="underline">this metric is giving more weights to low values</span>.</p>
 <figure class="align-default" id="fig-harmonic-mean">
 <a class="reference internal image-reference" href="../_images/harmonnic_mean.png"><img alt="A plot of 2D harmonic mean between range 0 and 1" src="../_images/harmonnic_mean.png" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 6 </span><span class="caption-text">A plot of 2D harmonic mean between range 0 and 1. The mean approaches 0 if either x or y approaches 0.</span><a class="headerlink" href="#fig-harmonic-mean" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 8 </span><span class="caption-text">A plot of 2D harmonic mean between range 0 and 1. The mean approaches 0 if either x or y approaches 0.</span><a class="headerlink" href="#fig-harmonic-mean" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The F1 score is the harmonic mean of precision and recall, providing a single metric that balances both considerations. The harmonic mean is used instead of the arithmetic mean because it gives more weight to low values. Intuitively, <span class="underline">a reasonable F1-score performance needs to have reasonable performance in precision and recall</span>.</p>
@@ -405,7 +405,7 @@ Our visualization compares both models across the precision-recall space. Key th
 <a class="reference internal image-reference" href="../_images/spam_model_comparison_pr.svg"><img alt="Precision-Recall curve comparing two spam detection models" src="../_images/spam_model_comparison_pr.svg" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 7 </span><span class="caption-text">Precision-Recall curve comparing two spam detection models. Model A (blue) and Model B (orange) show different performance characteristics. Model B maintains higher precision at low to medium recall levels, while Model A performs slightly better at very high recall values.</span><a class="headerlink" href="#fig-spam-model-comparison" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 9 </span><span class="caption-text">Precision-Recall curve comparing two spam detection models. Model A (blue) and Model B (orange) show different performance characteristics. Model B maintains higher precision at low to medium recall levels, while Model A performs slightly better at very high recall values.</span><a class="headerlink" href="#fig-spam-model-comparison" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p><strong>Business Implications:</strong>
@@ -654,7 +654,7 @@ Our visualization shows how varying the threshold creates different points on th
 <a class="reference internal image-reference" href="../_images/credit_scoring_roc.svg"><img alt="ROC curve for a credit scoring model showing different threshold points" src="../_images/credit_scoring_roc.svg" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 8 </span><span class="caption-text">ROC curve for a credit scoring model. The curve shows how TPR and FPR change as the classification threshold varies from high (0.7, conservative) to low (0.3, aggressive). The diagonal dashed line represents random guessing performance. The “High Precision Region” generally contains points with better precision but lower recall, while the “Low Precision Region” offers higher recall at the cost of precision.</span><a class="headerlink" href="#fig-credit-scoring-roc" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 10 </span><span class="caption-text">ROC curve for a credit scoring model. The curve shows how TPR and FPR change as the classification threshold varies from high (0.7, conservative) to low (0.3, aggressive). The diagonal dashed line represents random guessing performance. The “High Precision Region” generally contains points with better precision but lower recall, while the “Low Precision Region” offers higher recall at the cost of precision.</span><a class="headerlink" href="#fig-credit-scoring-roc" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p><strong>Business Implications:</strong>

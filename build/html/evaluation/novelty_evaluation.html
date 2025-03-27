@@ -9,7 +9,7 @@
   <title>Novelty Metrics &mdash; MLAI 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=e159ab47" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=3eba48d4" />
 
   
     <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/evaluation/novelty_evaluation.html" />
@@ -22,9 +22,12 @@
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+      <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+      <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Diversity Evaluation" href="diversity_evaluation.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -47,10 +50,47 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../system_design/index.html">ML/AI Systen Design</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../modeling/index.html">Modeling</a></li>
-<li class="toctree-l1"><a class="reference internal" href="index.html">Evaluation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Evaluation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic_evaluation.html">Basic Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ranking_evaluation.html">Ranking Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="diversity_evaluation.html">Diversity Evaluation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Novelty Metrics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#expected-popularity-complement-epc">Expected Popularity Complement (EPC)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#expected-intra-list-novelty-ein">Expected Intra-List Novelty (EIN)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#calibrated-diversity">Calibrated Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#personalized-diversity">Personalized Diversity</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#user-specific-topic-coverage-ustc">User-Specific Topic Coverage (USTC)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#unexpectedness">Unexpectedness</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#trade-offs-between-relevance-and-diversity">Trade-offs Between Relevance and Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation-challenges">Evaluation Challenges</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subjective-nature">Subjective Nature</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#annotation-complexity">Annotation Complexity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metric-selection">Metric Selection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#online-vs-offline-evaluation">Online vs. Offline Evaluation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#selection-of-an-appropriate-diversity-metric">Selection of an Appropriate Diversity Metric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-applications">Practical Applications</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#search-engines">Search Engines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recommendation-systems">Recommendation Systems</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#feed-ranking">Feed Ranking</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#key-diversity-metrics">Key Diversity Metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#diversity-relevance-balance">Diversity-Relevance Balance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -67,6 +107,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Evaluation</a></li>
       <li class="breadcrumb-item active">Novelty Metrics</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/evaluation/novelty_evaluation.rst.txt" rel="nofollow"> View page source</a>
@@ -349,7 +390,9 @@ Calibrated Diversity(B) = 1 - (<a href="#id7"><span class="problematic" id="id8"
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="diversity_evaluation.html" class="btn btn-neutral float-left" title="Diversity Evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
 
   <hr/>
 

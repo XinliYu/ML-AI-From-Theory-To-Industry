@@ -9,7 +9,7 @@
   <title>Modeling &mdash; MLAI 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=e159ab47" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=3eba48d4" />
 
   
     <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/modeling/index.html" />
@@ -20,11 +20,13 @@
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/foldable_admonitions.js?v=351fa817"></script>
       <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+      <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+      <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Classic Modeling" href="classic_modeling/index.html" />
-    <link rel="prev" title="Recommendation ML/AI System Design" href="../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html" /> 
+    <link rel="prev" title="Advertising Systems" href="../system_design/recommendation_and_ads_system_design/02_ads_system_design.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -99,7 +101,7 @@
 <li class="toctree-l3"><a class="reference internal" href="classic_modeling/01_data_preparation.html#reward-function-ruled-based-label-creation">Reward Function (Ruled-Based Label Creation)</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="classic_modeling/01_data_preparation.html#reward-normalization">Reward Normalization</a></li>
 <li class="toctree-l4"><a class="reference internal" href="classic_modeling/01_data_preparation.html#meta-learning">Meta Learning</a></li>
-<li class="toctree-l4"><a class="reference internal" href="classic_modeling/01_data_preparation.html#deep-reward-labeling-models">Deep Reward (Labeling) Models</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/01_data_preparation.html#pairwise-preference-learning">Pairwise Preference Learning</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="classic_modeling/01_data_preparation.html#preference-learning">Preference Learning</a></li>
 </ul>
 </li>
@@ -111,20 +113,93 @@
 <li class="toctree-l3"><a class="reference internal" href="classic_modeling/02_transformer_models.html#transformer-architecture">Transformer Architecture</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#multi-head-attention">Multi-Head Attention</a></li>
 <li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#positional-encoding">Positional Encoding</a></li>
-<li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#position-wise-feed-forward-networks">Position-Wise Feed-Forward Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#positionwise-feed-forward-networks">Positionwise Feed-Forward Networks</a></li>
 <li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#layer-normalization">Layer Normalization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#encoder-decoder-architecture">Encoder-Decoder Architecture</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="classic_modeling/02_transformer_models.html#encoder-decoder-architecture">Encoder-Decoder Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/02_transformer_models.html#gpt-architecture">GPT Architecture</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#gpt-decoder">GPT Decoder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/02_transformer_models.html#generation-strategies">Generation Strategies</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/02_transformer_models.html#greedy-search">Greedy Search</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/02_transformer_models.html#sampling-based-generation">Sampling-Based Generation</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/02_transformer_models.html#beam-search">Beam Search</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="classic_modeling/02_transformer_models.html#beam-width">Beam Width</a></li>
+<li class="toctree-l6"><a class="reference internal" href="classic_modeling/02_transformer_models.html#length-penalty">Length Penalty</a></li>
+<li class="toctree-l6"><a class="reference internal" href="classic_modeling/02_transformer_models.html#numerical-considerations">Numerical Considerations</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="classic_modeling/03_reinforcement_learning.html">Reinforcement Learning</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_reinforcement_learning.html#policy-optimization">Policy Optimization</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_reinforcement_learning.html#reward-value-functions">Reward &amp; Value Functions</a></li>
-<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_reinforcement_learning.html#deep-policy-networks">Deep Policy Networks</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="classic_modeling/03_reinforcement_learning.html#policy-networks">Policy Networks</a></li>
-<li class="toctree-l5"><a class="reference internal" href="classic_modeling/03_reinforcement_learning.html#multi-armed-bandit">Multi-Armed Bandit</a></li>
-<li class="toctree-l5"><a class="reference internal" href="classic_modeling/03_reinforcement_learning.html#deep-q-networks">Deep Q-Networks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="classic_modeling/03_supervised_learning.html">Supervised Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#generic-neural-modeling-architecture">Generic Neural Modeling Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#regression-loss">Regression Loss</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#mae-mse">MAE &amp; MSE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#huber-loss-log-cosh-loss">Huber Loss &amp; Log-Cosh Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#quantile-regression-loss">Quantile Regression Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#classification-ordinal-loss">Classification &amp; Ordinal Loss</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#cross-entropy-loss-weighted-cross-entropy-loss-focal-loss">Cross-Entropy Loss, Weighted Cross-Entropy Loss &amp; Focal Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#hinge-loss">Hinge Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#all-threshold-loss-ordinal-cross-entropy-loss">All-Threshold Loss &amp; Ordinal Cross-Entropy Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#pairwise-preference-loss">Pairwise Preference Loss</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#pairwise-cross-entropy-loss">Pairwise Cross-Entropy Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#ranknet-loss">RankNet Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#listwise-ranking-loss">Listwise Ranking Loss</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#rank-aware-positionwise-bce">Rank-Aware Positionwise BCE</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#lambdarank-loss">LambdaRank Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#listnet-loss">ListNet Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#approxndcg-loss">ApproxNDCG Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#contrastive-loss">Contrastive Loss</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#negative-examples">Negative Examples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#pairwise-contrastive-loss">Pairwise Contrastive Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#triplet-loss">Triplet Loss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#batch-contrastive-loss">Batch Contrastive Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#relating-business-metrics-to-loss">Relating Business Metrics To Loss</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#common-business-metrics">Common Business Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#proxy-metrics">Proxy Metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/03_supervised_learning.html#promoting-diversity">Promoting Diversity</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html">Reinforcement Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#reward-value-functions">Reward &amp; Value Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#deep-policy-networks">Deep Policy Networks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#multi-armed-bandits-mabs">Multi-Armed Bandits (MABs)</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#modeling-without-explicit-uncertainty">Modeling Without Explicit Uncertainty</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#regression-loss">Regression Loss</a></li>
+<li class="toctree-l6"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#classification-ordinal-loss">Classification &amp; Ordinal Loss</a></li>
+<li class="toctree-l6"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#preference-rank-loss">Preference &amp; Rank Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#mbas-exploration-strategies">MBAs Exploration Strategies</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#exploration-with-explicit-uncertainty-modeling">Exploration With Explicit Uncertainty Modeling</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#upper-confidence-bound-ucb">Upper Confidence Bound (UCB)</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#thompson-sampling">Thompson Sampling</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#contextual-bandits">4. Contextual Bandits</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#advanced-mab-techniques">Advanced MAB Techniques</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#training-objectives">Training Objectives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#implementation-with-neural-thompson-sampling">Implementation with Neural Thompson Sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#handling-combinatorial-actions-and-exploration">Handling Combinatorial Actions and Exploration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#continuous-learning-and-adaptation">Continuous Learning and Adaptation</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#policy-networks">Policy Networks</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classic_modeling/04_reinforcement_learning.html#deep-q-networks">Deep Q-Networks</a></li>
 </ul>
 </li>
 </ul>
@@ -141,7 +216,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html" class="btn btn-neutral float-left" title="Recommendation ML/AI System Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../system_design/recommendation_and_ads_system_design/02_ads_system_design.html" class="btn btn-neutral float-left" title="Advertising Systems" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="classic_modeling/index.html" class="btn btn-neutral float-right" title="Classic Modeling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

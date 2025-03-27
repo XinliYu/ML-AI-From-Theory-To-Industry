@@ -1,0 +1,1943 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supervised Learning &mdash; MLAI 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=3eba48d4" />
+
+  
+    <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/modeling/classic_modeling/03_supervised_learning.html" />
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/foldable_admonitions.js?v=351fa817"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../_static/js/mathjax-config.js?v=c54ad740"></script>
+      <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+      <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Reinforcement Learning" href="04_reinforcement_learning.html" />
+    <link rel="prev" title="Transformer Models" href="02_transformer_models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MLAI
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../system_design/index.html">ML/AI Systen Design</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Modeling</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Classic Modeling</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01_data_preparation.html">Data Preparation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="02_transformer_models.html">Transformer Models</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Supervised Learning</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#generic-neural-modeling-architecture">Generic Neural Modeling Architecture</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#regression-loss">Regression Loss</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#mae-mse">MAE &amp; MSE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#huber-loss-log-cosh-loss">Huber Loss &amp; Log-Cosh Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#quantile-regression-loss">Quantile Regression Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#classification-ordinal-loss">Classification &amp; Ordinal Loss</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#cross-entropy-loss-weighted-cross-entropy-loss-focal-loss">Cross-Entropy Loss, Weighted Cross-Entropy Loss &amp; Focal Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#hinge-loss">Hinge Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#all-threshold-loss-ordinal-cross-entropy-loss">All-Threshold Loss &amp; Ordinal Cross-Entropy Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#pairwise-preference-loss">Pairwise Preference Loss</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#pairwise-cross-entropy-loss">Pairwise Cross-Entropy Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ranknet-loss">RankNet Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#listwise-ranking-loss">Listwise Ranking Loss</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#rank-aware-positionwise-bce">Rank-Aware Positionwise BCE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#lambdarank-loss">LambdaRank Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#listnet-loss">ListNet Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#approxndcg-loss">ApproxNDCG Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#contrastive-loss">Contrastive Loss</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#negative-examples">Negative Examples</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#pairwise-contrastive-loss">Pairwise Contrastive Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#triplet-loss">Triplet Loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#batch-contrastive-loss">Batch Contrastive Loss</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#relating-business-metrics-to-loss">Relating Business Metrics To Loss</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#common-business-metrics">Common Business Metrics</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#proxy-metrics">Proxy Metrics</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#promoting-diversity">Promoting Diversity</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="04_reinforcement_learning.html">Reinforcement Learning</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../evaluation/index.html">Evaluation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MLAI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Modeling</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Classic Modeling</a></li>
+      <li class="breadcrumb-item active">Supervised Learning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/modeling/classic_modeling/03_supervised_learning.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="supervised-learning">
+<h1>Supervised Learning<a class="headerlink" href="#supervised-learning" title="Link to this heading"></a></h1>
+<section id="generic-neural-modeling-architecture">
+<h2>Generic Neural Modeling Architecture<a class="headerlink" href="#generic-neural-modeling-architecture" title="Link to this heading"></a></h2>
+<p>In modern practice, supervised learning models for search/recommendation/ads commonly employ <a class="reference external" href="02_transformer_models.html#newconcept-transformer_architecture"><span class="refconcept">Transformer Architecture</span></a> as their foundational modeling architecture for both the recall and precision stages (see Staged Recommendations).</p>
+<div class="math notranslate nohighlight">
+\[\hat{r} = f_\mathbf{\theta}(\mathbf{u}, \mathbf{Q}, \mathbf{I})\]</div>
+<p>where</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{u}\)</span> represents encoded pre-indexed user features (including user profile, interaction history, etc.).</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{Q}\)</span> represents encoded runtime query and context features (including query, device context, session context/history, etc.).</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{Q}\)</span> is a sequential encodings of past interactions in the current runtime session (e.g., by a <a class="reference external" href="02_transformer_models.html#code-transformer-encoder">TransformerEncoder</a>)..</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{Q} = \text{SequentialEncoder}([\mathbf{q_1}, \mathbf{q_2}, ..., \mathbf{q_n}])\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mathbf{q}_j\)</span> is the encoding of the j-th interaction (including its post-action results).</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{Q}\)</span> is the contextualized representation of the interaction history.</p></li>
+<li><p>A causal (auto-regressive) masking mechanism similar to <a class="reference external" href="02_transformer_models.html#code-transformer-masking">transformer decoder masking</a> is typically applied to ensure each interaction is only contextualized by previous (not future) interactions.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{I}\)</span> represents encoded item features of a limited number of items.</p></li>
+<li><p><span class="math notranslate nohighlight">\(f_\mathbf{\theta}\)</span> is a model with parameters <span class="math notranslate nohighlight">\(\mathbf{\theta}\)</span></p></li>
+</ul>
+<p>The following is an example design of $f$ for a precision-stage model, consisting of two modules. The <strong class="underline-bold">precision stage model targets to rank the items</strong> given all information from <span class="math notranslate nohighlight">\(\mathbf{u}, \mathbf{Q}, \mathbf{I}\)</span>, and present the top-$k$ results to the user.</p>
+<ol class="arabic">
+<li><p><strong class="underline-bold">User-Item Interaction Module</strong>: Captures the interactions between user, current item, and historical context, and mix the features. For example, using a <a class="reference external" href="02_transformer_models.html#code-transformer-encoder">TransformerEncoder</a>.</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{u}, \mathbf{Q}, \mathbf{I} = \text{UserItemInteraction}([\mathbf{u}, \mathbf{Q}, \mathbf{I}])\]</div>
+<p>For simplicity we still use the same letters to denote the post-mixing features. Usually more mixing layers for precision, and less mixing layers for recall.</p>
+</li>
+<li><p><strong class="underline-bold">Prediction Head</strong>: Estimates the expected outcome $\hat{r}$ for potential user-item interaction, where this “outcome” can be a reward (numerical value), an original label, or a categorical label.</p>
+<div class="math notranslate nohighlight">
+\[\hat{r} = \text{RewardHead}(\mathbf{u},\mathbf{Q}, \mathbf{I})\]</div>
+<p>The prediction head can optionally further pool across $[\mathbf{u}, \mathbf{Q}]$ to obtain a finalized $\mathbf{u}$, then a simple layer can be applied to $\mathbf{u}$ and $\mathbf{I}$ to convert them into logits, for example:</p>
+<ul class="simple">
+<li><p>May optionally first apply another <a class="reference external" href="02_transformer_models.html#newconcept-positionwise_feed-forward_networks"><span class="refconcept">Positionwise Feed-Forward Networks</span></a> to enhance prediction head capability.</p></li>
+<li><p>Combine $\mathbf{u}$ and every item in $\mathbf{I}$ (e.g., concat), then apply a linear layer to transform then into desired prediction outputs (can be scores, two-class or multi-class logits).</p>
+<ul>
+<li><p>This is typically for precision stage where the model targets to learn the item relevance and ranking.</p></li>
+<li><p>Not suitable for recall stage because user/item embeddings are combined in the output before passing to the loss.</p></li>
+</ul>
+</li>
+<li><p>Or directly compute inner products as prediction outputs (can be scores or two-class logits).</p>
+<ul>
+<li><p>This is typically for recall stage where the model targets to learn embedding similarities and be able to output embeddings for both user and items separately.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p>The scores and logits are then passed to loss functions. Development of modern production search/recommendation/ads models (where ranking is fundamental) typically require learning from different types of loss functions, attaching multiple prediction heads to a shared representation network. This approach, formally known as <cite>Multi-Objective Optimization (MOO)</cite> (a.k.a. <span class="target" id="newconcept-multi-task_learning"></span><span class="newconcept">Multi-Task Learning (MTL)</span>).</p>
+<ul class="simple">
+<li><p>This approach allows systems to flexibly and simultaneously optimize for several complementary objectives that <strong class="underline-bold">capture different aspects of user behavior and business goals</strong>.</p></li>
+<li><p><strong class="underline-bold">Each head is intended to be lightweight</strong> (e.g., a fully-connected linear layer, or a simple MLP) in order for the model to learn a strong shared representation.</p></li>
+</ul>
+<figure class="align-center" id="id2">
+<a class="reference internal image-reference" href="../../_images/supervised_learning_model_architecture.png"><img alt="Recommendation System Architecture with Specialized Prediction Heads" src="../../_images/supervised_learning_model_architecture.png" style="width: 80%;" />
+</a>
+<figcaption>
+<p><span class="caption-number">Figure 7 </span><span class="caption-text">MOO model architecture for search/recommendation/ads systems.</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>Based on their learning objectives, loss heads in recommendation systems can be categorized into several types:</p>
+<ol class="arabic simple">
+<li><p><strong>Regression Heads</strong>: Estimate continuous values like synthetic rewards/engagement scores, revenue (earnings per mile), playback time, or numeric ratings, using <a class="reference internal" href="#regression-loss">Regression Loss</a> functions for optimization.</p></li>
+<li><p><strong>Classification Heads</strong>: Predict probabilities of discrete (e.g., simply click or not, convert or not) or progression events (e.g., view → click → add-to-cart → purchase) through sequential user journey, using <a class="reference internal" href="#classification-ordinal-loss">Classification &amp; Ordinal Loss</a> functions for optimization.</p></li>
+<li><p><strong>Ranking Heads</strong>: Optimize the order of items in the result list, such as search result ranking, feed ranking, using <a class="reference internal" href="#pairwise-preference-loss">Pairwise Preference Loss</a> functions and <a class="reference internal" href="#listwise-ranking-loss">Listwise Ranking Loss</a> functions for optimization.</p></li>
+<li><p><strong>Joint Loss Heads</strong>: Combine multiple objectives (may already exists in other heads) into a single unified optimization target. This is usually the main training goal.</p></li>
+</ol>
+<p>MOO architectures offer several advantages over single-objective or joint-objective models:</p>
+<ol class="arabic simple">
+<li><p><strong>Shared Representation Learning</strong>: Lower network layers learn generalizable features useful across multiple tasks, leading to more robust representations.</p></li>
+<li><p><strong>Complementary Signal Integration</strong>: Diverse signals (clicks, conversions, engagement time) from different heads feedback complementary information to the model in a soft way, enriching the model’s understanding.</p></li>
+<li><p><strong>Training Efficiency</strong>: Learning multiple losses from the same training examples improves sample efficiency.</p></li>
+<li><p><strong>Business Flexibility</strong>: These architectures are particularly valuable for mature recommendation platforms where multiple stakeholders have different priorities (e.g., user engagement teams vs. monetization teams).</p>
+<ul class="simple">
+<li><p>While maintaining a unified model architecture, different prediction heads can align with different KPIs, and be flexibly weighted to reflect negotiated business priorities. However, the weights do need carefully experiments to balance competing priorities.</p></li>
+</ul>
+</li>
+</ol>
+<p>The recall-stage model is mostly the same as precision-stage model, with a key difference - it must decouple the input embeddings from the item embeddings (decoupling <span class="math notranslate nohighlight">\(\mathbf{u}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{Q}\)</span> from <span class="math notranslate nohighlight">\(\mathbf{I}\)</span>), and cannot transform <span class="math notranslate nohighlight">\(\mathbf{I}\)</span> during training or runtime. This decoupling is widely known as the <span class="target" id="newconcept-two-tower_architecture"></span><span class="newconcept">Two-Tower Architecture</span>.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>This is to mimic the runtime scenario that recall layer is a retrieval layer, and a single query embedding <span class="math notranslate nohighlight">\(\mathbf{q} = h(\mathbf{u}, \mathbf{Q})\)</span> will be computed solely based on <span class="math notranslate nohighlight">\(\mathbf{u}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{Q}\)</span> in order to retrieved items from a vast embedding store consisting of possibly billions of items. There might optionally be a <strong class="underline-bold">lightweight positionwise transformation layer on item embeddings</strong> $mathbf{I}$ to transform the item embeddings to required dimensions. All item embeddings are pre-computed and indexed; therefore no item embedding transformations are allowed during runtime.</p></li>
+<li><p>The recall-stage model training focus is on optimizing embedding similarities and distances between $\mathbf{q}$ and $\mathbf{I}$, rather than direct rankings, using <a class="reference internal" href="#contrastive-loss">Contrastive Loss</a> functions for optimization. Negative examples play a crucial role for the training.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="regression-loss">
+<h2>Regression Loss<a class="headerlink" href="#regression-loss" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-regression_loss"></span><span class="newconcept">Regression Loss</span></p>
+<section id="mae-mse">
+<h3>MAE &amp; MSE<a class="headerlink" href="#mae-mse" title="Link to this heading"></a></h3>
+<p>The training objective is straightforward regression to predict reward values. For example, using <span class="target" id="newconcept-mean_absolute_error"></span><span class="newconcept">Mean Absolute Error (MAE)</span> or <span class="target" id="newconcept-mean_square_error"></span><span class="newconcept">Mean Square Error (MSE)</span> loss. Additional regularization terms (e.g., <span class="target" id="newconcept-l2_regularization"></span><span class="newconcept">L2 regularization</span>) may be added to prevent overfitting.</p>
+<ul class="simple">
+<li><p>MAE can be <strong class="underline-bold">straightforwardly interpreted</strong> as how far off predictions are on average. MAE <strong class="underline-bold">gradient is not continuous</strong> but it is <strong class="underline-bold">not so sensitive to outliers</strong>.</p></li>
+<li><p>MSE has <strong class="underline-bold">smooth gradient</strong> but <strong class="underline-bold">sensitive to outliers</strong>.</p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{MAE}}(\mathbf{\theta}) = \text{mean}(|(r - \hat{r})|) + \text{regularization}\]</div>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{MSE}}(\mathbf{\theta}) = \text{mean}((r - \hat{r})^2) + \text{regularization}\]</div>
+</section>
+<section id="huber-loss-log-cosh-loss">
+<h3>Huber Loss &amp; Log-Cosh Loss<a class="headerlink" href="#huber-loss-log-cosh-loss" title="Link to this heading"></a></h3>
+<p>The <span class="target" id="newconcept-huber_loss"></span><span class="newconcept">Huber Loss</span> combines the best properties of <strong>MSE Loss</strong> and <strong>MAE Loss</strong> by being quadratic for small errors and linear for large errors, making it less sensitive to outliers.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{Huber}}(\mathbf{\theta}) = \text{mean}\left(\sum_{i=1}^{N} L_\delta(r_i - \hat{r}_i)\right) + \text{regularization}\]</div>
+<p>where:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}L_\delta(a) =
+\begin{cases}
+\frac{1}{2}a^2 &amp; \text{for } |a| \leq \delta \\
+\delta(|a| - \frac{1}{2}\delta) &amp; \text{otherwise}
+\end{cases}\end{split}\]</div>
+<p>The parameter <span class="math notranslate nohighlight">\(\delta\)</span> controls the transition point between quadratic and linear behavior. Smaller values of <span class="math notranslate nohighlight">\(\delta\)</span> make the loss more robust to outliers but may slow down learning for small errors. In the MAB context, Huber loss is particularly useful when:</p>
+<ul class="simple">
+<li><p>Reward distributions have heavy tails or occasional extreme values</p></li>
+<li><p>You want stability in training without completely discarding large errors</p></li>
+</ul>
+<p><span class="target" id="newconcept-log-cosh_loss"></span><span class="newconcept">Log-Cosh Loss</span> is a smooth approximation of the Huber Loss that is twice differentiable everywhere, making the gradient more smooth and suitable for optimization algorithms that use second derivatives.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{LogCosh}}(\mathbf{\theta}) = \text{mean}(\sum \log(\cosh(r_i - \hat{r}_i))) + \text{regularization}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\cosh(x) = \frac{e^x + e^{-x}}{2}\)</span> is the <span class="target" id="newconcept-hyperbolic_cosine_function"></span><span class="newconcept">hyperbolic cosine function</span>. The gradient of this loss is sigmoid-like - the derivative of <span class="math notranslate nohighlight">\(\log(\cosh(a))\)</span> is <span class="math notranslate nohighlight">\(\tanh(a) = 2\sigma(2a) - 1\)</span> where $\sigma$ is the standard logistic function.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The somewhat strange formulation of Huber loss (like the coefficient $\frac{1}{2}$) is to ensure a continuous derivative.</p>
+<ul class="simple">
+<li><p>For $|a| ≤ δ$: the derivative is $a$.</p></li>
+<li><p>For $|a| &gt; δ$: the derivative is $δ \cdot \text{sign}(a)$.</p></li>
+<li><p>At $|a| = δ$: both sides have the same derivative ($±δ$).</p></li>
+</ul>
+<p>This is effectively capping the loss gradient, as showing in the following visualization. We also compare with Log-Cosh loss in the visualization, whose gradient is sigmoid-like.</p>
+
+        <div id="wrapper-react-HuberLossVisualizer-5563" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-HuberLossVisualizer-5563" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-HuberLossVisualizer-5563" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        </div>
+        <script type="text/javascript">
+            (function() {
+                // Self-contained function to avoid global scope pollution
+                function showError(message) {
+                    // Display error in contained error div instead of modifying component container
+                    var errorDiv = document.getElementById('error-react-HuberLossVisualizer-5563');
+                    if (errorDiv) {
+                        errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
+                        errorDiv.style.display = 'block';
+                        console.error(message);
+                    }
+                }
+
+                function loadComponentScript() {
+                    try {
+                        // Only proceed if React is available
+                        if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+                            showError('React or ReactDOM is not available');
+                            return;
+                        }
+
+                        // Load component script - using the exact filename and path
+                        var script = document.createElement('script');
+                        script.src = '../../_static/js/modeling/classic_modeling/supervised_learning/HuberLossVisualizer.js';
+                        script.onerror = function(e) {
+                            showError('Failed to load component script: ../../_static/js/modeling/classic_modeling/supervised_learning/HuberLossVisualizer.js');
+                        };
+                        script.onload = function() {
+                            // Mount component with error handling - use the exact component name
+                            try {
+                                if (window.HuberLossVisualizer) {
+                                    ReactDOM.render(
+                                        React.createElement(window.HuberLossVisualizer, {}, null),
+                                        document.getElementById('react-HuberLossVisualizer-5563')
+                                    );
+                                } else {
+                                    showError('Component HuberLossVisualizer not found in global scope');
+                                }
+                            } catch (error) {
+                                showError(error.message);
+                            }
+                        };
+                        document.head.appendChild(script);
+                    } catch (error) {
+                        showError('Unexpected error: ' + error.message);
+                    }
+                }
+
+                // Initialize component loading based on KaTeX option
+                function initComponent() {
+                    
+            // Only load KaTeX if it's not already loaded
+            if (typeof window.katex === 'undefined') {
+                // Load KaTeX CSS
+                var katexCss = document.createElement('link');
+                katexCss.rel = 'stylesheet';
+                katexCss.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+                katexCss.integrity = 'sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntxDrHanlDqC0IIziTXcrXPnpVcVB8n2eHZ';
+                katexCss.crossOrigin = 'anonymous';
+                document.head.appendChild(katexCss);
+
+                // Load KaTeX JS
+                var katexScript = document.createElement('script');
+                katexScript.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js';
+                katexScript.integrity = 'sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx';
+                katexScript.crossOrigin = 'anonymous';
+                katexScript.onload = function() {
+                    // Once KaTeX is loaded, load the component
+                    loadComponentScript();
+                };
+                document.head.appendChild(katexScript);
+            } else {
+                // KaTeX already loaded, proceed to load component
+                loadComponentScript();
+            }
+            
+                }
+
+                // Initialize when DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initComponent);
+                } else {
+                    initComponent();
+                }
+            })();
+        </script>
+        </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The true gradient of a neural network <span class="math notranslate nohighlight">\(f_{\mathbf{\theta}}\)</span> is computed with respect to all its parameters <span class="math notranslate nohighlight">\(\mathbf{\theta}\)</span>. However, this complete gradient is complex to analyze directly, so we typically focus on gradients at the output/loss layer with respect to intermediate variables like <span class="math notranslate nohighlight">\(\mathbf{z}_{\mathbf{\theta}}\)</span> (e.g., predicted reward scores, logits, etc., which are parameterized by <span class="math notranslate nohighlight">\(\mathbf{\theta}\)</span>). By the chain rule:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial \mathcal{L}}{\partial \mathbf{\theta}} = \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\mathbf{\theta}}} \cdot \frac{\partial \mathbf{z}_{\mathbf{\theta}}}{\partial \mathbf{\theta}}\]</div>
+<p>The gradient term <span class="math notranslate nohighlight">\(\frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\mathbf{\theta}}}\)</span> acts as a scaling factor that can effectively amplify or zero out downstream gradients, making it critical for model behavior. This is why our discussions of gradients typically focus on variables near the output/loss layer rather than tracking through the entire network.</p>
+</div>
+</section>
+<section id="quantile-regression-loss">
+<h3>Quantile Regression Loss<a class="headerlink" href="#quantile-regression-loss" title="Link to this heading"></a></h3>
+<ul>
+<li><p><span class="target" id="newconcept-quantile_regression_loss"></span><span class="newconcept">Quantile Regression Loss</span> provides a more complete view of the relationship between prediction and outcome by estimating conditional quantiles rather than just the conditional mean.</p>
+<p>For a specific quantile <span class="math notranslate nohighlight">\(\tau \in (0,1)\)</span>, the loss is:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{Quantile}}(\mathbf{\theta}, \tau) = \text{mean}(\rho_\tau(r_i - \hat{r}_i)） + \text{regularization}\]</div>
+<p>where:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\begin{split}\rho_\tau(a) =
+\begin{cases}
+\tau \cdot a &amp; \text{if } a \geq 0 \\
+(1-\tau) \cdot (-a) &amp; \text{if } a &lt; 0
+\end{cases}\end{split}\]</div>
+</div></blockquote>
+<p>when <span class="math notranslate nohighlight">\(\tau = 0.5\)</span>, this corresponds to <span class="target" id="newconcept-median_regression"></span><span class="newconcept">Median Regression</span>, which is $0.5 \times (\text{MAE loss})$. Values of <span class="math notranslate nohighlight">\(\tau\)</span> closer to 0 or 1 focus on lower or upper quantiles of the distribution, respectively.</p>
+<p>The parameter <span class="math notranslate nohighlight">\(\tau\)</span> controls which quantile is estimated through asymmetric weighting of errors:</p>
+<ul class="simple">
+<li><p>When the model predicts too high (<span class="math notranslate nohighlight">\(\hat{r}_i &gt; r_i\)</span>, so <span class="math notranslate nohighlight">\(a &lt; 0\)</span>), the error is weighted by <span class="math notranslate nohighlight">\((1-\tau)\)</span></p></li>
+<li><p>When the model predicts too low (<span class="math notranslate nohighlight">\(\hat{r}_i &lt; r_i\)</span>, so <span class="math notranslate nohighlight">\(a &gt; 0\)</span>), the error is weighted by <span class="math notranslate nohighlight">\(\tau\)</span></p></li>
+</ul>
+<p>This setup will optimize toward $P(r_i &gt; \hat{r}_i) = tau$, meaning only <span class="math notranslate nohighlight">\(\tau\)</span>-quantile is underestimation. This makes <strong class="underline-bold">quantile regression particularly suitable for a risk-averse model</strong> - we set a large $\tau$ (e.g., 0.9) to ensure only a small fraction is overestimation.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>During optimization, the model is incentivized to position its predictions at the <span class="math notranslate nohighlight">\(\tau\)</span>-quantile due to the mathematics of the loss function. Let’s examine the derivative of the loss function with respect to the prediction <span class="math notranslate nohighlight">\(\hat{r}_i\)</span>:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\begin{split}\frac{\partial \rho_\tau(r_i - \hat{r}_i)}{\partial \hat{r}_i} =
+\begin{cases}
+-\tau &amp; \text{if } r_i &gt; \hat{r}_i \text{ (i.e., } a &gt; 0 \text{)} \\
+(1-\tau) &amp; \text{if } r_i &lt; \hat{r}_i \text{ (i.e., } a &lt; 0 \text{)}
+\end{cases}\end{split}\]</div>
+</div></blockquote>
+<p>At the optimum, the expected gradient should equal zero:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\mathbb{E}\left[\frac{\partial \rho_\tau(r_i - \hat{r}_i)}{\partial \hat{r}_i}\right] = 0\]</div>
+</div></blockquote>
+<p>This expectation can be written as:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[-\tau \cdot P(r_i &gt; \hat{r}_i) + (1-\tau) \cdot P(r_i &lt; \hat{r}_i) = 0\]</div>
+</div></blockquote>
+<p>Rearranging, we get:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\tau \cdot P(r_i &gt; \hat{r}_i) = (1-\tau) \cdot P(r_i &lt; \hat{r}_i)\]</div>
+</div></blockquote>
+<p>This simplifies to:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[P(r_i &gt; \hat{r}_i) = \tau\]</div>
+</div></blockquote>
+<p>Meaning that the probability of the true value exceeding the prediction is exactly <span class="math notranslate nohighlight">\(\tau\)</span>, which is precisely the definition of the <span class="math notranslate nohighlight">\(\tau\)</span>-quantile.</p>
+
+        <div id="wrapper-react-QuantileLossVisualizer-7612" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-QuantileLossVisualizer-7612" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-QuantileLossVisualizer-7612" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        </div>
+        <script type="text/javascript">
+            (function() {
+                // Self-contained function to avoid global scope pollution
+                function showError(message) {
+                    // Display error in contained error div instead of modifying component container
+                    var errorDiv = document.getElementById('error-react-QuantileLossVisualizer-7612');
+                    if (errorDiv) {
+                        errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
+                        errorDiv.style.display = 'block';
+                        console.error(message);
+                    }
+                }
+
+                function loadComponentScript() {
+                    try {
+                        // Only proceed if React is available
+                        if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+                            showError('React or ReactDOM is not available');
+                            return;
+                        }
+
+                        // Load component script - using the exact filename and path
+                        var script = document.createElement('script');
+                        script.src = '../../_static/js/modeling/classic_modeling/supervised_learning/QuantileLossVisualizer.js';
+                        script.onerror = function(e) {
+                            showError('Failed to load component script: ../../_static/js/modeling/classic_modeling/supervised_learning/QuantileLossVisualizer.js');
+                        };
+                        script.onload = function() {
+                            // Mount component with error handling - use the exact component name
+                            try {
+                                if (window.QuantileLossVisualizer) {
+                                    ReactDOM.render(
+                                        React.createElement(window.QuantileLossVisualizer, {}, null),
+                                        document.getElementById('react-QuantileLossVisualizer-7612')
+                                    );
+                                } else {
+                                    showError('Component QuantileLossVisualizer not found in global scope');
+                                }
+                            } catch (error) {
+                                showError(error.message);
+                            }
+                        };
+                        document.head.appendChild(script);
+                    } catch (error) {
+                        showError('Unexpected error: ' + error.message);
+                    }
+                }
+
+                // Initialize component loading based on KaTeX option
+                function initComponent() {
+                    
+            // Only load KaTeX if it's not already loaded
+            if (typeof window.katex === 'undefined') {
+                // Load KaTeX CSS
+                var katexCss = document.createElement('link');
+                katexCss.rel = 'stylesheet';
+                katexCss.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+                katexCss.integrity = 'sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntxDrHanlDqC0IIziTXcrXPnpVcVB8n2eHZ';
+                katexCss.crossOrigin = 'anonymous';
+                document.head.appendChild(katexCss);
+
+                // Load KaTeX JS
+                var katexScript = document.createElement('script');
+                katexScript.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js';
+                katexScript.integrity = 'sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx';
+                katexScript.crossOrigin = 'anonymous';
+                katexScript.onload = function() {
+                    // Once KaTeX is loaded, load the component
+                    loadComponentScript();
+                };
+                document.head.appendChild(katexScript);
+            } else {
+                // KaTeX already loaded, proceed to load component
+                loadComponentScript();
+            }
+            
+                }
+
+                // Initialize when DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initComponent);
+                } else {
+                    initComponent();
+                }
+            })();
+        </script>
+        </div>
+</li>
+</ul>
+</section>
+</section>
+<section id="classification-ordinal-loss">
+<h2>Classification &amp; Ordinal Loss<a class="headerlink" href="#classification-ordinal-loss" title="Link to this heading"></a></h2>
+<p>As mentioned earlier, MABs can be viewed as a generalization of supervised learning where the training targets can be any numerical numbers in general. As a special case, if the reward is binary $0$ or $1$ (or $-1$, $+1$, as long as it distinguishes the two classes), then the above model effectively becomes supervised learning that can work with <strong>binary classification loss</strong>. In this case, we follow supervised-learning conversion to denote the label (reward) as $y$ and the estimation as $\hat{y}$.</p>
+<p>Reward functions in practice are often synthetic and discontinuous in nature (e.g., <a class="reference internal" href="01_data_preparation.html#code-example-ecommerce-reward-function"><span class="std std-ref">ecommerce reward function</span></a>), even if it appears to be numeric. Therefore a common strategy to simplify the reward is using ordinal categories $C$. The categorization can be done by</p>
+<ul class="simple">
+<li><p>Simply rounding the numerical rewards.</p></li>
+<li><p>Using milestone events, such as <code class="docutils literal notranslate"><span class="pre">{no-action:0,</span> <span class="pre">click:1,</span> <span class="pre">dwell-60sec-plus:2,</span> <span class="pre">add-to-cart:3,</span> <span class="pre">purchase:4}</span></code>.</p></li>
+</ul>
+<p>The the reward head will typically predict a distribution over the categories $\hat{y}_i sim \hat{p}_{i, c}, c \in C$, where $\hat{p}_{i, c}$ is the probability selecting item $i$ will result in a reward in category $c$. This loss design is suitable when there are clear milestone events in the application, and the reward is itself synthetic and based on the milestone events. Then <strong>multi-class classification loss</strong> or <strong>ordinal classification loss</strong> can then be applied. During inference, a reward can still be estimated and apply the <a class="reference external" href="04_reinforcement_learning.html#newconcept-mbas_exploration_strategies"><span class="refconcept">MBAs Exploration Strategies</span></a>.</p>
+<div class="math notranslate nohighlight">
+\[\hat{r}_i = \sum_{c \in C} c \cdot \hat{p}_{i,c}\]</div>
+<section id="cross-entropy-loss-weighted-cross-entropy-loss-focal-loss">
+<h3>Cross-Entropy Loss, Weighted Cross-Entropy Loss &amp; Focal Loss<a class="headerlink" href="#cross-entropy-loss-weighted-cross-entropy-loss-focal-loss" title="Link to this heading"></a></h3>
+<ul>
+<li><p>The most common binary classification loss is <span class="target" id="newconcept-cross-entropy_loss"></span><span class="newconcept">Cross-Entropy Loss</span>. The following is the binary case and the multi-class case.</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mathcal{L}_{\text{CE}} = -\text{mean}(y_i \log(\hat{y}_i) + (1 - y_i) \log(1 - \hat{y}_i)\\\mathcal{L}_{\text{multiclass-CE}} = -\text{mean}(\sum_{c \in C} \mathbb{I}(y_i = c) \log(\hat{p}_{i,c})\end{aligned}\end{align} \]</div>
+<p>where $\mathbb{I}$ is the identity function.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The gradient of cross-entropy loss with respect to the logit is the logistic function.</p>
+
+        <div id="wrapper-react-CrossEntropyLossVisualizer-8440" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-CrossEntropyLossVisualizer-8440" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-CrossEntropyLossVisualizer-8440" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        </div>
+        <script type="text/javascript">
+            (function() {
+                // Self-contained function to avoid global scope pollution
+                function showError(message) {
+                    // Display error in contained error div instead of modifying component container
+                    var errorDiv = document.getElementById('error-react-CrossEntropyLossVisualizer-8440');
+                    if (errorDiv) {
+                        errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
+                        errorDiv.style.display = 'block';
+                        console.error(message);
+                    }
+                }
+
+                function loadComponentScript() {
+                    try {
+                        // Only proceed if React is available
+                        if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+                            showError('React or ReactDOM is not available');
+                            return;
+                        }
+
+                        // Load component script - using the exact filename and path
+                        var script = document.createElement('script');
+                        script.src = '../../_static/js/modeling/classic_modeling/supervised_learning/CrossEntropyLossVisualizer.js';
+                        script.onerror = function(e) {
+                            showError('Failed to load component script: ../../_static/js/modeling/classic_modeling/supervised_learning/CrossEntropyLossVisualizer.js');
+                        };
+                        script.onload = function() {
+                            // Mount component with error handling - use the exact component name
+                            try {
+                                if (window.CrossEntropyLossVisualizer) {
+                                    ReactDOM.render(
+                                        React.createElement(window.CrossEntropyLossVisualizer, {}, null),
+                                        document.getElementById('react-CrossEntropyLossVisualizer-8440')
+                                    );
+                                } else {
+                                    showError('Component CrossEntropyLossVisualizer not found in global scope');
+                                }
+                            } catch (error) {
+                                showError(error.message);
+                            }
+                        };
+                        document.head.appendChild(script);
+                    } catch (error) {
+                        showError('Unexpected error: ' + error.message);
+                    }
+                }
+
+                // Initialize component loading based on KaTeX option
+                function initComponent() {
+                    
+            // Only load KaTeX if it's not already loaded
+            if (typeof window.katex === 'undefined') {
+                // Load KaTeX CSS
+                var katexCss = document.createElement('link');
+                katexCss.rel = 'stylesheet';
+                katexCss.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+                katexCss.integrity = 'sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntxDrHanlDqC0IIziTXcrXPnpVcVB8n2eHZ';
+                katexCss.crossOrigin = 'anonymous';
+                document.head.appendChild(katexCss);
+
+                // Load KaTeX JS
+                var katexScript = document.createElement('script');
+                katexScript.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js';
+                katexScript.integrity = 'sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx';
+                katexScript.crossOrigin = 'anonymous';
+                katexScript.onload = function() {
+                    // Once KaTeX is loaded, load the component
+                    loadComponentScript();
+                };
+                document.head.appendChild(katexScript);
+            } else {
+                // KaTeX already loaded, proceed to load component
+                loadComponentScript();
+            }
+            
+                }
+
+                // Initialize when DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initComponent);
+                } else {
+                    initComponent();
+                }
+            })();
+        </script>
+        </div>
+<p>To handle class imbalance issue, one may introduce weights <span class="math notranslate nohighlight">\(w^+\)</span> and <span class="math notranslate nohighlight">\(w^-\)</span> to reflect the inverse frequency of positive vs. negative classes. The <span class="target" id="newconcept-weighted_cross-entropy_loss"></span><span class="newconcept">Weighted Cross-Entropy Loss</span> is fomulated as:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{weighted-CE}}
+    = -\text{mean}
+    (
+    w^+ \,y_i \,\log(\hat{y}_i)
+    + w^- \,(1 - y_i)\,\log\bigl(1 - \hat{y}_i\bigr)
+    ).\]</div>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{weighted-multiclass-CE}}(\mathbf{\theta}) = -\text{mean}\left(\sum_{c \in C} w_c \cdot \mathbb{I}(y_i = c) \log(\hat{p}_{i, c})\right)\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(w^+\)</span> is larger if positives are rarer; <span class="math notranslate nohighlight">\(w^-\)</span> is smaller if negatives are more frequent, and similarly for <span class="math notranslate nohighlight">\(w_k\)</span>.</p>
+</li>
+<li><p><span class="target" id="newconcept-focal_loss"></span><span class="newconcept">Focal Loss</span> is another variant of cross-entropy, especially helpful for <strong class="underline-bold">extremely imbalanced binary or multi-class classification</strong> tasks and <strong class="underline-bold">focusing on hard cases</strong>.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{focal-CE}}
+  = -\,\alpha \,(1 - p)^\gamma \,y \,\log(p)
+    \;-\;\bigl(1 - \alpha\bigr)\,p^\gamma \,(1 - y)\,\log(1 - p),\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\alpha\)</span> is a weighting factor (e.g., balancing positives vs. negatives, similar to the weighted CE).</p></li>
+<li><p><span class="math notranslate nohighlight">\(\gamma\)</span> (the <span class="target" id="newconcept-focusing_parameter"></span><span class="newconcept">focusing parameter</span>) <span class="math notranslate nohighlight">\(\ge 0\)</span> controls how strongly to reduce the loss for well-classified samples, effectively <strong class="underline-bold">down-weighting easy examples</strong> and focus on misclassified or hard examples:</p>
+<ul>
+<li><p>If the example is <strong>easy</strong> (e.g., <span class="math notranslate nohighlight">\(y = 1\)</span> and <span class="math notranslate nohighlight">\(p \approx 1\)</span>), then <span class="math notranslate nohighlight">\((1 - p)^\gamma\)</span> further reduces its loss, freeing capacity to learn from harder examples.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\gamma = 0\)</span> recovers standard cross-entropy (i.e., no down-weighting).</p></li>
+<li><p>Larger <span class="math notranslate nohighlight">\(\gamma\)</span> places more emphasis on hard or misclassified samples, diminishing the gradient for trivially correct ones.</p></li>
+<li><p>Commonly used with <span class="math notranslate nohighlight">\(\gamma = 2\)</span> or <span class="math notranslate nohighlight">\(\gamma = 4\)</span> and <span class="math notranslate nohighlight">\(\alpha \in [0.25, 0.75]\)</span>. Tuning is often required to match the dataset.</p>
+<ul>
+<li><p>By emphasizing hard examples, focal loss may cause the model to <strong class="underline-bold">output less confident probabilities</strong>, leading to under-confident predictions.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>In the multi-class case, the model output a softmax distribution <span class="math notranslate nohighlight">\(\mathbf{p} = (p_1, p_2, \dots, p_k)\)</span>, with a true label <span class="math notranslate nohighlight">\(y \in \{1, 2, \dots, k\}\)</span>. A multi-class focal loss is similarly formulated as</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{focal-multiclass-CE}} = -\text{mean}\left(\sum_{c \in C}
+\mathbb{I}(y_i = c)
+\,\alpha_c
+\,\bigl(1 - \hat{p}_{i,c}\bigr)^\gamma
+\,\log\bigl(\hat{p}_{i,c}\bigr)\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha_k\)</span> is the optional weight for class <span class="math notranslate nohighlight">\(k\)</span>. If <span class="math notranslate nohighlight">\(p_y\)</span> is large (easy sample), <span class="math notranslate nohighlight">\((1 - p_y)^\gamma\)</span> suppresses its loss contribution.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Origins</strong>
+Focal loss was originally proposed for <strong>object detection</strong> (Lin et al., ICCV 2017), where background examples vastly outnumber foreground objects. It has since been adopted in other highly imbalanced settings.</p>
+<p><strong>How it is used in recommendation, search, and ads?</strong></p>
+<ul>
+<li><p>While focal loss is viable in these domains (due to frequent class imbalance, e.g., very low click or conversion rates), however, <strong class="underline-bold">data sampling, cross-entropy with negative sampling or weighted cross-entropy is the dominant approach</strong>. Even for recommendation and ads systems, they typically still find <strong class="underline-bold">cross-entropy adequate once negative sampling or weighting is well-tuned</strong>.</p></li>
+<li><p>The major reason is the focal loss penalizing easy cases, potentially making the model under-confident, and complicating the Probability Calibration that is very important for business interpretation.</p></li>
+<li><p>When to Consider Focal Loss:</p>
+<ol class="arabic simple">
+<li><p><strong>Extreme Rare Positives</strong>: If the dataset has an extremely low positive rate (e.g., far below 1%) and standard negative sampling isn’t enough, focal loss can help highlight rare but important positives.</p></li>
+<li><p><strong>Flood of Trivial Negatives</strong>: If there are a large number of obviously irrelevant impressions, focal loss can reduce their overshadowing effect and shift focus to borderline (hard) examples.</p></li>
+<li><p><strong>Experimental Tuning</strong>: If cross-entropy + negative sampling is under-performing, trying focal loss with different <span class="math notranslate nohighlight">\(\gamma\)</span> and <span class="math notranslate nohighlight">\(\alpha\)</span> may improve recall for the minority.</p></li>
+</ol>
+<p><strong class="underline-bold">A typical use case for above is Anomaly Detection</strong>, such as network intrusion detection, where the positive cases are extremely rase.</p>
+<p>In practice, although cross-entropy is typically found adequate, focal loss can still be an auxiliary loss function in Multi-Loss Learning so that its “focus” can softly feedback and impact the main loss (typically Cross-Entropy).</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</section>
+<section id="hinge-loss">
+<h3>Hinge Loss<a class="headerlink" href="#hinge-loss" title="Link to this heading"></a></h3>
+<ul>
+<li><p><span class="target" id="newconcept-hinge_loss"></span><span class="newconcept">Hinge Loss</span> is another option for binary classification. Unlike cross-entropy which focuses on probabilities, hinge loss enforces a margin between classes.</p>
+<ul class="simple">
+<li><p>Hinge loss considers <strong class="underline-bold">negative class label as -1 rather than 0</strong>.</p></li>
+<li><p>Hinge loss is <strong class="underline-bold">directly applied on the logits</strong>, not on after softmax, because its formula and mechanism requires non-probabilistic scores.</p></li>
+</ul>
+<p>For binary classification with labels <span class="math notranslate nohighlight">\(y \in \{-1, +1\}\)</span> and model output <span class="math notranslate nohighlight">\(\hat{y}\)</span> (a continuous numeric score), the hinge loss is defined as:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{Hinge}} = \text{mean}(\max(0, \text{margin} - y \cdot \hat{y}))\]</div>
+<p>Key properties of hinge loss:</p>
+<ul class="simple">
+<li><p>$\text{margin}$ is a positive number and is typically set to 1. Higher margin in theory only scales model parameter.</p></li>
+<li><p>When <span class="math notranslate nohighlight">\(y \cdot \hat{y} \geq \text{margin}\)</span>, the loss is zero - the example is correctly classified and outside the margin</p></li>
+<li><p>When <span class="math notranslate nohighlight">\(y \cdot \hat{y} &lt; \text{margin}\)</span>, a penalty is applied - either the example is misclassified (<span class="math notranslate nohighlight">\(r \cdot \hat{y} &lt; 0\)</span>) or falls within the margin (<span class="math notranslate nohighlight">\(0 \leq y \cdot \hat{y} &lt; \text{margin}\)</span>)</p></li>
+<li><p>The <strong class="underline-bold">zero-gradient region</strong> (when <span class="math notranslate nohighlight">\(y \cdot \hat{y} &gt; \text{margin}\)</span>) helps prevent overfitting by not pushing already well-classified points further</p></li>
+</ul>
+<p>Comparison with cross-entropy loss:</p>
+<ul class="simple">
+<li><p>[Pro] Hinge loss enforces the margin, offers especially robustness for hard marginal cases.</p></li>
+<li><p>[Pro &amp; Con] Hinge loss has zero gradient for well-classified examples but tackling the hard marginal examples.</p>
+<ul>
+<li><p>However, this has similar adverse effect as <a class="reference external" href="04_reinforcement_learning.html#newconcept-focal_loss"><span class="refconcept">Focal Loss</span></a> that will make model less confident in its predictions.</p></li>
+</ul>
+</li>
+<li><p>[Con] Hinge loss <strong class="underline-bold">does not produce probability scores</strong>, which can hurt interpretability if a probabilistic output is needed.</p></li>
+<li><p>[Con] Hinge loss is less common nowadays, but still <strong class="underline-bold">specifically applies to pairwise preference learning</strong> due to its capability to separate two preferences with a margin. Cross-entropy is the de facto standard for classification tasks in modern frameworks, with extensive tooling for performance support.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Hinge loss was traditionally popular in margin-based classifiers like Support Vector Machines (SVMs).</p>
+<p>Hinge loss can be extended to multi-class settings (e.g., Crammer-Singer Formulation) or ordinal classification where constraints enforce ordering among classes, each with its own hinge penalty if that order is violated. However, preference learning is where today hinge loss is most commonly employed today. Pairwise preference learning is also dominant today in preference learning, therefore binary hinge loss usually suffices.</p>
+
+        <div id="wrapper-react-HingeLossVisualizer-7253" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-HingeLossVisualizer-7253" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-HingeLossVisualizer-7253" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        </div>
+        <script type="text/javascript">
+            (function() {
+                // Self-contained function to avoid global scope pollution
+                function showError(message) {
+                    // Display error in contained error div instead of modifying component container
+                    var errorDiv = document.getElementById('error-react-HingeLossVisualizer-7253');
+                    if (errorDiv) {
+                        errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
+                        errorDiv.style.display = 'block';
+                        console.error(message);
+                    }
+                }
+
+                function loadComponentScript() {
+                    try {
+                        // Only proceed if React is available
+                        if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+                            showError('React or ReactDOM is not available');
+                            return;
+                        }
+
+                        // Load component script - using the exact filename and path
+                        var script = document.createElement('script');
+                        script.src = '../../_static/js/modeling/classic_modeling/supervised_learning/HingeLossVisualizer.js';
+                        script.onerror = function(e) {
+                            showError('Failed to load component script: ../../_static/js/modeling/classic_modeling/supervised_learning/HingeLossVisualizer.js');
+                        };
+                        script.onload = function() {
+                            // Mount component with error handling - use the exact component name
+                            try {
+                                if (window.HingeLossVisualizer) {
+                                    ReactDOM.render(
+                                        React.createElement(window.HingeLossVisualizer, {}, null),
+                                        document.getElementById('react-HingeLossVisualizer-7253')
+                                    );
+                                } else {
+                                    showError('Component HingeLossVisualizer not found in global scope');
+                                }
+                            } catch (error) {
+                                showError(error.message);
+                            }
+                        };
+                        document.head.appendChild(script);
+                    } catch (error) {
+                        showError('Unexpected error: ' + error.message);
+                    }
+                }
+
+                // Initialize component loading based on KaTeX option
+                function initComponent() {
+                    
+            // Only load KaTeX if it's not already loaded
+            if (typeof window.katex === 'undefined') {
+                // Load KaTeX CSS
+                var katexCss = document.createElement('link');
+                katexCss.rel = 'stylesheet';
+                katexCss.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+                katexCss.integrity = 'sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntxDrHanlDqC0IIziTXcrXPnpVcVB8n2eHZ';
+                katexCss.crossOrigin = 'anonymous';
+                document.head.appendChild(katexCss);
+
+                // Load KaTeX JS
+                var katexScript = document.createElement('script');
+                katexScript.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js';
+                katexScript.integrity = 'sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx';
+                katexScript.crossOrigin = 'anonymous';
+                katexScript.onload = function() {
+                    // Once KaTeX is loaded, load the component
+                    loadComponentScript();
+                };
+                document.head.appendChild(katexScript);
+            } else {
+                // KaTeX already loaded, proceed to load component
+                loadComponentScript();
+            }
+            
+                }
+
+                // Initialize when DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initComponent);
+                } else {
+                    initComponent();
+                }
+            })();
+        </script>
+        </div>
+</li>
+</ul>
+</section>
+<section id="all-threshold-loss-ordinal-cross-entropy-loss">
+<h3>All-Threshold Loss &amp; Ordinal Cross-Entropy Loss<a class="headerlink" href="#all-threshold-loss-ordinal-cross-entropy-loss" title="Link to this heading"></a></h3>
+<p>Another category of loss functions is the <span class="target" id="newconcept-ordinal_classification_loss"></span><span class="newconcept">Ordinal Classification Loss</span>. This is less common, but still see their often applications where milestone events are especially strong (e.g., in e-commerce, or ads). The most popular losses in this category are <strong class="underline-bold">adapted</strong> from classification CE losses.</p>
+<ul>
+<li><p>The <span class="target" id="newconcept-all-threshold_loss"></span><span class="newconcept">All-Threshold Loss</span> (a.k.a. <span class="target" id="newconcept-cumulative_probability_loss"></span><span class="newconcept">Cumulative Probability Loss</span>) is a common approach for ordinal regression that models $|C|-1$ binary thresholds for <a href="#id5"><span class="problematic" id="id6">|C|</span></a> ordinal categories:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{all-threshold}} = -\text{mean}\left(\sum_{j=1}^{|C|-1} \left[
+\mathbb{I}(y_i &gt; j) \log(\hat{p}_{y_i&gt;j}) +
+\mathbb{I}(y_i \leq j) \log(1-\hat{p}_{y_i&gt;j})
+\right]\right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;j}\)</span> represents the probability that the predicted outcome for item i exceeds threshold j (<strong class="underline-bold">cumulative probabilities</strong> above thresholds).</p>
+<div class="example-green admonition">
+<p class="admonition-title">Example: Cumulative Probabilities Above Thresholds</p>
+<p>Consider a sequence of $|C|=5$ ordinal categories <code class="docutils literal notranslate"><span class="pre">{no-action:0,</span> <span class="pre">click:1,</span> <span class="pre">dwell-60sec-plus:2,</span> <span class="pre">add-to-cart:3,</span> <span class="pre">purchase:4}</span></code>. The All-Threshold model predicts $|C|-1=4$ thresholds:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;0}\)</span>: Probability of at least clicking (categories 1-4)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;1}\)</span>: Probability of at least dwelling 60+ seconds (categories 2-4)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;2}\)</span>: Probability of at least adding to cart (categories 3-4)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;3}\)</span>: Probability of purchasing (category 4)</p></li>
+</ul>
+<p>For a user who adds to cart but doesn’t purchase (true label 3):</p>
+<ul class="simple">
+<li><p>The model should predict high probabilities for <span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;0}\)</span>, <span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;1}\)</span>, and <span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;2}\)</span></p></li>
+<li><p>The model should predict a low probability for <span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;3}\)</span></p></li>
+</ul>
+</div>
+<p>This approach preserves ordinality because:</p>
+<ul class="simple">
+<li><p>The thresholds have an inherent ordering (<span class="math notranslate nohighlight">\(\hat{p}_{y_i&gt;0} \geq \hat{p}_{y_i&gt;1} \geq \hat{p}_{y_i&gt;2} \geq \hat{p}_{y_i&gt;3}\)</span>)</p></li>
+<li><p>It mathematically enforces that higher categories cannot be more likely than lower ones, preserving the ordinal relationship between categories in C.</p></li>
+<li><p>A mistake predicting category 2 when the true category is 3 incurs less penalty than predicting category 0</p></li>
+</ul>
+<p>Despite the mathematical difference, all-threshold loss is essentially a Multi-Label Binary Cross-Entropy Loss. The <strong class="underline-bold">manipulation is on the label side</strong>, so that if the highest category one training example belongs to is $j$, then it also belongs to higher categories like $j+1$. During inference, the individual probabilities for each category can be derived from these cumulative thresholds:</p>
+<div class="math notranslate nohighlight">
+\[P(\hat{y}_i = c) = P(\hat{y}_i &gt; c-1) - P(\hat{y}_i &gt; c)\]</div>
+<p>This convenience makes “all-threshold loss” a most popular ordinal classification loss.</p>
+</li>
+<li><p>The <span class="target" id="newconcept-ordinal_cross-entropy_loss"></span><span class="newconcept">Ordinal Cross-Entropy Loss</span> directly extends standard cross-entropy by incorporating a distance penalty that increases with the ordinal distance between predicted and true classes:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{ordinal-CE}}(\mathbf{\theta}) = -\text{mean}\left(\sum_{c \in C} w_{|y_i - c|} \cdot \mathbb{I}(y_i = c) \log(\hat{p}_{i, c})\right)\]</div>
+<p>where this is essentially a Weight Cross-Entropy Loss, and <span class="math notranslate nohighlight">\(w_{|y_i - c|}\)</span> is a weight that increases with the distance between the true class <span class="math notranslate nohighlight">\(y_i\)</span> and class c. Common weight formulations include squared distance (<span class="math notranslate nohighlight">\(w_d = d^2\)</span>) or exponential distance (<span class="math notranslate nohighlight">\(w_d = e^d - 1\)</span>).</p>
+</li>
+</ul>
+</section>
+</section>
+<section id="pairwise-preference-loss">
+<h2>Pairwise Preference Loss<a class="headerlink" href="#pairwise-preference-loss" title="Link to this heading"></a></h2>
+<p>There exists a common scenario where the reward itself is implicit or hard to label directly. For instance, in search, recommendation, and advertising systems, user preferences are often only revealed through relative choices rather than through absolute ratings (e.g., thumb up one post instead of another, click one search result instead of the other). In these contexts, <span class="target" id="newconcept-preference_learning"></span><span class="newconcept">Preference Learning</span> and <span class="target" id="newconcept-rank_learning"></span><span class="newconcept">Rank Learning</span> approaches become especially valuable.</p>
+<p><span class="target" id="newconcept-pairwise_preference_loss"></span><span class="newconcept">Pairwise Preference Loss</span> models the relative preference between pairs of items. They are particularly useful when direct reward values are unavailable but relative preferences can be annotated and inferred from user behavior. Nowadays pairwise preference learning is popular because it requires simpler labels, and is driven by its application in LLM development (a.k.a. <span class="target" id="newconcept-preference_alignment"></span><span class="newconcept">Preference Alignment</span>, focusing on aligning LLM with human preferences, enhancing their utility in terms of helpfulness, truthfulness, safety, and harmlessness).</p>
+<ul class="simple">
+<li><p>In search/recommendation/ads systems, pairwise prefernece is mostly applied to offline learning of user prefernece. However, in some scenarios where there are only two candidates (e.g., amazon places one preferred ad right below a product intro section, and the other less preferred ad on the side), then pairwise preference learning can be applied to runtime system.</p></li>
+<li><p>In applications where final candidates can be often limited to two (e.g., chatbot through beam search), then pairwise preference learning can be applied to runtime system.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In realistic annotation practice, <strong class="underline-bold">asking annotators to rank preference, especially pairwise preference, is much easier than other annotations</strong>, less noisy and suitable for large-scale annotations. Instead of annotating A is relevant, B is not relevant (it becomes hard when relevance is not appearant), it is <strong class="underline-bold">easier to answer which one of A and B is more relevant</strong>.</p>
+</div>
+<p>In pairwise preference, a pair of items $i$ and $j$ are assumed, and we use $i \succ j$ to denote that item $i$ is preferred over item $j$ by the labels. We also denote $s_i$ and $s_j$ as the predicted scores for items $i$ and $j$ respectively. Popular pairwise losses are usually adaptation from classification losses.</p>
+<ul class="simple">
+<li><p>We view $i \succ j$ as the “positive label”, and denoting $y_{ij} = 1$ if item $i$ is preferred over item $j$, and $y_{ij} = 0$ (or $y_{ij} = -1$ for hinge loss) otherwise.</p></li>
+<li><p>We view $\Delta s_{_ij} = s_i - s_j$ as “reward”, and $\sigma(\Delta s_{ij}) = \frac{1}{1 + e^{-(s_i - s_j)}}$ as the “positive probability” ($\sigma$ is the standard logistic function).</p></li>
+<li><p>Due to its pairwise nature, vague and marginal examples are more frequent in preference-labeled data.</p>
+<ul>
+<li><p>Many comparisons might be between almost equally relevant examples from annotated data.</p></li>
+<li><p>Human feedback for recommendation/ads are vague, i.e., user clicking on item A does not necessarily mean item B is irrelevant.</p></li>
+</ul>
+</li>
+</ul>
+<p>Then the adaptation naturally follows.</p>
+<section id="pairwise-cross-entropy-loss">
+<h3>Pairwise Cross-Entropy Loss<a class="headerlink" href="#pairwise-cross-entropy-loss" title="Link to this heading"></a></h3>
+<p>The <span class="target" id="newconcept-pairwise_cross-entropy_loss"></span><span class="newconcept">Pairwise Cross-Entropy Loss</span> (also known as the <span class="target" id="newconcept-pairwise_logistic_loss"></span><span class="newconcept">Pairwise Logistic Loss</span>), and the <span class="target" id="newconcept-pairwise_hinge_loss"></span><span class="newconcept">Pairwise Hinge Loss</span> (also called <span class="target" id="newconcept-margin_ranking_loss"></span><span class="newconcept">Margin Ranking Loss</span>).</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{pairwise-CE}} = -\text{mean}\left( y_{ij} \log(\sigma(\Delta s_{ij})) + (1 - y_{ij}) \log(1 - \sigma(\Delta s_{ij})) \right)\]</div>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{pairwise-hinge}} = \text{mean}\left( \max(0, \text{margin} - \text{sign}(y_{ij}) \cdot (\Delta s_{ij})) \right)\]</div>
+<p>The pairwise hinge loss is more common in preference learning than in classification, because</p>
+<ul class="simple">
+<li><p>Hinge loss enforces a margin (see <a class="reference external" href="04_reinforcement_learning.html#newconcept-hinge_loss"><span class="refconcept">Hinge Loss</span></a>), and therefore it offers robustness against marginal cases (marginal cases are more often in preference learning). Such robustness is especially valued in ads.</p></li>
+<li><p>Probabilistic interpretation is less important in pairwise preference learning. We can always convert it to probability by applying the logistic function.</p></li>
+<li><p>Still the most common practice is used as jointly with cross-entropy loss.</p></li>
+</ul>
+</section>
+<section id="ranknet-loss">
+<h3>RankNet Loss<a class="headerlink" href="#ranknet-loss" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-ranknet_loss"></span><span class="newconcept">RankNet Loss</span> has exactly the same formula as the <a class="reference external" href="04_reinforcement_learning.html#newconcept-pairwise_cross-entropy_loss"><span class="refconcept">Pairwise Cross-Entropy Loss</span></a>, but</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = -\text{mean}\left( y_{ij} \log(\sigma(\Delta s_{ij})) + (1 - y_{ij}) \log(1 - \sigma(\Delta s_{ij})) \right)\]</div>
+<p>but simply allow three level of labels</p>
+<ul class="simple">
+<li><p>$y_{ij} = 1$ if item $i$ is preferred over item $j$.</p></li>
+<li><p>$y_{ij} = 0$ if item $j$ is preferred over item $i$.</p></li>
+<li><p>$y_{ij} = 0.5$ if items $i$ and $j $ are equally preferred. In this case the minimum loss is achieved when $s_i = s_j$, aligned with the semantic meaning of $y_{ij} = 0.5$.</p></li>
+</ul>
+<p>This is effectively handling the scenario that many comparisons between equally relevant examples.</p>
+<div class="admonition-exact-loss-behavior-when-y-ij-0-5 admonition">
+<p class="admonition-title">** Exact Loss Behavior When ** $y_{ij} = 0.5$</p>
+<dl class="field-list simple">
+<dt class="field-odd">class<span class="colon">:</span></dt>
+<dd class="field-odd"><p>note</p>
+</dd>
+</dl>
+<p>When $y_{ij} = 0.5$, it signifies that items $i$ and $j$ are equally preferred. In this case, the RankNet loss function becomes:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = -\left( 0.5 \log(\sigma(\Delta s_{ij})) + 0.5 \log(1 - \sigma(\Delta s_{ij})) \right)\]</div>
+<p>This simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = -0.5 \left( \log(\sigma(\Delta s_{ij})) + \log(1 - \sigma(\Delta s_{ij})) \right)\]</div>
+<p>Given that $\sigma(x) + \sigma(-x) = 1$, the loss further simplifies to:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = -0.5 \left( \log(\sigma(\Delta s_{ij})) + \log(\sigma(s_j - s_i)) \right)\]</div>
+<p>Simplifying the logarithmic terms:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = -0.5 \left( -\log(1 + e^{-(\Delta s_{ij})}) + \log(e^{-(\Delta s_{ij})}) - \log(1 + e^{-(\Delta s_{ij})}) \right)\]</div>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = -0.5 \left( -\log(1 + e^{-(\Delta s_{ij})}) - (\Delta s_{ij}) - \log(1 + e^{-(\Delta s_{ij})}) \right)\]</div>
+<p>Combining terms:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = -0.5 \left( -2\log(1 + e^{-(\Delta s_{ij})}) - (\Delta s_{ij}) \right)\]</div>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{RankNet}} = \log(1 + e^{-(\Delta s_{ij})}) + 0.5(\Delta s_{ij})\]</div>
+<ul class="simple">
+<li><p>When $\Delta s_{ij} &gt;&gt; 0$, the logarithm term approaches $0$, and the loss becomes $0.5(\Delta s_{ij})$. When $\Delta s_{ij} &lt;&lt; 0$, the logarithm term approaches $-\Delta s_{ij}$, and the loss becomes $-0.5(\Delta s_{ij})$. Therefore $\mathcal{L}_{text{RankNet}} \approx 0.5|\Delta s_{ij}|$ when $|\Delta s_{ij}|$ is large.</p></li>
+<li><p>Obviously the loss achieves minimum $0$ when $|\Delta s_{ij}| = 0$</p></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="listwise-ranking-loss">
+<h2>Listwise Ranking Loss<a class="headerlink" href="#listwise-ranking-loss" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-listwise_ranking_loss"></span><span class="newconcept">Listwise Ranking Loss</span> functions have become popular for directly optimizing the overall quality of an entire ranking list, contrasting with pairwise preference learning that focuses on localized rank optimization. These functions typically <strong class="underline-bold">assume each candidate item has a relevance score label</strong> (denoted by $y_i$), and <strong class="underline-bold">items are ranked based on the relevance scores</strong> in descending order. Traditionally, a large scale of relevance scores has been obtained through Pairwise Preference Learning, where models learn from relative preferences between item pairs. Recent advancements have introduced the use of LLMs to generate relevance scores for training data.</p>
+<p>Some listwise ranking losses (<a class="reference internal" href="#rank-aware-positionwise-bce">Rank-Aware Positionwise BCE</a>, <a class="reference internal" href="#lambdarank-loss">LambdaRank Loss</a>) fundamentally involve non-differentiable ranking require re-ranking after model updates. This re-ranking step is a core part of their training process, but itself is non-differentiable and requires approximations. The changing ranks can create <strong class="underline-bold">complex and unstable training dynamics due to the discontinued gradients</strong>. Several practical mitigations:</p>
+<ul class="simple">
+<li><p>Don’t re-rank after every single batch update (which would be expensive), but rather at certain intervals (e.g., every N batches or every epoch) to balance computational efficiency with training effectiveness.</p></li>
+<li><p>For each item, memorize its past few ranks and make a weighted average over them to smooth the rank change.</p></li>
+</ul>
+<p>Other listwise ranking losses assume the relevance score distribution already encodes ranking information, and work on top of the score distribution (<a class="reference internal" href="#listnet-loss">ListNet Loss</a>, <a class="reference internal" href="#approxndcg-loss">ApproxNDCG Loss</a>).</p>
+<section id="rank-aware-positionwise-bce">
+<h3>Rank-Aware Positionwise BCE<a class="headerlink" href="#rank-aware-positionwise-bce" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-rank-aware_positionwise_bce"></span><span class="newconcept">Rank-Aware Positionwise BCE</span> is a simpled weighted adaptation of binary cross-entropy.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{rank-BCE}} = -\text{mean}\left( \sum_{i} w_{\text{rank}_{i}} \cdot (y_i \log(\sigma(s_i)) + (1 - y_i) \log(1 - \sigma(s_i))) \right)\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p>$\sigma$ is the logistic function to convert the score to probability.</p></li>
+<li><p>$w_{\text{rank}_{i}}$ is a position-dependent weight function, typically decreasing with position like DCG. Common weight functions include $w_{\text{rank}_{i}} = \frac{1}{\log_2(\text{rank}_i + 1)}$ (DCG-like) or $w_{\text{rank}_{i}} = e^{-\alpha \cdot \text{rank}_i}$</p></li>
+</ul>
+<p>This approach:</p>
+<ul class="simple">
+<li><p>Directly incorporates position information into the loss function, aligning with real-world metrics like NDCG and user behavior where top positions matter more.</p></li>
+<li><p>Less computationally expensive than pure listwise approaches. Empirically it is found a good approximation of listwise behavior while keeping the simplicity of a positionwise BCE.</p></li>
+</ul>
+</section>
+<section id="lambdarank-loss">
+<h3>LambdaRank Loss<a class="headerlink" href="#lambdarank-loss" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-lambdarank_loss"></span><span class="newconcept">LambdaRank Loss</span> doesn’t have a closed-form expression but is derived from the gradient of RankNet loss, scaled by the change in a non-differentiable evaluation metric (like NDCG or MAP):</p>
+<div class="math notranslate nohighlight">
+\[\lambda_{ij} = \frac{\partial \mathcal{L}_{\text{RankNet}}}{\partial s_i} \cdot |\Delta \text{NDCG}_{ij}|\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p>$\lambda_{ij}$ represents the gradient of the loss function with respect to the score of item i (s_i), considering its relationship with item j.</p></li>
+<li><p>$\Delta \text{NDCG}_{ij}$ is the change in the NDCG metric if items $i$ and $j$ were swapped in the ranking.</p></li>
+<li><p>This loss is like weighted average of the RankNet loss for every pairs in the list, where the weight is the NDCG change if item $i$ and $j$ were to swap. Higher positions in the ranking get more weight (errors in top positions are penalized more)</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<blockquote>
+<div><p>LambdaRank enables optimization that considers NDCG improvements without requiring NDCG to be differentiable. This is sometimes called “implicit gradient-based optimization” - we’re not computing the true gradient of NDCG, but we’re constructing a gradient that empirically behaves similarly to what that gradient would be if it could be computed.</p>
+<p>Starting with RankNet, we define the probability that item $i$ should be ranked higher than item $j$:</p>
+<div class="math notranslate nohighlight">
+\[P_{ij} = \sigma(s_i - s_j)\]</div>
+<p>where $sigma$ is the sigmoid function. We can compute its gradient with respect to $s_i$</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial L_{ij}}{\partial s_i} = (P_{ij} - 1)\]</div>
+</div></blockquote>
+<p>When $i$ should be ranked higher than $j$:</p>
+<ul class="simple">
+<li><p>If the model predicts otherwise ($s_i &lt; s_j$), then $P_{ij}$ is close to $0$, making this gradient close to $-1$, which is a strong push to increase $s_i$ for minimization and possibly flipping the order between $i$, $j$. LambdaRank then modifies this gradient by scaling it with $|\Delta \text{NDCG}_{ij}|$.</p></li>
+<li><p>If the model predicts this correctly ($s_i &gt; s_j$), then $P_{ij}$ is close to 1, and the gradient is near zero. Even though $|\Delta \text{NDCG}_{ij}|$ might be substantial (if $i$ and $j$ have very different relevance scores), multiplying it by a gradient close to zero still results in a very small lambda value.</p></li>
+</ul>
+</div>
+<p>LambdaRank introduces the idea of directly optimizing ranking quality metrics that users care about, and it was originally proposed for neural networks. However, today <strong class="underline-bold">LambdaRank is mostly applied to GBDT</strong> approaches.</p>
+<ul class="simple">
+<li><p>LambdaMART is an approach built on top of “LambdaRank” and uses above-mentioned lambda gradients $\lambda_{ij}$ from LambdaRank to guide the construction of regression trees for GBDT models.</p></li>
+<li><p>Neural models nowadays more often use differentiable NDCG approximations like ApproxNDCG, SoftNDCG or NeuralNDCG.</p></li>
+</ul>
+<p>LambdaRank loss does not have closed form, it can still be implemented in pytorch by directly interfering with the gradient calculation.</p>
+<div class="folding highlight-python notranslate" id="lambdarankloss"><div class="highlight"><pre><span></span> <span class="kn">import</span> <span class="nn">torch</span>
+ <span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Module</span>
+ <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+ <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">ndcg_score</span>
+
+ <span class="k">class</span> <span class="nc">LambdaRankLoss</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">         </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Initialize LambdaRank loss with scikit-learn&#39;s NDCG implementation.</span>
+
+<span class="sd">         Args:</span>
+<span class="sd">             k (int): The &#39;k&#39; in NDCG@k</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+         <span class="nb">super</span><span class="p">(</span><span class="n">LambdaRankLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
+
+     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+<span class="w">         </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Forward pass with scikit-learn NDCG calculation.</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+         <span class="n">placeholder_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+         <span class="n">scores_grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+
+         <span class="c1"># Move to numpy for sklearn compatibility</span>
+         <span class="n">scores_np</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+         <span class="n">labels_np</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+         <span class="c1"># Get current ranking</span>
+         <span class="n">current_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">scores_np</span><span class="p">)</span>  <span class="c1"># Descending order</span>
+
+         <span class="c1"># Compute lambdas for all pairs</span>
+         <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
+             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
+                 <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span> <span class="ow">or</span> <span class="n">labels_np</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">labels_np</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                     <span class="k">continue</span>
+
+                 <span class="c1"># Compute RankNet gradient</span>
+                 <span class="n">s_diff</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">scores</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                 <span class="n">ranknet_grad</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">s_diff</span><span class="p">))</span>
+
+                 <span class="c1"># Compute NDCG delta using sklearn</span>
+                 <span class="n">ndcg_delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_ndcg_delta_sklearn</span><span class="p">(</span>
+                     <span class="n">labels_np</span><span class="p">,</span> <span class="n">scores_np</span><span class="p">,</span> <span class="n">current_indices</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+
+                 <span class="c1"># Combine for lambda</span>
+                 <span class="n">lambda_ij</span> <span class="o">=</span> <span class="n">ranknet_grad</span> <span class="o">*</span> <span class="n">ndcg_delta</span>
+
+                 <span class="c1"># Update gradients</span>
+                 <span class="n">scores_grad</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="n">lambda_ij</span>
+                 <span class="n">scores_grad</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">lambda_ij</span>
+
+         <span class="c1"># Register hook</span>
+         <span class="n">scores</span><span class="o">.</span><span class="n">register_hook</span><span class="p">(</span><span class="k">lambda</span> <span class="n">grad</span><span class="p">:</span> <span class="n">scores_grad</span><span class="p">)</span>
+         <span class="k">return</span> <span class="n">placeholder_loss</span>
+
+     <span class="k">def</span> <span class="nf">_compute_ndcg_delta_sklearn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">current_indices</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+<span class="w">         </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Calculate NDCG delta using scikit-learn&#39;s implementation.</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+         <span class="c1"># Find positions in the ranking</span>
+         <span class="n">pos_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">current_indices</span> <span class="o">==</span> <span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+         <span class="n">pos_j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">current_indices</span> <span class="o">==</span> <span class="n">j</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+         <span class="c1"># Only consider changes affecting top-k</span>
+         <span class="k">if</span> <span class="n">pos_i</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="ow">and</span> <span class="n">pos_j</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">:</span>
+             <span class="k">return</span> <span class="mf">0.0</span>
+
+         <span class="c1"># Create new ranking with i and j swapped</span>
+         <span class="n">new_indices</span> <span class="o">=</span> <span class="n">current_indices</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+         <span class="n">new_indices</span><span class="p">[</span><span class="n">pos_i</span><span class="p">],</span> <span class="n">new_indices</span><span class="p">[</span><span class="n">pos_j</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_indices</span><span class="p">[</span><span class="n">pos_j</span><span class="p">],</span> <span class="n">new_indices</span><span class="p">[</span><span class="n">pos_i</span><span class="p">]</span>
+
+         <span class="c1"># Create ranked score arrays for NDCG calculation</span>
+         <span class="n">current_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+         <span class="n">new_scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+
+         <span class="c1"># Fill in the scores in ranking order</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">orig_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">current_indices</span><span class="p">):</span>
+             <span class="n">current_scores</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">orig_idx</span><span class="p">]</span>
+
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">orig_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_indices</span><span class="p">):</span>
+             <span class="n">new_scores</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">orig_idx</span><span class="p">]</span>
+
+         <span class="c1"># Reshape for sklearn (expects 2D arrays)</span>
+         <span class="n">y_true</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+         <span class="n">current_scores</span> <span class="o">=</span> <span class="n">current_scores</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+         <span class="n">new_scores</span> <span class="o">=</span> <span class="n">new_scores</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+         <span class="c1"># Calculate NDCG for both rankings</span>
+         <span class="n">current_ndcg</span> <span class="o">=</span> <span class="n">ndcg_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">current_scores</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+         <span class="n">new_ndcg</span> <span class="o">=</span> <span class="n">ndcg_score</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">new_scores</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+
+         <span class="c1"># Return absolute difference</span>
+         <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">new_ndcg</span> <span class="o">-</span> <span class="n">current_ndcg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You may also try an existing implementation by <a class="reference external" href="https://pypi.org/project/torch-directml/">Pytorch-DirectML</a> from Microsoft. For example,</p>
+<div class="folding highlight-python notranslate" id="lambdarankloss-directml"><div class="highlight"><pre><span></span> <span class="kn">from</span> <span class="nn">allrank.models.losses</span> <span class="kn">import</span> <span class="n">lambdaLoss</span>
+ <span class="kn">from</span> <span class="nn">allrank.data.dataset_loading</span> <span class="kn">import</span> <span class="n">load_libsvm_dataset</span>
+ <span class="kn">from</span> <span class="nn">allrank.models.model</span> <span class="kn">import</span> <span class="n">make_model</span>
+ <span class="kn">from</span> <span class="nn">allrank.training.train_utils</span> <span class="kn">import</span> <span class="n">fit</span>
+
+ <span class="c1"># Load dataset</span>
+ <span class="n">train_ds</span> <span class="o">=</span> <span class="n">load_libsvm_dataset</span><span class="p">(</span><span class="s2">&quot;path/to/train.txt&quot;</span><span class="p">)</span>
+ <span class="n">val_ds</span> <span class="o">=</span> <span class="n">load_libsvm_dataset</span><span class="p">(</span><span class="s2">&quot;path/to/val.txt&quot;</span><span class="p">)</span>
+
+ <span class="c1"># Create model</span>
+ <span class="n">model</span> <span class="o">=</span> <span class="n">make_model</span><span class="p">(</span><span class="n">input_dim</span><span class="o">=</span><span class="n">train_ds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                 <span class="n">hidden_dim</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+                 <span class="n">dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+ <span class="c1"># Train with LambdaRank</span>
+ <span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+     <span class="n">train_ds</span><span class="p">,</span>
+     <span class="n">val_ds</span><span class="p">,</span>
+     <span class="n">loss_function</span><span class="o">=</span><span class="n">lambdaLoss</span><span class="p">(</span><span class="n">weighing_scheme</span><span class="o">=</span><span class="s2">&quot;ndcgLoss2_scheme&quot;</span><span class="p">),</span>
+     <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span>
+     <span class="n">n_epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="https://github.com/microsoft/LightGBM">LightGBM</a> also has build-in support for LambdaRank. Following is a complete example using LambdaRank with LightGBM.</p>
+<div class="folding highlight-python notranslate" id="lambdarankloss-lightgbm-complete-example"><div class="highlight"><pre><span></span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+ <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+ <span class="kn">import</span> <span class="nn">lightgbm</span> <span class="k">as</span> <span class="nn">lgb</span>
+ <span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_svmlight_file</span>
+ <span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+ <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">ndcg_score</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 1. Data Loading and Preparation</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="k">def</span> <span class="nf">load_letor_data</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Load a LETOR-formatted dataset (SVMLight/LibSVM format with query IDs).</span>
+
+<span class="sd">     LETOR format example:</span>
+<span class="sd">     &lt;relevance&gt; qid:&lt;qid&gt; 1:&lt;feature1&gt; 2:&lt;feature2&gt; ... #comment</span>
+<span class="sd">     2 qid:1 1:0.1 2:0.3 3:0.9 #docid=GX001-01</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">         X: features array</span>
+<span class="sd">         y: relevance labels</span>
+<span class="sd">         qids: query IDs for each document</span>
+<span class="sd">         comment: comment strings if present</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c1"># Load the SVMLight formatted file</span>
+     <span class="c1"># This format is common for learning-to-rank datasets (MSLR, Yahoo, LETOR)</span>
+     <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">qids</span><span class="p">,</span> <span class="n">comment</span> <span class="o">=</span> <span class="n">load_svmlight_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">query_id</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+     <span class="c1"># Convert sparse matrix to dense if needed</span>
+     <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+
+     <span class="c1"># Convert relevance labels and qids to numpy arrays</span>
+     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+     <span class="n">qids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded dataset with </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples, </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> features, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">qids</span><span class="p">))</span><span class="si">}</span><span class="s2"> unique queries&quot;</span><span class="p">)</span>
+     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">qids</span><span class="p">,</span> <span class="n">comment</span>
+
+ <span class="c1"># Load the dataset (e.g., MSLR-WEB10K)</span>
+ <span class="c1"># You can download it from: https://www.microsoft.com/en-us/research/project/mslr/</span>
+ <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">qids</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_letor_data</span><span class="p">(</span><span class="s2">&quot;path/to/MSLR-WEB10K/Fold1/train.txt&quot;</span><span class="p">)</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 2. Data Splitting</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="c1"># Split data while preserving query groups</span>
+ <span class="k">def</span> <span class="nf">split_data_by_queries</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">qids</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Split the data into train and test sets while keeping documents from</span>
+<span class="sd">     the same query in the same set.</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c1"># Get unique query IDs</span>
+     <span class="n">unique_qids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">qids</span><span class="p">)</span>
+
+     <span class="c1"># Split the query IDs (not the individual documents)</span>
+     <span class="n">train_qids</span><span class="p">,</span> <span class="n">test_qids</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
+         <span class="n">unique_qids</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="n">test_size</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span>
+     <span class="p">)</span>
+
+     <span class="c1"># Create masks for train and test data</span>
+     <span class="n">train_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">qids</span><span class="p">,</span> <span class="n">train_qids</span><span class="p">)</span>
+     <span class="n">test_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">qids</span><span class="p">,</span> <span class="n">test_qids</span><span class="p">)</span>
+
+     <span class="c1"># Apply masks to get train and test sets</span>
+     <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">qids_train</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">train_mask</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">train_mask</span><span class="p">],</span> <span class="n">qids</span><span class="p">[</span><span class="n">train_mask</span><span class="p">]</span>
+     <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">qids_test</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">test_mask</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">test_mask</span><span class="p">],</span> <span class="n">qids</span><span class="p">[</span><span class="n">test_mask</span><span class="p">]</span>
+
+     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train set: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">qids_train</span><span class="p">))</span><span class="si">}</span><span class="s2"> queries&quot;</span><span class="p">)</span>
+     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test set: </span><span class="si">{</span><span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">qids_test</span><span class="p">))</span><span class="si">}</span><span class="s2"> queries&quot;</span><span class="p">)</span>
+
+     <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">qids_train</span><span class="p">,</span> <span class="n">qids_test</span>
+
+ <span class="c1"># Split data</span>
+ <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">qids_train</span><span class="p">,</span> <span class="n">qids_test</span> <span class="o">=</span> <span class="n">split_data_by_queries</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">qids</span><span class="p">)</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 3. Preparing LightGBM Dataset</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="c1"># Create LightGBM datasets</span>
+ <span class="c1"># The group parameter is crucial for learning-to-rank</span>
+ <span class="c1"># It tells LightGBM which documents belong to which query</span>
+
+ <span class="k">def</span> <span class="nf">create_lgb_dataset</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">qids</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Create a LightGBM dataset with group information.</span>
+
+<span class="sd">     Args:</span>
+<span class="sd">         X: Feature matrix</span>
+<span class="sd">         y: Target labels (relevance scores)</span>
+<span class="sd">         qids: Query IDs for each document</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">         LightGBM Dataset with group information</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c1"># Count documents per query to create the group array</span>
+     <span class="c1"># LightGBM needs to know how many documents are in each query group</span>
+     <span class="n">query_counts</span> <span class="o">=</span> <span class="p">[]</span>
+     <span class="k">for</span> <span class="n">qid</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">qids</span><span class="p">):</span>
+         <span class="n">count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qids</span> <span class="o">==</span> <span class="n">qid</span><span class="p">)</span>
+         <span class="n">query_counts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+     <span class="c1"># Create LightGBM dataset with group information</span>
+     <span class="n">lgb_dataset</span> <span class="o">=</span> <span class="n">lgb</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
+         <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
+         <span class="n">label</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+         <span class="n">group</span><span class="o">=</span><span class="n">query_counts</span><span class="p">,</span>  <span class="c1"># This tells LightGBM which docs belong to which query</span>
+         <span class="n">free_raw_data</span><span class="o">=</span><span class="kc">False</span>  <span class="c1"># Keep the raw data in memory</span>
+     <span class="p">)</span>
+
+     <span class="k">return</span> <span class="n">lgb_dataset</span>
+
+ <span class="c1"># Create training and validation datasets</span>
+ <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">create_lgb_dataset</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">qids_train</span><span class="p">)</span>
+ <span class="n">test_dataset</span> <span class="o">=</span> <span class="n">create_lgb_dataset</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">qids_test</span><span class="p">)</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 4. Configure LightGBM Parameters for LambdaRank</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="c1"># Set up parameters for learning-to-rank with LambdaRank</span>
+ <span class="c1"># LightGBM supports multiple ranking objectives</span>
+
+ <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+     <span class="c1"># Specify that we&#39;re doing a ranking task</span>
+     <span class="s1">&#39;objective&#39;</span><span class="p">:</span> <span class="s1">&#39;lambdarank&#39;</span><span class="p">,</span>
+
+     <span class="c1"># Optimization metric to use (NDCG@10)</span>
+     <span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;ndcg&#39;</span><span class="p">,</span>
+
+     <span class="c1"># Focus on optimizing NDCG at position 10</span>
+     <span class="s1">&#39;ndcg_eval_at&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+
+     <span class="c1"># LambdaRank specific parameters</span>
+     <span class="s1">&#39;lambdarank_truncation_level&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># Depth for computing NDCG in LambdaRank</span>
+
+     <span class="c1"># Learning parameters</span>
+     <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+     <span class="s1">&#39;max_depth&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+     <span class="s1">&#39;num_leaves&#39;</span><span class="p">:</span> <span class="mi">31</span><span class="p">,</span>
+     <span class="s1">&#39;min_data_in_leaf&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+
+     <span class="c1"># Regularization</span>
+     <span class="s1">&#39;lambda_l1&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>  <span class="c1"># L1 regularization</span>
+     <span class="s1">&#39;lambda_l2&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>  <span class="c1"># L2 regularization</span>
+
+     <span class="c1"># Other parameters</span>
+     <span class="s1">&#39;feature_fraction&#39;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>  <span class="c1"># Use a subset of features per tree (prevents overfitting)</span>
+     <span class="s1">&#39;bagging_fraction&#39;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>  <span class="c1"># Use a subset of data per tree</span>
+     <span class="s1">&#39;bagging_freq&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>        <span class="c1"># Perform bagging every 5 iterations</span>
+
+     <span class="c1"># Verbosity</span>
+     <span class="s1">&#39;verbose&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+
+     <span class="c1"># Force categorical features if any (in this example, we&#39;re assuming all are numerical)</span>
+     <span class="c1"># &#39;categorical_feature&#39;: [0, 1]  # Uncomment if you have categorical features</span>
+ <span class="p">}</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 5. Training the LambdaRank Model</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="c1"># Train the model</span>
+ <span class="n">num_rounds</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># Number of boosting iterations</span>
+
+ <span class="c1"># LightGBM&#39;s native early stopping</span>
+ <span class="n">evals_result</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Dictionary to store evaluation results</span>
+
+ <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training LightGBM LambdaRank model...&quot;</span><span class="p">)</span>
+ <span class="n">model</span> <span class="o">=</span> <span class="n">lgb</span><span class="o">.</span><span class="n">train</span><span class="p">(</span>
+     <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+     <span class="n">train_set</span><span class="o">=</span><span class="n">train_dataset</span><span class="p">,</span>
+     <span class="n">num_boost_round</span><span class="o">=</span><span class="n">num_rounds</span><span class="p">,</span>
+     <span class="n">valid_sets</span><span class="o">=</span><span class="p">[</span><span class="n">train_dataset</span><span class="p">,</span> <span class="n">test_dataset</span><span class="p">],</span>
+     <span class="n">valid_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">],</span>
+     <span class="n">evals_result</span><span class="o">=</span><span class="n">evals_result</span><span class="p">,</span>
+     <span class="n">early_stopping_rounds</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>  <span class="c1"># Stop if performance doesn&#39;t improve for 20 rounds</span>
+     <span class="n">verbose_eval</span><span class="o">=</span><span class="mi">10</span>  <span class="c1"># Print evaluation every 10 iterations</span>
+ <span class="p">)</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 6. Evaluation and Analysis</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="c1"># Extract scores by query for evaluation</span>
+ <span class="k">def</span> <span class="nf">get_scores_by_query</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">qids</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Get predictions grouped by query for proper ranking evaluation.</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">         Dictionary mapping each query ID to its true labels and predicted scores</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c1"># Get predictions for all documents</span>
+     <span class="n">y_pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+     <span class="c1"># Group by query ID</span>
+     <span class="n">query_results</span> <span class="o">=</span> <span class="p">{}</span>
+     <span class="k">for</span> <span class="n">qid</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">qids</span><span class="p">):</span>
+         <span class="n">mask</span> <span class="o">=</span> <span class="n">qids</span> <span class="o">==</span> <span class="n">qid</span>
+         <span class="n">query_results</span><span class="p">[</span><span class="n">qid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+             <span class="s1">&#39;y_true&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+             <span class="s1">&#39;y_pred&#39;</span><span class="p">:</span> <span class="n">y_pred</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+         <span class="p">}</span>
+
+     <span class="k">return</span> <span class="n">query_results</span>
+
+ <span class="c1"># Get predictions by query</span>
+ <span class="n">test_results</span> <span class="o">=</span> <span class="n">get_scores_by_query</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">qids_test</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+
+ <span class="c1"># Calculate NDCG for each query and average</span>
+ <span class="n">ndcg_scores</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">]}</span>
+
+ <span class="k">for</span> <span class="n">qid</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">test_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+     <span class="n">true_labels</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;y_true&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+     <span class="n">predicted_scores</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;y_pred&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+     <span class="c1"># Skip queries with only one relevance level (NDCG not meaningful)</span>
+     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">true_labels</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="k">continue</span>
+
+     <span class="c1"># Calculate NDCG at different cutoffs</span>
+     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ndcg_scores</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_labels</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">k</span><span class="p">:</span>  <span class="c1"># Only if we have enough documents</span>
+             <span class="n">score</span> <span class="o">=</span> <span class="n">ndcg_score</span><span class="p">(</span><span class="n">true_labels</span><span class="p">,</span> <span class="n">predicted_scores</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+             <span class="n">ndcg_scores</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+
+ <span class="c1"># Print average NDCG scores</span>
+ <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Test Set Evaluation:&quot;</span><span class="p">)</span>
+ <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">scores</span> <span class="ow">in</span> <span class="n">ndcg_scores</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+     <span class="k">if</span> <span class="n">scores</span><span class="p">:</span>  <span class="c1"># Check if we have scores for this k</span>
+         <span class="n">avg_score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;NDCG@</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">avg_score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 7. Feature Importance Analysis</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="c1"># Get feature importance</span>
+ <span class="n">importance</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">feature_importance</span><span class="p">(</span><span class="n">importance_type</span><span class="o">=</span><span class="s1">&#39;gain&#39;</span><span class="p">)</span>
+ <span class="n">feature_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Feature_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+
+ <span class="c1"># Create a DataFrame for better visualization</span>
+ <span class="n">importance_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+     <span class="s1">&#39;Feature&#39;</span><span class="p">:</span> <span class="n">feature_names</span><span class="p">,</span>
+     <span class="s1">&#39;Importance&#39;</span><span class="p">:</span> <span class="n">importance</span>
+ <span class="p">})</span>
+ <span class="n">importance_df</span> <span class="o">=</span> <span class="n">importance_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;Importance&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+ <span class="c1"># Display top 20 features</span>
+ <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Top 20 important features:&quot;</span><span class="p">)</span>
+ <span class="nb">print</span><span class="p">(</span><span class="n">importance_df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 8. Model Saving and Loading</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="c1"># Save the model</span>
+ <span class="n">model</span><span class="o">.</span><span class="n">save_model</span><span class="p">(</span><span class="s1">&#39;lightgbm_lambdarank_model.txt&#39;</span><span class="p">)</span>
+ <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Model saved to lightgbm_lambdarank_model.txt&quot;</span><span class="p">)</span>
+
+ <span class="c1"># Load the model (if needed)</span>
+ <span class="n">loaded_model</span> <span class="o">=</span> <span class="n">lgb</span><span class="o">.</span><span class="n">Booster</span><span class="p">(</span><span class="n">model_file</span><span class="o">=</span><span class="s1">&#39;lightgbm_lambdarank_model.txt&#39;</span><span class="p">)</span>
+
+ <span class="c1"># =====================================================</span>
+ <span class="c1"># 9. Applying the Model to New Data</span>
+ <span class="c1"># =====================================================</span>
+
+ <span class="k">def</span> <span class="nf">predict_rankings</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">new_data</span><span class="p">,</span> <span class="n">query_ids</span><span class="p">):</span>
+<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Apply the model to new data and return rankings for each query</span>
+
+<span class="sd">     Args:</span>
+<span class="sd">         model: Trained LightGBM model</span>
+<span class="sd">         new_data: Features for new documents</span>
+<span class="sd">         query_ids: Query IDs for the new documents</span>
+
+<span class="sd">     Returns:</span>
+<span class="sd">         Dictionary mapping each query ID to ranked document indices</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+     <span class="c1"># Get predictions</span>
+     <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span>
+
+     <span class="c1"># Group by query</span>
+     <span class="n">rankings</span> <span class="o">=</span> <span class="p">{}</span>
+     <span class="k">for</span> <span class="n">qid</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">query_ids</span><span class="p">):</span>
+         <span class="c1"># Get indices where query ID matches</span>
+         <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">query_ids</span> <span class="o">==</span> <span class="n">qid</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+         <span class="c1"># Get predictions for this query</span>
+         <span class="n">query_preds</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+
+         <span class="c1"># Sort indices by prediction score (descending)</span>
+         <span class="n">ranked_indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">query_preds</span><span class="p">)]</span>
+
+         <span class="c1"># Store the ranked indices</span>
+         <span class="n">rankings</span><span class="p">[</span><span class="n">qid</span><span class="p">]</span> <span class="o">=</span> <span class="n">ranked_indices</span>
+
+     <span class="k">return</span> <span class="n">rankings</span>
+
+ <span class="c1"># Example of using the model on new data (using test data as an example)</span>
+ <span class="n">new_rankings</span> <span class="o">=</span> <span class="n">predict_rankings</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">qids_test</span><span class="p">)</span>
+
+ <span class="c1"># Show example ranking for first query</span>
+ <span class="n">first_query</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_rankings</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+ <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Example ranking for query </span><span class="si">{</span><span class="n">first_query</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+ <span class="n">ranked_indices</span> <span class="o">=</span> <span class="n">new_rankings</span><span class="p">[</span><span class="n">first_query</span><span class="p">]</span>
+ <span class="k">for</span> <span class="n">rank</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ranked_indices</span><span class="p">[:</span><span class="mi">10</span><span class="p">],</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># Show top 10</span>
+     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rank </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">: Document idx=</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">, Score=</span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">([</span><span class="n">X_test</span><span class="p">[</span><span class="n">idx</span><span class="p">]])[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, True relevance=</span><span class="si">{</span><span class="n">y_test</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="listnet-loss">
+<h3>ListNet Loss<a class="headerlink" href="#listnet-loss" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-listnet_loss"></span><span class="newconcept">ListNet Loss</span> converts both target relevance score labels $y_i$ and predicted scores $s_i$ into probability distributions using the softmax function.</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}s_i = \frac{e^{s_i}}{\sum_{j} e^{s_j}}\\y_i = \frac{e^{y_i}}{\sum_{j} e^{y_j}}\end{aligned}\end{align} \]</div>
+<p>Then the loss is a cross entropy.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{ListNet}} = -\text{mean}\left(y_i \log(s_i) \right)\]</div>
+<p>ListNet converts the ranking label to a probability distribution, and the model learns to give higher scores to more relevant items to match the probability distribution.</p>
+</section>
+<section id="approxndcg-loss">
+<h3>ApproxNDCG Loss<a class="headerlink" href="#approxndcg-loss" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-approxndcg_loss"></span><span class="newconcept">ApproxNDCG Loss</span> creates a differentiable approximation of the <a class="reference external" href="../../evaluation/ranking_evaluation.html#newconcept-normalized_discounted_cumulative_gain"><span class="refconcept">Normalized Discounted Cumulative Gain</span></a> (NDCG) metric. It first tries to approximate an item’s predicted rank by a differential function.</p>
+<ul class="simple">
+<li><p>When $s_jj &gt; s_i$ (items ranked about item $i$), the logistic function approaches 1; when $s_j &lt; s_i$ (items ranked below item $i$) the logistic function approaches 0. Therefore the sum of the logistic function is assumed to approximate the total number of other items above item $i$, which is the rank of item $i$.</p></li>
+<li><p>$\alpha$ controls the sharpness of the sigmoid approximation.</p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\text{rank}_i \approx 1 + \sum_{j \neq i} \sigma(\alpha(s_j - s_i))\]</div>
+<p>Then DCG is approximated as</p>
+<div class="math notranslate nohighlight">
+\[\text{ApproxDCG} \approx \sum_{i} \frac{2^{y_i} - 1}{\log_2(1 + \text{rank}_i)}\]</div>
+<p>where $y_i$ is the relevance score for item $i$ (treated as gain), and therefore the ApproxNDCG loss</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{ApproxNDCG}} = 1 - \frac{\text{ApproxDCG}}{\text{IDCG}}\]</div>
+<p>This loss directly optimizes a differentiable proxy for NDCG, providing a <strong class="underline-bold">more direct path to optimizing the actual evaluation metric</strong>.</p>
+</section>
+</section>
+<section id="contrastive-loss">
+<h2>Contrastive Loss<a class="headerlink" href="#contrastive-loss" title="Link to this heading"></a></h2>
+<p><span class="target" id="newconcept-contrastive_loss"></span><span class="newconcept">Contrastive Loss</span> functions are specifically designed to shape an embedding model’s output space by pulling similar (“positive”) examples closer while pushing dissimilar (“negative”) examples apart. This is particularly beneficial for recall-stage models in search, recommendation, or advertising systems, where the objective is to efficiently retrieve potentially relevant items from vast candidate pools. These loss functions focus explicitly on optimizing embedding spaces rather than direct ranking.</p>
+<p>In recall-stage models, interactions surpassing a pre-defined engagement milestone are typically classified as positive examples (<strong class="underline-bold">lower bar than the precision stage</strong>). For instance, in music recommendation, songs played beyond 30 seconds or interactions exceeding other specified thresholds might constitute positives, though thresholds may vary based on platform and content type.</p>
+<section id="negative-examples">
+<h3>Negative Examples<a class="headerlink" href="#negative-examples" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-negative_examples"></span><span class="newconcept">Negative Examples</span> are vital in developing effective recall-stage models. Given the sparse nature of positive user-item interactions, negative sampling <strong class="underline-bold">addresses data imbalance</strong> by selecting a representative subset of non-interacted (negative) items to enhance model training.</p>
+<p>The primary objectives of embedding training with negative examples include:</p>
+<ul class="simple">
+<li><p>Creating query and item embeddings optimized for efficient similarity search, ensuring queries are close to relevant items and distant from irrelevant ones.</p></li>
+<li><p>Enabling scalable approximate nearest neighbor retrieval techniques such as FAISS, HNSW, or ScaNN, facilitating handling extremely large item catalogs (potentially billions of items).</p></li>
+</ul>
+<p>However, accurately determining negative examples poses significant challenges due to the inherent sparsity of positive interactions. The key question is how to identify reliable negative samples effectively. Non-interacted items are not always genuinely negative; they may simply be unknown or unexposed to the user. Mislabeling potential positives as negatives adversely affects recall performance. To improve negative sample quality, the following strategies are recommended:</p>
+<ol class="arabic simple">
+<li><p>[Include] Only items with explicit negative user feedback (e.g., thumbs-down, low ratings, quick abandonment).</p></li>
+<li><p>[Include] Only items previously ranked higher and shown to the user before their lowest positively interacted item. A stricter approach could require repeated occurrences of these items.</p></li>
+<li><p>[Exclude] Items exceeding certain engagement thresholds (e.g., viewed for 30+ seconds).</p></li>
+<li><p>[Exclude] Items within a certain affinity radius (e.g., within 3 hops) on the user-item interaction graph, as these may indicate latent user interest.</p></li>
+</ol>
+<p>Common negative sampling techniques include:</p>
+<ul class="simple">
+<li><p><strong>Random Sampling</strong>: Negatives randomly selected from the entire item catalog.</p></li>
+<li><p><strong>Popularity-Based Sampling</strong>: Negatives sampled proportionally to item popularity, with caps recommended to prevent oversampling highly popular items.</p></li>
+<li><p><strong>Hard Negative Mining</strong>: Strategically selecting negatives that the current model incorrectly classifies as potential positives.</p></li>
+<li><p>[Meta Technique] <strong>Stratified Sampling</strong>: Stratify negative samples across different categories, genres, or other raw features. Ensure representation from different item types proportional to their distribution.</p></li>
+<li><p>[Meta Technique] <strong>Bootstrapping</strong>: Build an initial model with simple random sampling and then iteratively add more negative samples on top. Assume one positive example targets to pair with 50 negative examples in every round of training.</p>
+<ul>
+<li><p>Begin with simple random sampling (e.g., starting with 10 negative examples) and build an initial model.</p></li>
+<li><p>Extract embeddings from the initial models (e.g., 100 embeddings). Perform clustering algorithms (e.g., k-means) to obtain 10 new negative examples. Add new negative examples to the training data.</p></li>
+<li><p>Continuous the iterations until 50 negative examples are sampled for each positive example. After each iteration, the new negative examples would bias more to hard negatives.</p></li>
+<li><p>The sampled negative examples are representative, consisting of initial random sample, and then gradually easier negatives to harder negatives.</p></li>
+</ul>
+</li>
+</ul>
+<p>While these approaches improve confidence in negative sample selection, they also introduce potential biases and reduce representativeness. A recommended solution to mitigate these biases is incorporating <a class="reference external" href="04_reinforcement_learning.html#newconcept-preference_learning"><span class="refconcept">preference learning</span></a> as an additional multi-task objective. Preference learning involves modeling user preferences between item pairs, as discussed by <a class="reference internal" href="#pairwise-preference-loss">Pairwise Preference Loss</a>. This technique <strong class="underline-bold">leverages richer training data</strong> can help <strong class="underline-bold">promote a nuanced, continuous representation</strong> of user preferences while the model still learns to maintain hard binary distinction among the explicit pairs of positive/negative examples.</p>
+<div class="note admonition">
+<p class="admonition-title"><strong>Why Negative Examples Are Less Prominent in Precision Layers</strong></p>
+<p>While negative examples are crucial for recall-stage models, they play a diminished role in precision-stage models for several reasons:</p>
+<ol class="arabic simple">
+<li><p><strong>Different Optimization Goals</strong>: The precision layer focuses on fine-grained ranking of candidates already filtered by the recall stage, rather than distinguishing relevant from irrelevant items.</p></li>
+<li><p><strong>Candidate Set Characteristics</strong>: Precision layers operate on a much smaller set of candidates (dozens to hundreds) that have already passed basic relevance filters, eliminating most obvious negatives.</p></li>
+<li><p><strong>Ambiguity in Negative Labels</strong>: Within the filtered candidate set, the distinction between “not interesting” and “not seen yet” becomes more nuanced and critical.</p></li>
+<li><p><strong>Architectural Differences</strong>: Precision models often employ cross-attention mechanisms between query and item features, enabling richer interaction modeling without relying heavily on contrastive learning.</p></li>
+<li><p><strong>Rich Feature Utilization</strong>: Precision layers leverage complex, computation-intensive features that wouldn’t be practical to compute for the recall stage, reducing reliance on explicit negatives.</p></li>
+</ol>
+<p>Instead of leveraging contrastive losses that heavily rely on negative examples, precision-stage models often benefit more from cross-item attention mechanisms, listwise ranking losses and other specialized prediction heads.</p>
+</div>
+</section>
+<section id="pairwise-contrastive-loss">
+<h3>Pairwise Contrastive Loss<a class="headerlink" href="#pairwise-contrastive-loss" title="Link to this heading"></a></h3>
+<p>Assume <span class="math notranslate nohighlight">\(\mathbf{q} = h(\mathbf{u}, \mathbf{Q})\)</span> obtains an integrated query embedding, <span class="target" id="newconcept-pairwise_contrastive_loss"></span><span class="newconcept">Pairwise Contrastive Loss</span> pushes the query toward relevant items, and away from irrelevant items in the embedding space.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{contrastive}} = \frac{1}{2} \sum_{i} y_{i} \text{d}^2(\mathbf{q}, \mathbf{e}_i) + (1 - y_{i}) \max(0, \text{margin} - \text{d}^2(\mathbf{q}, \mathbf{e}_i))\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mathbf{q}\)</span> is the query embedding derived from user features <span class="math notranslate nohighlight">\(\mathbf{u}\)</span> and context features <span class="math notranslate nohighlight">\(\mathbf{Q}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{e}_i\)</span> is the embedding of item i</p></li>
+<li><p><span class="math notranslate nohighlight">\(y_{i} = 1\)</span> if item i is relevant to the query (positive example), 0 otherwise (negative example)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\text{d}(\mathbf{q}, \mathbf{e}_i)\)</span> is a distance function between embeddings (typically Euclidean or cosine distance)</p></li>
+<li><p>The margin parameter enforces a minimum distance between query and irrelevant items</p></li>
+</ul>
+<p>The Contrastive Loss can be understood as having two components that work together:</p>
+<ol class="arabic simple">
+<li><p>For relevant items (<span class="math notranslate nohighlight">\(y_{i} = 1\)</span>): The term <span class="math notranslate nohighlight">\(\text{d}^2(\mathbf{q}, \mathbf{e}_i)\)</span> penalizes distance between query and item embeddings, pulling them closer together.</p></li>
+<li><p>For irrelevant items (<span class="math notranslate nohighlight">\(y_{i} = 0\)</span>): The term <span class="math notranslate nohighlight">\(\max(0, \text{margin} - \text{d}^2(\mathbf{q}, \mathbf{e}_i))\)</span> penalizes embeddings that are closer than the margin (similar to <a class="reference internal" href="#hinge-loss">Hinge Loss</a>).</p>
+<ul class="simple">
+<li><p>When <span class="math notranslate nohighlight">\(\text{margin} \leq \text{d}(\mathbf{q}, \mathbf{e}_i)\)</span>, the loss is zero as the constraint is satisfied.</p></li>
+<li><p>When <span class="math notranslate nohighlight">\(\text{margin} &gt;  \text{d}(\mathbf{q}, \mathbf{e}_i)\)</span>, the loss is positive, pushing embeddings apart.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="triplet-loss">
+<h3>Triplet Loss<a class="headerlink" href="#triplet-loss" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-triplet_loss"></span><span class="newconcept">Triplet Loss</span> works with triplets consisting of a query, a relevant (positive) item, and an irrelevant (negative) item:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{triplet}} = \max(0, \text{margin} - (d(\mathbf{q}), \mathbf{e}_n) -  (d(\mathbf{q}, \mathbf{e}_p)))\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mathbf{q}\)</span> is the query embedding derived from user features <span class="math notranslate nohighlight">\(\mathbf{u}\)</span> and context features <span class="math notranslate nohighlight">\(\mathbf{Q}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{e}_p\)</span> is the embedding of a relevant (positive) item</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{e}_n\)</span> is the embedding of an irrelevant (negative) item</p></li>
+<li><p><span class="math notranslate nohighlight">\(d(\cdot,\cdot)\)</span> is a distance function (typically Euclidean or cosine distance)</p></li>
+<li><p>The margin enforces a minimum difference between distances of query-positive and query-negative pairs</p></li>
+</ul>
+<p>The formula can be interpreted as:</p>
+<ul class="simple">
+<li><p>When <span class="math notranslate nohighlight">\(\text{margin} - (d(\mathbf{q}, \mathbf{e}_p) - d(\mathbf{q}, \mathbf{e}_n)) \leq 0\)</span>, the loss is zero, meaning the model has successfully learned that the query is closer to the relevant item than to the irrelevant item by at least the margin amount</p></li>
+<li><p>When <span class="math notranslate nohighlight">\(\text{margin} - (d(\mathbf{q}, \mathbf{e}_p) - d(\mathbf{q}, \mathbf{e}_n)) &gt; 0\)</span>, the model is penalized proportionally to how much the constraint is violated</p></li>
+</ul>
+<div class="note admonition">
+<p class="admonition-title">Relationship to Hinge Loss</p>
+<p>Triplet Loss is a direct extension of <a class="reference external" href="04_reinforcement_learning.html#newconcept-hinge_loss"><span class="refconcept">Hinge Loss</span></a> to the similarity learning domain, both using the $\max(0, \cdot)$ operator:</p>
+<ul class="simple">
+<li><p><strong>Standard Hinge Loss for binary classification</strong>: <span class="math notranslate nohighlight">\(\max(0, \text{margin} - y \hat{y})\)</span> to mask out loss for well-enough predictions, and hence encourage incorrect or not-good-enough <span class="math notranslate nohighlight">\(\hat{y}\)</span> estimations move toward $y$.</p></li>
+<li><p><strong>Triplet Loss for enforcing a margin between relative distances in the embedding space</strong>: <span class="math notranslate nohighlight">\(\max(0, \text{margin} - (d(\mathbf{q}, \mathbf{e}_n) - d(\mathbf{q}, \mathbf{e}_p)))\)</span> to mask out loss well-apart positive/negative examples, and hence place more focus on moving remaining positive/negative examples apart.</p></li>
+</ul>
+</div>
+</section>
+<section id="batch-contrastive-loss">
+<h3>Batch Contrastive Loss<a class="headerlink" href="#batch-contrastive-loss" title="Link to this heading"></a></h3>
+<p><span class="target" id="newconcept-batch_contrastive_loss"></span><span class="newconcept">Batch Contrastive Loss</span> extends contrastive learning principles to entire batches, utilizing the positive example and multiple negative examples simultaneously to improve training efficiency and stability, and thus better embedding quality. <span class="target" id="newconcept-infonce_loss"></span><span class="newconcept">InfoNCE Loss</span> is widely used and formulated as the following</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{InfoNCE}} = -\frac{1}{B} \sum_{i=1}^{B} \log \frac{e^{s_{i,i+}/\tau}}{\sum_{j=1}^{B} e^{s_{i,j}/\tau}}\]</div>
+<p>where</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(B\)</span> is the batch size and <span class="math notranslate nohighlight">\(s_{i,j}\)</span> is the similarity score between user i and item j.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\tau\)</span> is a temperature parameter that controls the sharpness of the distribution.</p></li>
+</ul>
+<p><span class="target" id="newconcept-batch_softmax_loss"></span><span class="newconcept">Batch Softmax Loss</span> is is a special case of InfoNCE Loss when the temperature parameter is $1$.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{batch-softmax}} = \mathcal{L}_{\text{InfoNCE}}|_{\tau = 1}\]</div>
+<p>These batch contrastive methods offer key advantages:</p>
+<ul class="simple">
+<li><p><strong class="underline-bold">Efficient computation</strong>: Leverages batch-level parallelism on modern hardware, significantly accelerating training.</p></li>
+<li><p><strong class="underline-bold">Enhanced representation quality</strong>: Promotes clear embedding differentiation by jointly considering multiple negative examples together for contrasts.</p></li>
+</ul>
+</section>
+</section>
+<section id="relating-business-metrics-to-loss">
+<h2>Relating Business Metrics To Loss<a class="headerlink" href="#relating-business-metrics-to-loss" title="Link to this heading"></a></h2>
+<p>When designing recommendation/search/ads systems, bridging the gap between business metrics and model optimization objectives is a fundamental challenge. While businesses measure success through metrics like revenue, retention, and user satisfaction, machine learning models are trained through technical loss functions like cross-entropy or mean squared error. This disconnection between what we optimize for (loss functions) and what we actually care about (business metrics) represents one of the central challenges in applied machine learning for search/recommendation/ads systems. This section explores strategies for translating business KPIs into machine learning objectives.</p>
+<section id="common-business-metrics">
+<h3>Common Business Metrics<a class="headerlink" href="#common-business-metrics" title="Link to this heading"></a></h3>
+<p>The following table provides an overview of common business metrics used in search, recommendation, and ads systems.</p>
+<ul class="simple">
+<li><p><strong>Engagement &amp; Interaction Metrics</strong> reflecting service quality (item level or user leve)</p>
+<ul>
+<li><p>Click-Through Rate (CTR)</p></li>
+<li><p>Bounce Rate</p></li>
+<li><p>Session Duration</p></li>
+<li><p>First-Page Keyword Rankings</p></li>
+<li><p>Diversity</p></li>
+<li><p>Serendipity (Novelty)</p></li>
+<li><p>Engagement Score</p></li>
+<li><p>User Satisfaction Score</p></li>
+<li><p>Task Completion Rate</p></li>
+<li><p>Daily/Monthly Active Users (DAU/MAU)</p></li>
+</ul>
+</li>
+<li><p><strong>Conversion and Monetization Metrics</strong> reflecting the business prosperity and profitability.</p>
+<ul>
+<li><p>Conversion Rate (CVR)</p></li>
+<li><p>Click-to-Conversion Rate</p></li>
+<li><p>Revenue Per Mille (RPM)</p></li>
+<li><p>Customer Lifetime Value (CLV)</p></li>
+<li><p>Return on Ad Spend (ROAS)</p></li>
+<li><p>Return on Marketing Investment (ROMI)</p></li>
+</ul>
+</li>
+<li><p><strong>Cost &amp; Efficiency Metrics</strong> reflecting the business cost and efficiency.</p>
+<ul>
+<li><p>Cost Per Click (CPC)</p></li>
+<li><p>Cost Per Mille (CPM)</p></li>
+<li><p>Cost Per Lead (CPL)</p></li>
+<li><p>Cost Per Acquisition (CPA)</p></li>
+<li><p>Customer Acquisition Cost (CAC)</p></li>
+</ul>
+</li>
+<li><p><strong>Retention &amp; Loyalty Metrics</strong> reflecting user’s long-term satisfaction with the service.</p>
+<ul>
+<li><p>Retention Rate</p></li>
+<li><p>N-Day Retention</p></li>
+<li><p>Churn Rate</p></li>
+<li><p>Customer Lifetime Value (CLV)</p></li>
+</ul>
+</li>
+<li><p><strong>Analysis Metrics</strong></p>
+<ul>
+<li><p>Impressions</p></li>
+<li><p>Exploration Rate</p></li>
+<li><p>Attribution Metrics</p></li>
+</ul>
+</li>
+</ul>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">Common Business Metrics in Search, Recommendation, and Advertising Systems</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Metric</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Search</p></th>
+<th class="head"><p>Recommendation</p></th>
+<th class="head"><p>Ads</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Click-Through Rate (CTR)</p></td>
+<td><p>Percentage of impressions that result in clicks. Formula: CTR = (Clicks / Impressions) × 100%</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Conversion Rate (CVR)</p></td>
+<td><p>Percentage of users who complete a desired action (e.g., purchase, signup). Formula: CVR = (Conversions / Total Users) × 100%</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Click-to-Conversion Rate</p></td>
+<td><p>Percentage of clicks that result in a conversion. Formula: (Conversions / Clicks) × 100%</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Bounce Rate</p></td>
+<td><p>Percentage of sessions where users leave without taking further action. Formula: Bounce Rate = (Single-Page Sessions / Total Sessions) × 100%</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Session Duration</p></td>
+<td><p>Average time users spend per session. Formula: Total Duration of All Sessions / Number of Sessions</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Diversity</p></td>
+<td><p>Variety of items recommended to users. For example, averaging pairwise similarity of recommended items</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>Serendipity (Novelty)</p></td>
+<td><p>Measure of how “surprising” yet relevant recommendations are. For example, percentage of recommended items from categories the user hasn’t previously interacted with but finds relevant</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>First-Page Keyword Rankings</p></td>
+<td><p>Track the ranking positions of targeted keywords on the first page of search engine results, reflecting SEO performance</p></td>
+<td><p>✓</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>Task Completion Rate</p></td>
+<td><p>Percentage of users who successfully complete their intended task</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>User Satisfaction Score</p></td>
+<td><p>Direct feedback from users about their experience</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Retention Rate</p></td>
+<td><p>Percentage of users who return after their first visit within a specific timeframe</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>N-Day Retention</p></td>
+<td><p>Percentage of users who return on the nth day after their first visit</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>Churn Rate</p></td>
+<td><p>Percentage of users who stop using a service over a specific period. Formula: Churn Rate = (Number of Users Lost during Period / Total Users at Start of Period) × 100%</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Revenue Per Mille (RPM)</p></td>
+<td><p>Revenue generated per 1,000 impressions. Formula: RPM = (Total Revenue / Total Impressions) × 1,000</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Cost Per Click (CPC)</p></td>
+<td><p>Average cost paid for each click. Formula: CPC = Total Cost / Number of Clicks</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cost Per Mille (CPM)</p></td>
+<td><p>Cost per 1,000 ad impressions. Formula: CPM = (Total Cost / Impressions) × 1,000</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Cost Per Lead (CPL)</p></td>
+<td><p>Cost effectiveness of generating new leads. In the context of ads, a “lead” refers to a potential customer who has shown some interest in a product or service through a qualifying action. Formula: CPL = Total Marketing Spend / Number of New Leads</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cost Per Acquisition (CPA)</p></td>
+<td><p>Average cost incurred to acquire a customer through an ad campaign. Formula: CPA = Total Advertising Cost / Number of Acquisitions</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Customer Acquisition Cost (CAC)</p></td>
+<td><p>Total cost of acquiring a new customer, including marketing and sales expenses. Formula: CAC = Total Marketing and Sales Expenses / Number of New Customers</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Return on Ad Spend (ROAS)</p></td>
+<td><p>Revenue generated relative to advertising costs. Formula: ROAS = Revenue from Advertising / Cost of Advertising</p></td>
+<td></td>
+<td></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Return on Marketing Investment (ROMI)</p></td>
+<td><p>Revenue generated for each dollar spent on marketing. Formula: ROMI = (Sales Growth - Marketing Cost) / Marketing Investment × 100%</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Customer Lifetime Value (CLV)</p></td>
+<td><p>Total revenue expected from a customer throughout their relationship with the platform</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Daily/Monthly Active Users (DAU/MAU)</p></td>
+<td><p>Number of unique users who engage with the platform daily or monthly</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Engagement Score</p></td>
+<td><p>Indicating level of user interaction with content, such as likes, shares, mentions, comments, or time spent on a page</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Impressions</p></td>
+<td><p>Number of times an ad is displayed, regardless of user interaction</p></td>
+<td></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>Exploration Rate</p></td>
+<td><p>Measure of how often user choose to interact with results offered by the system for the purpose of exploration.</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Attribution Metrics</p></td>
+<td><p>Determine the contribution of each marketing channel or touchpoint in driving conversions, aiding in budget allocation and strategy optimization</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+<td><p>✓</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="proxy-metrics">
+<h3>Proxy Metrics<a class="headerlink" href="#proxy-metrics" title="Link to this heading"></a></h3>
+<p>Some business metrics (like revenue, retention, or lifetime value) cannot be directly optimized through standard loss functions for several key reasons:</p>
+<ul class="simple">
+<li><p><strong>Delayed Feedback</strong>: Business metrics often materialize days or weeks after model predictions (e.g., earning for a conversion, lifetime value, retention).</p></li>
+<li><p><strong>Signal Sparsity</strong>: Business events like purchases or subscriptions are rare compared to clicks or impressions.</p></li>
+<li><p><strong>Noise and Variability</strong>: Business metrics fluctuate due to external factors beyond the model’s control (seasonality, market conditions).</p></li>
+<li><p><strong>Attribution Challenges</strong>: Difficult to attribute business outcomes to specific model decisions.</p></li>
+<li><p><strong>Normalization Issues</strong>: Raw business metrics vary widely in scale and are not normalized.</p></li>
+</ul>
+<p>Therefore, effective model training typically relies on carefully selected proxy metrics that:</p>
+<ol class="arabic simple">
+<li><p>Provide <strong class="underline-bold">immediate</strong> feedback for optimization.</p></li>
+<li><p><strong class="underline-bold">Correlate</strong> strongly with business outcomes.</p></li>
+<li><p>Offer <strong class="underline-bold">consistent</strong> and stable signals for modeling.</p></li>
+<li><p>Are <strong class="underline-bold">normalized and comparable</strong> across contexts.</p></li>
+</ol>
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-number">Table 2 </span><span class="caption-text">Common Business Metrics and Their Loss Function Mappings</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Business Metric</p></th>
+<th class="head"><p>Proxy Metric</p></th>
+<th class="head"><p>Loss Function</p></th>
+<th class="head"><p>Prediction Head Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Revenue/ROAS</p></td>
+<td><p>Click-Through Rate, Conversion Rate</p></td>
+<td><p>Binary Cross-Entropy, Weighted BCE</p></td>
+<td><p>Classification</p></td>
+</tr>
+<tr class="row-odd"><td><p>User Retention</p></td>
+<td><p>Session Time, Revisit Rate</p></td>
+<td><p>MSE, Huber Loss, Quantile Regression</p></td>
+<td><p>Regression</p></td>
+</tr>
+<tr class="row-even"><td><p>Content Discovery</p></td>
+<td><p>Click Diversity, Exploration Rate</p></td>
+<td><p>ListNet, ApproxNDCG</p></td>
+<td><p>Ranking</p></td>
+</tr>
+<tr class="row-odd"><td><p>User Satisfaction</p></td>
+<td><p>Explicit Ratings, Session Completion</p></td>
+<td><p>Ordinal Cross-Entropy</p></td>
+<td><p>Ordinal Classification</p></td>
+</tr>
+<tr class="row-even"><td><p>Engagement</p></td>
+<td><p>Scroll Depth, Playback Time, Synthetic Engagement Score</p></td>
+<td><p>MSE, Huber Loss</p></td>
+<td><p>Regression</p></td>
+</tr>
+<tr class="row-odd"><td><p>Conversion Funnel</p></td>
+<td><p>Session Milestone Completion</p></td>
+<td><p>All-Threshold Loss</p></td>
+<td><p>Ordinal Classification</p></td>
+</tr>
+</tbody>
+</table>
+<p>Some business metrics like Revenue/Return Per Mile (RPM) are accumulated smoothed across hundreds to thousands of impressions/interactions, and hence can possibly be one optimization objective, especially if delayed reward is tolerated.</p>
+</section>
+<section id="promoting-diversity">
+<h3>Promoting Diversity<a class="headerlink" href="#promoting-diversity" title="Link to this heading"></a></h3>
+<p>promoting diversity is one business focus for search/recommendation/ads system, as user does not want to be</p>
+<p>although adding a diversity penality term to loss to encourage diversity is one way, for example, if the business want items after position 5 be more diverse,  you can add a sum of intra embeddings similarities to the loss to encourage a higher inter embedding similarities before the output layer caculation. this would eliminate one benefict of approxndcg, need need for reranking. however, this it is not the full picture.</p>
+<p>in practice, diversity is promoted through multiple practice, including session based data (prevent user search twice and get the same results), and exploration experiments, …</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="02_transformer_models.html" class="btn btn-neutral float-left" title="Transformer Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="04_reinforcement_learning.html" class="btn btn-neutral float-right" title="Reinforcement Learning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tony.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

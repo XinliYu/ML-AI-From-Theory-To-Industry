@@ -227,3 +227,75 @@ p {
     display: none;
 }
 
+/* Add these styles to your _static/custom.css file */
+
+/* React component wrapper */
+.react-component-wrapper {
+  margin: 24px 0;
+  width: 100%;
+}
+
+/* Base styling for React components */
+.react-component-container {
+  background-color: #f8fbff;
+  border: 1px solid #e1e8f0;
+  border-radius: 6px;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden; /* Prevent content from flowing outside */
+}
+
+/* Responsive component styling */
+.react-component-responsive {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Hide any error output in React components */
+.react-component-container script,
+.react-component-container noscript {
+  display: none !important;
+}
+
+/* Make sure error containers are properly styled */
+[id^="error-react-"] {
+  color: #d32f2f;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 14px;
+  display: none; /* Hidden by default, shown via JS when needed */
+  max-width: 100%;
+}
+
+/* Make note admonitions more resilient to script content */
+.admonition.note script,
+.admonition.note .react-error-output {
+  display: none !important;
+}
+
+/* Ensure component styling works well inside notes */
+.admonition .react-component-container {
+  background-color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 102, 204, 0.2);
+}
+
+/* Make components in notes take up appropriate space */
+.admonition .react-component-wrapper {
+  width: 100%;
+}
+
+/* Media queries for better responsiveness */
+@media screen and (max-width: 768px) {
+  .react-component-container {
+    padding: 15px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .react-component-container {
+    padding: 10px;
+  }
+}

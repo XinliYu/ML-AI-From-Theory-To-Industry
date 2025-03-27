@@ -9,7 +9,7 @@
   <title>Data Preparation &mdash; MLAI 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=e159ab47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=3eba48d4" />
 
   
     <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/modeling/classic_modeling/01_data_preparation.html" />
@@ -22,6 +22,8 @@
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       <script src="../../_static/js/mathjax-config.js?v=c54ad740"></script>
+      <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+      <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -66,7 +68,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#reward-function-ruled-based-label-creation">Reward Function (Ruled-Based Label Creation)</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#reward-normalization">Reward Normalization</a></li>
 <li class="toctree-l5"><a class="reference internal" href="#meta-learning">Meta Learning</a></li>
-<li class="toctree-l5"><a class="reference internal" href="#deep-reward-labeling-models">Deep Reward (Labeling) Models</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#pairwise-preference-learning">Pairwise Preference Learning</a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#preference-learning">Preference Learning</a></li>
 </ul>
 </li>
@@ -75,7 +77,8 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="02_transformer_models.html">Transformer Models</a></li>
-<li class="toctree-l3"><a class="reference internal" href="03_reinforcement_learning.html">Reinforcement Learning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="03_supervised_learning.html">Supervised Learning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="04_reinforcement_learning.html">Reinforcement Learning</a></li>
 </ul>
 </li>
 </ul>
@@ -111,8 +114,8 @@
              
   <section id="data-preparation">
 <h1>Data Preparation<a class="headerlink" href="#data-preparation" title="Link to this heading"></a></h1>
-<p>In ML/AI systems for search, recommendation, and advertising, effective data preparation for offline model development is crucial. The retrieval system relies on various inputs, including user queries, user data, contextual signals and runtime analytics. Properly collecting, labeling, and balancing this data is critical model performance and user satisfaction.</p>
-<p>The runtime system will typically log the following information for offline development (see also <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html">Recommendation ML/AI System Design</a>).</p>
+<p>Effective data preparation forms the foundation for successful search/recommendation/ads systems. The quality of data directly impacts model performance, system accuracy, and ultimately user satisfaction. This section outlines key considerations for collecting, processing, and labeling data to support search/recommendation/ads ML/AI system development.</p>
+<p>Modern search/recommendation/ads systems capture and utilize various data logs from runtime operations (see also <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html">Recommendation ML/AI System Design</a>). These logs typically include:</p>
 <ul class="simple">
 <li><p><strong>User Queries</strong>: In search systems and reactive recommendation or advertising scenarios, user queries are primary inputs. While typically textual, queries can also be in the form of audio, images, or videos (e.g., the Amazon Shopping app allows users to search for products by taking pictures).</p></li>
 <li><p><strong>User Data</strong>: Proactive recommendations and ads heavily depend on user data, such as <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-user_profiles"><span class="refconcept">User Profiles</span></a> and <a class="reference external" href="../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html#newconcept-historical_user_activities_&amp;_analytics"><span class="refconcept">Historical User Activities &amp; Analytics</span></a>. This data is also valuable in search and reactive scenarios to personalize results.</p></li>
@@ -177,7 +180,7 @@
 <li><p>Contextual (considering the whole session for offline, or consdering the interactions up to the last completed one for runtime)</p></li>
 <li><p>Multi-task (learning from major downstream tasks)</p></li>
 </ul>
-<p>The ecodings can serve as input for classic downstream ML, or serve as context tokens in downstream LLM (if the LLM is post-trained to support it).</p>
+<p>The encodings can serve as input for classic downstream ML, or serve as context tokens in downstream LLM (if the LLM is post-trained to support it).</p>
 </li>
 <li><p>Optionally, for LLM, a session information prompt template can be recommended for downstream LLMs to leverage (post-training not required).</p></li>
 </ul>
@@ -321,8 +324,8 @@
 <h2>Reward Function (Ruled-Based Label Creation)<a class="headerlink" href="#reward-function-ruled-based-label-creation" title="Link to this heading"></a></h2>
 <p>The next step is creating a reward function. At the beginning, it is usually a rule based function resulting from intuitive business requirements.</p>
 <ul class="simple">
-<li><p>Even with recent advancements <a class="reference internal" href="#deep-reward-labeling-models">Deep Reward (Labeling) Models</a>, the rule-based reward functions with <a class="reference internal" href="#meta-learning">Meta Learning</a> approache is still a common practice, especially helping swiftly establish labeling and evaluation tools especially when a product is starting up and there is not yet sufficient data. The downsides for this approache include the manual efforts for feature engineering, creating and maintaining the complex reward strucuture, various thresholds and weights.</p></li>
-<li><p>After sufficient data have been collected, <a class="reference internal" href="#deep-reward-labeling-models">Deep Reward (Labeling) Models</a> is an advanced techinque to reduce business complexity, ingest ever-growing complex data and signals, and better facility automated continuous model improvement.</p></li>
+<li><p>Even with recent advancements <a href="#id3"><span class="problematic" id="id4">`Deep Reward (Labeling) Models`_</span></a>, the rule-based reward functions with <a class="reference internal" href="#meta-learning">Meta Learning</a> approache is still a common practice, especially helping swiftly establish labeling and evaluation tools especially when a product is starting up and there is not yet sufficient data. The downsides for this approache include the manual efforts for feature engineering, creating and maintaining the complex reward strucuture, various thresholds and weights.</p></li>
+<li><p>After sufficient data have been collected, <a href="#id5"><span class="problematic" id="id6">`Deep Reward (Labeling) Models`_</span></a> is an advanced techinque to reduce business complexity, ingest ever-growing complex data and signals, and better facility automated continuous model improvement.</p></li>
 </ul>
 <p>Consider an e-commerce platform that recommends products to users. The platform collects various implicit feedback signals with increasing strength of user interest:</p>
 <ul class="simple">
@@ -787,7 +790,7 @@
 <li><p>Apply the L-BFGS-B algorithm using these estimated gradients</p></li>
 </ol>
 </li>
-<li><p>This traditional method has a stochastic version that can handle dataset of a large size for robustness and reduce the complexity and workload on data sampling. However, if a more sophisticated approach is required to naturally integrate same level of diverse and complex information as in the runtime search/recommendation/Ads models, the a modern day approach is <a href="#id3"><span class="problematic" id="id4">`Deep Reward Models`_</span></a>.</p></li>
+<li><p>This traditional method has a stochastic version that can handle dataset of a large size for robustness and reduce the complexity and workload on data sampling. However, if a more sophisticated approach is required to naturally integrate same level of diverse and complex information as in the runtime search/recommendation/Ads models, the a modern day approach is <a href="#id7"><span class="problematic" id="id8">`Deep Reward Models`_</span></a>.</p></li>
 </ul>
 <div class="folding highlight-python notranslate" id="meta-learning-example"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">meta_learning_multi_objective_function</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">interactions</span><span class="p">,</span> <span class="n">revenue_metrics</span><span class="p">,</span> <span class="n">retention_metrics</span><span class="p">,</span> <span class="n">satisfaction_metrics</span><span class="p">):</span>
      <span class="n">rewards</span> <span class="o">=</span> <span class="p">[</span><span class="n">calculate_reward</span><span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="k">for</span> <span class="n">interaction</span> <span class="ow">in</span> <span class="n">interactions</span><span class="p">]</span>
@@ -815,8 +818,8 @@
 </pre></div>
 </div>
 </section>
-<section id="deep-reward-labeling-models">
-<h3>Deep Reward (Labeling) Models<a class="headerlink" href="#deep-reward-labeling-models" title="Link to this heading"></a></h3>
+<section id="pairwise-preference-learning">
+<h3>Pairwise Preference Learning<a class="headerlink" href="#pairwise-preference-learning" title="Link to this heading"></a></h3>
 <p><span class="target" id="newconcept-deep_reward_models"></span><span class="newconcept">Deep Reward Models</span> is now a widely-used advanced approach to build a powerful labeling tool. It is the most critical module for a <span class="target" id="newconcept-self-improving_ml/ai_system"></span><span class="newconcept">Self-Improving ML/AI System</span> (meaning that the ML/AI system can continuously improve itself using real-time user feedback data with a <span class="target" id="newconcept-closed_feedback_learning_loop"></span><span class="newconcept">Closed Feedback Learning Loop</span>).</p>
 <ul class="simple">
 <li><p>They <strong class="underline-bold">directly learn the mapping from user interaction signals to reward values</strong>, bypassing the need for explicit feature engineering, rule-based reward function development, and manual parameter tuning.</p></li>
@@ -870,6 +873,22 @@
 </div>
 <section id="preference-learning">
 <h4>Preference Learning<a class="headerlink" href="#preference-learning" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>High-quality, user-curated ranking annotations are rare.</p></li>
+<li><p>Explicit feedback, like product ratings or reviews, often lacks absolute ranking clarity. For instance, a product rated 4.2 isn’t necessarily inferior to one rated 4.4.</p></li>
+<li><p>While business-driven reward functions can be manually defined for training models in reward regression, relying solely on synthetic rankings derived from these rewards is suboptimal</p>
+<ul>
+<li><p><strong>Misalignment with User Preferences</strong>: Manually crafted reward functions may not fully capture the nuanced preferences and behaviors of users. This misalignment can lead to recommendations that prioritize business objectives over user satisfaction, potentially diminishing user engagement over time.​</p></li>
+<li><p><strong>Simplified Assumptions</strong>: Synthetic rankings often rely on simplified assumptions that may not reflect the complexity of real-world interactions. Such oversimplification can result in models that perform well on synthetic data but fail to generalize effectively to actual user behavior.​</p></li>
+<li><p><strong>Lack of Diversity</strong>: Synthetic data may not encompass the full diversity of user interactions present in real-world scenarios. This limitation can cause models to overlook niche user groups or less common items, leading to a homogenized recommendation list that doesn’t cater to all user segments.​</p></li>
+<li><p><strong>Evaluation Challenges</strong>: Models trained on synthetic rankings might exhibit inflated performance metrics when evaluated on similar synthetic data. However, this performance may not translate to real-world effectiveness, making it challenging to assess the true value of the recommendation system. Models trained on synthetic rankings usually perform suboptimal on real user-curated gold testsets.</p></li>
+</ul>
+</li>
+</ul>
+<ol class="arabic simple">
+<li><p>Offline Model Development: pairwise preferences are extracted from user interactions (clicks, purchases, engagement) to create ranking labels that capture relative item preferences. An offline model is trained on pairwise prefernece to learn prefernce scores through <a class="reference external" href="04_reinforcement_learning.html#newconcept-pairwise_preference_loss"><span class="refconcept">Pairwise Preference Loss</span></a>. After the learning, the model is able to generate preference scores for each item, and the ranking by this learned preference scores can be used as groundtruth. The evaluation is performed against a few carefully human curated annotated rankings. This stage can also optionally perform reward regression (using Rgression Loss) or oridinal reward classification (using <a class="reference external" href="04_reinforcement_learning.html#newconcept-classification_loss"><span class="refconcept">Classification Loss</span></a> or <a class="reference external" href="04_reinforcement_learning.html#newconcept-ordinal_classification_loss"><span class="refconcept">Ordinal Classification Loss</span></a>) as a joint learning task.</p></li>
+<li><p>Runtime Model Development, runtime models are developed using the labels learned from the offline models.  optimize toward ranking, optionlly jointly alongside reward regresion or oridinal reward classification.</p></li>
+</ol>
 <p>The fundamental unit in preference learning is the <span class="target" id="newconcept-preference_pair"></span><span class="newconcept">Preference Pair</span>, derived from the pre-defined <span class="target" id="newconcept-preference_rules"></span><span class="newconcept">Preference Rules</span> - “given two interaction sequences, which one is preferred over the other”. For example, a preference rule can be “any interaction sequence ending in purchase has highest user preference”. As a result,</p>
 <ul class="simple">
 <li><p>Interaction Sequence A: View → Dwell → Add to Cart → Purchase</p></li>

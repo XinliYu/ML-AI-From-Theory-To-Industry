@@ -6,10 +6,10 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>&lt;no title&gt; &mdash; MLAI 0.1 documentation</title>
+  <title>Advertising Systems &mdash; MLAI 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=e159ab47" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=3eba48d4" />
 
   
     <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/system_design/recommendation_and_ads_system_design/02_ads_system_design.html" />
@@ -20,9 +20,13 @@
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/foldable_admonitions.js?v=351fa817"></script>
       <script src="../../_static/js/mathjax-config.js?v=c54ad740"></script>
+      <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+      <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Modeling" href="../../modeling/index.html" />
+    <link rel="prev" title="Recommendation ML/AI System Design" href="01_recommendation_system_design.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,8 +49,26 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../index.html">ML/AI Systen Design</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ML/AI Systen Design</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Recommendation &amp; Ads System Design</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="01_recommendation_system_design.html">Recommendation ML/AI System Design</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Advertising Systems</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ad-engagement-prediction-systems">Ad Engagement Prediction Systems</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ad-engagement-prediction-system-architecture">Ad Engagement Prediction System Architecture</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#staged-ad-recommendation-system">Staged Ad Recommendation System</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#ad-relevance-system-for-search-engines">Ad Relevance System for Search Engines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ad-relevance-system-for-social-networks">Ad Relevance System for Social Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#multi-modal-learning-for-ad-engagement">Multi-Modal Learning for Ad Engagement</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#scaling-to-billions-of-users">Scaling to Billions of Users</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../../modeling/index.html">Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../evaluation/index.html">Evaluation</a></li>
 </ul>
@@ -65,7 +87,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+          <li class="breadcrumb-item"><a href="../index.html">ML/AI Systen Design</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Recommendation &amp; Ads System Design</a></li>
+      <li class="breadcrumb-item active">Advertising Systems</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/system_design/recommendation_and_ads_system_design/02_ads_system_design.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -75,13 +99,940 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <p>balanced system</p>
-<p>How would you design the ranking algorithm to balance user engagement (relevance/quality of ads) with advertiser value (bid and conversion)? Describe how you’d incorporate quality scores, relevance predictions, and the bidding strategy into the system’s design.</p>
+  <section id="advertising-systems">
+<h1>Advertising Systems<a class="headerlink" href="#advertising-systems" title="Link to this heading"></a></h1>
+</section>
+<section id="ad-engagement-prediction-systems">
+<h1>Ad Engagement Prediction Systems<a class="headerlink" href="#ad-engagement-prediction-systems" title="Link to this heading"></a></h1>
+<p>This document outlines comprehensive approaches to building machine learning systems for ad engagement prediction across different platforms. These systems are designed to optimize ad relevance, user engagement, and business objectives in a scalable, efficient manner.</p>
+<section id="ad-engagement-prediction-system-architecture">
+<h2>Ad Engagement Prediction System Architecture<a class="headerlink" href="#ad-engagement-prediction-system-architecture" title="Link to this heading"></a></h2>
+<p>Ad engagement prediction shares many characteristics with recommendation systems but focuses specifically on predicting user interactions with advertisements. Like recommendation systems, ad engagement prediction can be categorized into three types:</p>
+<ul class="simple">
+<li><p><strong>Reactive</strong>: Responding to explicit user actions or queries (e.g., search ads)</p></li>
+<li><p><strong>Proactive</strong>: Anticipating user needs without explicit prompting (e.g., personalized ad suggestions)</p></li>
+<li><p><strong>Feed</strong>: Combining elements of both in a curated content stream (e.g., social media ads)</p></li>
+</ul>
+<p>All ad engagement prediction systems, regardless of implementation context, consist of four major components:</p>
+<ul class="simple">
+<li><p><strong>Task Understanding</strong>: Interpreting user intent and needs through explicit queries, implicit signals, or predicted interests to determine what ads would be most relevant in the current context.</p></li>
+<li><p><strong>Contextual Awareness</strong>: Incorporating session data, location, time, device information, and other situational factors to enhance relevance and personalization of ad recommendations.</p></li>
+<li><p><strong>Delivery</strong>: Creating a ranked list of ads that best match the interpreted task and context, optimizing for user engagement, satisfaction, and business objectives.</p></li>
+<li><p><strong>Evaluation &amp; Feedback</strong>: Measuring ad system performance through metrics, A/B testing, and user feedback to continuously improve the system and adapt to changing preferences and behaviors.</p></li>
+</ul>
+<section id="staged-ad-recommendation-system">
+<h3>Staged Ad Recommendation System<a class="headerlink" href="#staged-ad-recommendation-system" title="Link to this heading"></a></h3>
+<p>Similar to general recommendation systems, ad engagement prediction employs a staged filtering approach that progressively narrows down candidate items to achieve both computational efficiency and recommendation quality.</p>
+<ol class="arabic">
+<li><p><strong>Sourcing Layer</strong></p>
+<p>The sourcing layer acquires potential ad candidates from diverse sources, making proper storage and indexing before formal retrieval begins.</p>
+<ul>
+<li><p><strong>Integrated Data Sources</strong>:
+* <strong>Advertiser Campaign Data</strong>: Ad creatives, targeting parameters, bids, budgets
+* <strong>Ad Inventory</strong>: Available ad slots, formats, placement contexts
+* <strong>Platform Data</strong>: User profiles, interaction history, contextual information</p></li>
+<li><p><strong>Implementation Example</strong>:
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+def source_ad_candidates(user_context, available_slots):</p>
+<blockquote>
+<div><p>“””
+Source initial ad candidates from various data sources.</p>
+<p>Parameters:
+- user_context: Dict containing user information and context
+- available_slots: List of ad slot configurations</p>
+<p>Returns:
+- List of candidate ads with basic metadata
+“””
+candidates = []</p>
+<p># Source from advertiser campaigns
+active_campaigns = ad_campaign_db.get_active_campaigns(</p>
+<blockquote>
+<div><p>region=user_context.get(‘region’),
+language=user_context.get(‘language’)</p>
+</div></blockquote>
+<p>)</p>
+<p># Apply basic filtering rules
+for campaign in active_campaigns:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>if campaign_matches_basic_criteria(campaign, user_context, available_slots):</dt><dd><p>candidates.extend(campaign.get_ad_creatives())</p>
+</dd>
+</dl>
+</div></blockquote>
+<p># Add real-time bid ads if applicable
+if rtb_enabled(available_slots):</p>
+<blockquote>
+<div><p>rtb_candidates = fetch_rtb_candidates(user_context, available_slots)
+candidates.extend(rtb_candidates)</p>
+</div></blockquote>
+<p>return candidates</p>
+</div></blockquote>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Recall Layer</strong></p>
+<p>The recall layer retrieves a manageable subset of potentially relevant ads from the vast sourced candidate pool.</p>
+<ul>
+<li><p><strong>Implementation Approaches</strong>:
+* <strong>Vector Search</strong>: Embedding-based retrieval using approximate nearest neighbor search
+* <strong>Rule-Based Filtering</strong>: Targeting criteria, frequency capping, budget constraints
+* <strong>Collaborative Filtering</strong>: Leveraging similar user preferences</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python
+def retrieve_relevant_ads(user_id, query_context, candidates, max_candidates=1000):</p>
+<blockquote>
+<div><p>“””
+Retrieve most relevant ad candidates using vector search and filtering.</p>
+<p>Parameters:
+- user_id: User identifier
+- query_context: Search query or contextual information
+- candidates: List of candidate ads from sourcing layer
+- max_candidates: Maximum number of candidates to return</p>
+<p>Returns:
+- Filtered list of most relevant ad candidates
+“””
+# Get user embedding
+user_embedding = user_embedding_store.get(user_id)</p>
+<p># Get query/context embedding
+if query_context:</p>
+<blockquote>
+<div><p>context_embedding = embedding_model.encode(query_context)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>else:</dt><dd><p>context_embedding = None</p>
+</dd>
+</dl>
+<p># Combine embeddings for retrieval
+search_embedding = combine_embeddings(user_embedding, context_embedding)</p>
+<p># Retrieve ads using ANN search
+ad_ids = vector_index.search(</p>
+<blockquote>
+<div><p>query_vector=search_embedding,
+filter_conditions={</p>
+<blockquote>
+<div><p>“eligible_for_user”: user_eligibility_filter(user_id),
+“within_budget”: active_budget_filter()</p>
+</div></blockquote>
+<p>},
+limit=max_candidates</p>
+</div></blockquote>
+<p>)</p>
+<p>return [ad for ad in candidates if ad.id in ad_ids]</p>
+</div></blockquote>
+<p><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Integrity Layer</strong></p>
+<p>The integrity layer ensures candidates passing to the precision layer meet business rules, quality standards, and policy requirements.</p>
+<ul>
+<li><p><strong>Key Components</strong>:
+* <strong>Policy Enforcement</strong>: Ensuring ads comply with platform policies and legal requirements
+* <strong>Quality Checks</strong>: Ad creative quality, landing page experience
+* <strong>Advertiser Reputation</strong>: Historical performance, user feedback
+* <strong>Safety Filters</strong>: Blocking harmful or inappropriate content</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id17"><span class="problematic" id="id18">``</span></a><a href="#id19"><span class="problematic" id="id20">`</span></a>python
+def apply_integrity_filters(user_context, ad_candidates):</p>
+<blockquote>
+<div><p>“””
+Apply integrity filters to ensure ads meet platform standards.</p>
+<p>Parameters:
+- user_context: Dict containing user information and context
+- ad_candidates: List of ad candidates from recall layer</p>
+<p>Returns:
+- Filtered list of ads that pass integrity checks
+“””
+filtered_candidates = []</p>
+<dl>
+<dt>for ad in ad_candidates:</dt><dd><p># Check policy compliance
+if not policy_service.is_compliant(ad, user_context):</p>
+<blockquote>
+<div><p>continue</p>
+</div></blockquote>
+<p># Check ad quality
+quality_score = quality_model.predict(ad, user_context)
+if quality_score &lt; MIN_QUALITY_THRESHOLD:</p>
+<blockquote>
+<div><p>continue</p>
+</div></blockquote>
+<p># Check advertiser reputation
+advertiser_score = reputation_service.get_score(ad.advertiser_id)
+if advertiser_score &lt; MIN_ADVERTISER_SCORE:</p>
+<blockquote>
+<div><p>continue</p>
+</div></blockquote>
+<p># Check safety filters
+if safety_service.contains_unsafe_content(ad, user_context):</p>
+<blockquote>
+<div><p>continue</p>
+</div></blockquote>
+<p># Ad passed all integrity checks
+filtered_candidates.append(ad)</p>
+</dd>
+</dl>
+<p>return filtered_candidates</p>
+</div></blockquote>
+<p><a href="#id21"><span class="problematic" id="id22">``</span></a><a href="#id23"><span class="problematic" id="id24">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Precision Layer</strong></p>
+<p>The precision layer applies sophisticated ranking to the filtered candidate set to identify the most engaging ads.</p>
+<ul>
+<li><p><strong>Model Types</strong>:
+* <strong>Deep Neural Networks</strong>: Multi-layer perceptrons, transformers for complex feature interactions
+* <strong>Gradient Boosting Decision Trees</strong>: XGBoost, LightGBM, CatBoost for efficient prediction
+* <strong>Multi-task Learning Models</strong>: Optimizing for multiple objectives simultaneously</p></li>
+<li><p><strong>Feature Categories</strong>:
+* <strong>User Features</strong>: Demographics, interests, behavior patterns
+* <strong>Ad Features</strong>: Creative elements, targeting parameters, historical performance
+* <strong>Contextual Features</strong>: Time, device, location, surrounding content
+* <strong>Interaction Features</strong>: Cross-features capturing user-ad relationships</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id25"><span class="problematic" id="id26">``</span></a><a href="#id27"><span class="problematic" id="id28">`</span></a>python
+def rank_ad_candidates(user_context, ad_candidates):</p>
+<blockquote>
+<div><p>“””
+Rank ad candidates based on predicted engagement probability.</p>
+<p>Parameters:
+- user_context: Dict containing user information and context
+- ad_candidates: List of ad candidates that passed integrity checks</p>
+<p>Returns:
+- Ranked list of ads with engagement probability scores
+“””
+# Extract features for each candidate
+features_batch = []
+for ad in ad_candidates:</p>
+<blockquote>
+<div><p>features = extract_features(user_context, ad)
+features_batch.append(features)</p>
+</div></blockquote>
+<p># Get engagement predictions from model
+engagement_scores = engagement_model.predict_batch(features_batch)</p>
+<p># Apply advertiser bid adjustments
+adjusted_scores = []
+for i, (ad, score) in enumerate(zip(ad_candidates, engagement_scores)):</p>
+<blockquote>
+<div><p>bid_adjustment = calculate_bid_adjustment(ad, score)
+final_score = score * bid_adjustment
+adjusted_scores.append((ad, final_score))</p>
+</div></blockquote>
+<p># Rank ads by adjusted score
+ranked_ads = sorted(adjusted_scores, key=lambda x: x[1], reverse=True)</p>
+<p>return ranked_ads</p>
+</div></blockquote>
+<p><a href="#id29"><span class="problematic" id="id30">``</span></a><a href="#id31"><span class="problematic" id="id32">`</span></a></p>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="ad-relevance-system-for-search-engines">
+<h2>Ad Relevance System for Search Engines<a class="headerlink" href="#ad-relevance-system-for-search-engines" title="Link to this heading"></a></h2>
+<p>Search advertising systems display ads in response to user queries, making them primarily reactive recommendation systems. The core challenge is matching ad content to search intent while ensuring commercial viability.</p>
+<p>### System Architecture</p>
+<ol class="arabic">
+<li><p><strong>Query Understanding</strong></p>
+<ul>
+<li><p><strong>Query Analysis</strong>: Parse, normalize, and understand search intent</p></li>
+<li><p><strong>Query Expansion</strong>: Identify related terms and concepts</p></li>
+<li><p><strong>Commercial Intent Classification</strong>: Determine if the query has commercial intent</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id33"><span class="problematic" id="id34">``</span></a><a href="#id35"><span class="problematic" id="id36">`</span></a>python
+def analyze_search_query(query_text):</p>
+<blockquote>
+<div><p>“””
+Analyze search query to understand intent and commercial potential.</p>
+<p>Parameters:
+- query_text: The raw search query text</p>
+<p>Returns:
+- Dict containing query analysis results
+“””
+# Normalize and tokenize query
+normalized_query = normalize_text(query_text)
+tokens = tokenize(normalized_query)</p>
+<p># Extract entities and concepts
+entities = entity_recognition_model.extract(tokens)</p>
+<p># Expand query with related terms
+expanded_terms = query_expansion_model.expand(normalized_query)</p>
+<p># Classify commercial intent
+commercial_score = commercial_intent_model.predict(</p>
+<blockquote>
+<div><p>query=normalized_query,
+entities=entities</p>
+</div></blockquote>
+<p>)</p>
+<p># Categorize query
+categories = query_categorization_model.predict(normalized_query)</p>
+<dl class="simple">
+<dt>return {</dt><dd><p>‘original_query’: query_text,
+‘normalized_query’: normalized_query,
+‘entities’: entities,
+‘expanded_terms’: expanded_terms,
+‘commercial_score’: commercial_score,
+‘categories’: categories</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p><a href="#id37"><span class="problematic" id="id38">``</span></a><a href="#id39"><span class="problematic" id="id40">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Ad Selection &amp; Ranking</strong></p>
+<ul>
+<li><p><strong>Query-Ad Matching</strong>: Match ads to query through keyword and semantic matching</p></li>
+<li><p><strong>Quality Score Calculation</strong>: Assess expected ad performance (CTR, relevance)</p></li>
+<li><p><strong>Auction Mechanism</strong>: Combine bid and quality score for final ranking</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id41"><span class="problematic" id="id42">``</span></a><a href="#id43"><span class="problematic" id="id44">`</span></a>python
+def select_and_rank_search_ads(query_analysis, user_context):</p>
+<blockquote>
+<div><p>“””
+Select and rank ads for a search query.</p>
+<p>Parameters:
+- query_analysis: Output from query analysis step
+- user_context: User and session information</p>
+<p>Returns:
+- Ranked list of ads
+“””
+# Retrieve candidate ads based on query terms
+candidates = []</p>
+<p># Keyword-based matching
+keyword_candidates = keyword_index.match(</p>
+<blockquote>
+<div><p>query_analysis[‘normalized_query’],
+query_analysis[‘expanded_terms’]</p>
+</div></blockquote>
+<p>)
+candidates.extend(keyword_candidates)</p>
+<p># Semantic matching
+if len(candidates) &lt; MIN_CANDIDATE_THRESHOLD:</p>
+<blockquote>
+<div><p>query_embedding = embedding_model.encode(query_analysis[‘normalized_query’])
+semantic_candidates = vector_index.search(</p>
+<blockquote>
+<div><p>query_vector=query_embedding,
+filter_conditions={</p>
+<blockquote>
+<div><p>“categories”: query_analysis[‘categories’]</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+<p>)
+candidates.extend(semantic_candidates)</p>
+</div></blockquote>
+<p># Apply integrity filters
+filtered_candidates = apply_integrity_filters(user_context, candidates)</p>
+<p># Calculate quality scores
+scored_candidates = []
+for ad in filtered_candidates:</p>
+<blockquote>
+<div><p>quality_score = calculate_quality_score(ad, query_analysis, user_context)
+predicted_ctr = predict_ctr(ad, query_analysis, user_context)</p>
+<p># Get advertiser bid
+bid = get_bid_for_query(ad, query_analysis)</p>
+<p># Calculate ad rank
+ad_rank = bid * quality_score</p>
+<dl class="simple">
+<dt>scored_candidates.append({</dt><dd><p>‘ad’: ad,
+‘quality_score’: quality_score,
+‘predicted_ctr’: predicted_ctr,
+‘bid’: bid,
+‘ad_rank’: ad_rank</p>
+</dd>
+</dl>
+<p>})</p>
+</div></blockquote>
+<p># Rank by ad rank (bid * quality score)
+ranked_ads = sorted(scored_candidates, key=lambda x: x[‘ad_rank’], reverse=True)</p>
+<p>return ranked_ads</p>
+</div></blockquote>
+<p><a href="#id45"><span class="problematic" id="id46">``</span></a><a href="#id47"><span class="problematic" id="id48">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Special Considerations for Search Ads</strong></p>
+<ul>
+<li><p><strong>Query Intent Alignment</strong>: Ensuring ads match search intent types (navigational, informational, transactional)</p></li>
+<li><p><strong>Dynamic Keyword Insertion</strong>: Customizing ad copy based on search terms</p></li>
+<li><p><strong>Landing Page Relevance</strong>: Evaluating how well landing pages address the query intent</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id49"><span class="problematic" id="id50">``</span></a><a href="#id51"><span class="problematic" id="id52">`</span></a>python
+def enhance_search_ad_relevance(query, ad):</p>
+<blockquote>
+<div><p>“””
+Enhance ad relevance through query-specific optimizations.</p>
+<p>Parameters:
+- query: The search query
+- ad: The ad to enhance</p>
+<p>Returns:
+- Enhanced ad with improved relevance
+“””
+enhanced_ad = ad.copy()</p>
+<p># Apply dynamic keyword insertion if enabled
+if ad.supports_dynamic_insertion:</p>
+<blockquote>
+<div><p>enhanced_ad.headline = insert_keywords(ad.headline_template, query)
+enhanced_ad.description = insert_keywords(ad.description_template, query)</p>
+</div></blockquote>
+<p># Calculate landing page relevance
+landing_page_relevance = calculate_landing_page_relevance(</p>
+<blockquote>
+<div><p>landing_page=ad.landing_page,
+query=query</p>
+</div></blockquote>
+<p>)
+enhanced_ad.landing_page_relevance = landing_page_relevance</p>
+<p># Adjust quality score based on landing page relevance
+enhanced_ad.quality_score <a href="#id53"><span class="problematic" id="id54">*</span></a>= (0.7 + 0.3 * landing_page_relevance)</p>
+<p>return enhanced_ad</p>
+</div></blockquote>
+<p><a href="#id55"><span class="problematic" id="id56">``</span></a><a href="#id57"><span class="problematic" id="id58">`</span></a></p>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="ad-relevance-system-for-social-networks">
+<h2>Ad Relevance System for Social Networks<a class="headerlink" href="#ad-relevance-system-for-social-networks" title="Link to this heading"></a></h2>
+<p>Social media advertising systems blend proactive and feed-based recommendation approaches, leveraging rich user data to predict relevant ads without explicit queries.</p>
+<p>### System Architecture</p>
+<ol class="arabic">
+<li><p><strong>User Understanding and Profiling</strong></p>
+<ul>
+<li><p><strong>Interest and Behavior Modeling</strong>: Analyzing user activities, content interactions, connections</p></li>
+<li><p><strong>Temporal Patterns</strong>: Capturing evolving interests and behaviors over time</p></li>
+<li><p><strong>Social Graph Utilization</strong>: Leveraging connections and social influence patterns</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id59"><span class="problematic" id="id60">``</span></a><a href="#id61"><span class="problematic" id="id62">`</span></a>python
+def build_user_profile(user_id, timestamp):</p>
+<blockquote>
+<div><p>“””
+Build comprehensive user profile for ad targeting.</p>
+<p>Parameters:
+- user_id: User identifier
+- timestamp: Current timestamp for temporal relevance</p>
+<p>Returns:
+- User profile with interests, behaviors, and social data
+“””
+# Retrieve base user information
+user_info = user_db.get_user(user_id)</p>
+<p># Get recent user activity (past 30 days)
+recent_activity = activity_store.get_user_activity(</p>
+<blockquote>
+<div><p>user_id=user_id,
+start_time=timestamp - 30*DAY_IN_SECONDS,
+end_time=timestamp</p>
+</div></blockquote>
+<p>)</p>
+<p># Extract interests from activity
+interest_model = InterestModel()
+interests = interest_model.extract_interests(recent_activity)</p>
+<p># Get temporal patterns
+temporal_model = TemporalModel()
+temporal_patterns = temporal_model.extract_patterns(recent_activity)</p>
+<p># Get social graph information
+social_model = SocialGraphModel()
+social_data = social_model.get_user_social_context(user_id)</p>
+<p># Combine into comprehensive profile
+user_profile = {</p>
+<blockquote>
+<div><p>‘user_info’: user_info,
+‘interests’: interests,
+‘temporal_patterns’: temporal_patterns,
+‘social_context’: social_data,
+‘recent_activity’: summarize_activity(recent_activity)</p>
+</div></blockquote>
+<p>}</p>
+<p>return user_profile</p>
+</div></blockquote>
+<p><a href="#id63"><span class="problematic" id="id64">``</span></a><a href="#id65"><span class="problematic" id="id66">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Feed Integration and Native Ad Placement</strong></p>
+<ul>
+<li><p><strong>Content-Ad Similarity</strong>: Ensuring ads match surrounding content style and themes</p></li>
+<li><p><strong>Engagement Prediction</strong>: Forecasting specific engagement types (likes, comments, clicks)</p></li>
+<li><p><strong>Optimal Placement</strong>: Determining when and where to show ads in the feed</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id67"><span class="problematic" id="id68">``</span></a><a href="#id69"><span class="problematic" id="id70">`</span></a>python
+def integrate_ads_into_feed(user_profile, organic_feed_items, available_ad_slots):</p>
+<blockquote>
+<div><p>“””
+Integrate ads into social feed for native appearance and relevance.</p>
+<p>Parameters:
+- user_profile: Comprehensive user profile
+- organic_feed_items: List of organic content in the feed
+- available_ad_slots: Available positions for ad placement</p>
+<p>Returns:
+- Integrated feed with organic content and ads
+“””
+# Source candidate ads
+ad_candidates = source_ad_candidates(user_profile, len(available_ad_slots))</p>
+<p># Retrieve relevant ads
+relevant_ads = retrieve_relevant_ads(</p>
+<blockquote>
+<div><p>user_id=user_profile[‘user_info’][‘id’],
+candidates=ad_candidates</p>
+</div></blockquote>
+<p>)</p>
+<p># Filter for integrity
+filtered_ads = apply_integrity_filters(user_profile, relevant_ads)</p>
+<p># For each potential ad slot
+integrated_feed = organic_feed_items.copy()
+used_ad_count = 0</p>
+<dl>
+<dt>for slot_position in available_ad_slots:</dt><dd><dl class="simple">
+<dt>if used_ad_count &gt;= len(filtered_ads):</dt><dd><p>break</p>
+</dd>
+</dl>
+<p># Get surrounding content for context
+surrounding_content = get_surrounding_content(</p>
+<blockquote>
+<div><p>feed=integrated_feed,
+position=slot_position,
+window_size=3</p>
+</div></blockquote>
+<p>)</p>
+<p># Find best matching ad for this context
+best_ad_index = find_best_contextual_match(</p>
+<blockquote>
+<div><p>ads=filtered_ads,
+context=surrounding_content,
+user_profile=user_profile</p>
+</div></blockquote>
+<p>)</p>
+<dl class="simple">
+<dt>if best_ad_index != -1:</dt><dd><p># Insert ad into feed
+ad_to_insert = filtered_ads.pop(best_ad_index)
+integrated_feed.insert(slot_position + used_ad_count, ad_to_insert)
+used_ad_count += 1</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>return integrated_feed</p>
+</div></blockquote>
+<p><a href="#id71"><span class="problematic" id="id72">``</span></a><a href="#id73"><span class="problematic" id="id74">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Multi-Modal Content Understanding</strong></p>
+<ul>
+<li><p><strong>Image and Video Analysis</strong>: Extracting concepts and themes from visual content</p></li>
+<li><p><strong>Cross-Modal Matching</strong>: Aligning ad creatives with user-preferred content styles</p></li>
+<li><p><strong>Creative Optimization</strong>: Selecting optimal creative elements based on user preferences</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id75"><span class="problematic" id="id76">``</span></a><a href="#id77"><span class="problematic" id="id78">`</span></a>python
+def analyze_ad_creative(ad):</p>
+<blockquote>
+<div><p>“””
+Perform multi-modal analysis of ad creative for better matching.</p>
+<p>Parameters:
+- ad: Ad with creative elements to analyze</p>
+<p>Returns:
+- Creative analysis results
+“””
+results = {}</p>
+<p># Analyze text elements
+if ad.has_text:</p>
+<blockquote>
+<div><p>text_analysis = text_model.analyze(ad.text_elements)
+results[‘text_concepts’] = text_analysis[‘concepts’]
+results[‘text_sentiment’] = text_analysis[‘sentiment’]
+results[‘text_style’] = text_analysis[‘style’]</p>
+</div></blockquote>
+<p># Analyze image elements
+if ad.has_images:</p>
+<blockquote>
+<div><p>image_analysis = image_model.analyze(ad.images)
+results[‘image_objects’] = image_analysis[‘objects’]
+results[‘image_scenes’] = image_analysis[‘scenes’]
+results[‘image_style’] = image_analysis[‘style’]
+results[‘image_colors’] = image_analysis[‘dominant_colors’]</p>
+</div></blockquote>
+<p># Analyze video elements
+if ad.has_video:</p>
+<blockquote>
+<div><p>video_analysis = video_model.analyze(ad.video)
+results[‘video_concepts’] = video_analysis[‘concepts’]
+results[‘video_pacing’] = video_analysis[‘pacing’]
+results[‘video_engagement_curve’] = video_analysis[‘engagement_curve’]</p>
+</div></blockquote>
+<p># Create unified creative embedding
+creative_embedding = multimodal_embedding_model.encode(ad)
+results[‘creative_embedding’] = creative_embedding</p>
+<p>return results</p>
+</div></blockquote>
+<p><a href="#id79"><span class="problematic" id="id80">``</span></a><a href="#id81"><span class="problematic" id="id82">`</span></a></p>
+</li>
+</ul>
+</li>
+<li><p><strong>Social Context and Targeting</strong></p>
+<ul>
+<li><p><strong>Social Influence Modeling</strong>: Identifying influential users and relationships</p></li>
+<li><p><strong>Lookalike Audience Expansion</strong>: Finding similar users to known engagers</p></li>
+<li><p><strong>Social Proof Integration</strong>: Incorporating social signals into ad presentation</p></li>
+<li><p><strong>Example Implementation</strong>:
+<a href="#id83"><span class="problematic" id="id84">``</span></a><a href="#id85"><span class="problematic" id="id86">`</span></a>python
+def enhance_social_targeting(ad, user_profile):</p>
+<blockquote>
+<div><p>“””
+Enhance ad targeting with social context.</p>
+<p>Parameters:
+- ad: The ad to enhance
+- user_profile: User profile with social information</p>
+<p>Returns:
+- Enhanced ad with social context
+“””
+enhanced_ad = ad.copy()</p>
+<p># Find social connections who engaged with this ad
+engaged_connections = find_engaged_connections(</p>
+<blockquote>
+<div><p>ad_id=ad.id,
+user_connections=user_profile[‘social_context’][‘connections’]</p>
+</div></blockquote>
+<p>)</p>
+<dl>
+<dt>if engaged_connections:</dt><dd><p># Add social proof elements
+enhanced_ad.social_proof = format_social_proof(engaged_connections)</p>
+<p># Boost relevance score based on social proof strength
+social_boost_factor = calculate_social_boost(</p>
+<blockquote>
+<div><p>engaged_connections,
+user_profile[‘social_context’][‘connection_strengths’]</p>
+</div></blockquote>
+<p>)
+enhanced_ad.relevance_score <a href="#id87"><span class="problematic" id="id88">*</span></a>= (1 + social_boost_factor)</p>
+</dd>
+</dl>
+<p># Check if user is in lookalike audience
+lookalike_match = check_lookalike_audience_match(</p>
+<blockquote>
+<div><p>user_profile=user_profile,
+ad_lookalike_segments=ad.lookalike_segments</p>
+</div></blockquote>
+<p>)</p>
+<dl class="simple">
+<dt>if lookalike_match:</dt><dd><p>enhanced_ad.lookalike_score = lookalike_match[‘score’]
+enhanced_ad.relevance_score <a href="#id89"><span class="problematic" id="id90">*</span></a>= (1 + 0.2 * lookalike_match[‘score’])</p>
+</dd>
+</dl>
+<p>return enhanced_ad</p>
+</div></blockquote>
+<p><a href="#id91"><span class="problematic" id="id92">``</span></a><a href="#id93"><span class="problematic" id="id94">`</span></a></p>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="multi-modal-learning-for-ad-engagement">
+<h2>Multi-Modal Learning for Ad Engagement<a class="headerlink" href="#multi-modal-learning-for-ad-engagement" title="Link to this heading"></a></h2>
+<p>Modern ad systems leverage multiple data modalities to create a comprehensive understanding of users, ads, and contexts. These multi-modal approaches enhance prediction accuracy and enable more nuanced targeting.</p>
+<p>### Key Modalities for Ad Engagement Prediction</p>
+<ol class="arabic simple">
+<li><p><strong>User Modality</strong></p>
+<ul class="simple">
+<li><p><strong>Explicit Profile Data</strong>: Demographics, declared interests, account settings</p></li>
+<li><p><strong>Behavioral Data</strong>: Click patterns, purchase history, content consumption</p></li>
+<li><p><strong>Temporal Patterns</strong>: Time-of-day preferences, seasonal behaviors</p></li>
+</ul>
+</li>
+<li><p><strong>Ad Creative Modality</strong></p>
+<ul class="simple">
+<li><p><strong>Visual Elements</strong>: Images, videos, animations, colors, layouts</p></li>
+<li><p><strong>Textual Elements</strong>: Headlines, descriptions, calls-to-action</p></li>
+<li><p><strong>Interactive Elements</strong>: Formats, interactive features</p></li>
+</ul>
+</li>
+<li><p><strong>Contextual Modality</strong></p>
+<ul class="simple">
+<li><p><strong>Platform Context</strong>: Placement location, surrounding content</p></li>
+<li><p><strong>Device Context</strong>: Device type, screen size, connection speed</p></li>
+<li><p><strong>Situational Context</strong>: Location, time, weather, events</p></li>
+</ul>
+</li>
+</ol>
+<p>### Fusion Strategies</p>
+<p>The choice of fusion strategy impacts both technical performance and operational feasibility:</p>
+<ol class="arabic">
+<li><p><strong>Early Fusion Implementation</strong></p>
+<p><a href="#id95"><span class="problematic" id="id96">``</span></a><a href="#id97"><span class="problematic" id="id98">`</span></a>python
+def early_fusion_model(user_features, ad_features, context_features):</p>
+<blockquote>
+<div><p>“””
+Implement early fusion by concatenating features before model processing.</p>
+<p>Parameters:
+- user_features: Features from user modality
+- ad_features: Features from ad creative modality
+- context_features: Features from contextual modality</p>
+<p>Returns:
+- Engagement prediction score
+“””
+# Concatenate all features
+combined_features = np.concatenate([</p>
+<blockquote>
+<div><p>user_features,
+ad_features,
+context_features</p>
+</div></blockquote>
+<p>])</p>
+<p># Pass through neural network
+hidden1 = dense_layer(combined_features, units=256, activation=’relu’)
+hidden2 = dense_layer(hidden1, units=128, activation=’relu’)
+hidden3 = dense_layer(hidden2, units=64, activation=’relu’)</p>
+<p># Output layer
+engagement_score = dense_layer(hidden3, units=1, activation=’sigmoid’)</p>
+<p>return engagement_score</p>
+</div></blockquote>
+<p><a href="#id99"><span class="problematic" id="id100">``</span></a><a href="#id101"><span class="problematic" id="id102">`</span></a></p>
+</li>
+<li><p><strong>Intermediate Fusion Implementation</strong></p>
+<p><a href="#id103"><span class="problematic" id="id104">``</span></a><a href="#id105"><span class="problematic" id="id106">`</span></a>python
+def intermediate_fusion_model(user_features, ad_features, context_features):</p>
+<blockquote>
+<div><p>“””
+Implement intermediate fusion with modality-specific processing.</p>
+<p>Parameters:
+- user_features: Features from user modality
+- ad_features: Features from ad creative modality
+- context_features: Features from contextual modality</p>
+<p>Returns:
+- Engagement prediction score
+“””
+# Modality-specific subnets
+user_hidden = dense_layer(user_features, units=64, activation=’relu’)</p>
+<p>ad_hidden1 = dense_layer(ad_features, units=128, activation=’relu’)
+ad_hidden2 = dense_layer(ad_hidden1, units=64, activation=’relu’)</p>
+<p>context_hidden = dense_layer(context_features, units=32, activation=’relu’)</p>
+<p># Fusion layer - concatenate processed features
+fusion = np.concatenate([user_hidden, ad_hidden2, context_hidden])</p>
+<p># Joint processing after fusion
+joint_hidden1 = dense_layer(fusion, units=128, activation=’relu’)
+joint_hidden2 = dense_layer(joint_hidden1, units=64, activation=’relu’)</p>
+<p># Multi-task outputs
+click_prob = dense_layer(joint_hidden2, units=1, activation=’sigmoid’)
+conversion_prob = dense_layer(joint_hidden2, units=1, activation=’sigmoid’)</p>
+<dl class="simple">
+<dt>return {</dt><dd><p>‘click_probability’: click_prob,
+‘conversion_probability’: conversion_prob</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p><a href="#id107"><span class="problematic" id="id108">``</span></a><a href="#id109"><span class="problematic" id="id110">`</span></a></p>
+</li>
+<li><p><strong>Late Fusion Implementation</strong></p>
+<p><a href="#id111"><span class="problematic" id="id112">``</span></a><a href="#id113"><span class="problematic" id="id114">`</span></a>python
+def late_fusion_model(user_id, ad_id, context):</p>
+<blockquote>
+<div><p>“””
+Implement late fusion by combining outputs from separate models.</p>
+<p>Parameters:
+- user_id: User identifier
+- ad_id: Ad identifier
+- context: Contextual information</p>
+<p>Returns:
+- Combined engagement prediction
+“””
+# Get user features
+user_features = user_feature_service.get_features(user_id)</p>
+<p># Get ad features
+ad_features = ad_feature_service.get_features(ad_id)</p>
+<p># Get context features
+context_features = context_feature_service.extract_features(context)</p>
+<p># User-focused model
+user_model_prediction = user_model.predict(user_features, ad_id, context)</p>
+<p># Ad-focused model
+ad_model_prediction = ad_model.predict(ad_features, user_id, context)</p>
+<p># Context-focused model
+context_model_prediction = context_model.predict(context_features, user_id, ad_id)</p>
+<p># Late fusion through weighted average
+combined_score = (</p>
+<blockquote>
+<div><p>0.4 * user_model_prediction +
+0.4 * ad_model_prediction +
+0.2 * context_model_prediction</p>
+</div></blockquote>
+<p>)</p>
+<p># Alternative: Use a meta-model for fusion
+fusion_features = [</p>
+<blockquote>
+<div><p>user_model_prediction,
+ad_model_prediction,
+context_model_prediction,
+# Additional meta-features
+user_model_confidence,
+ad_model_confidence,
+context_model_confidence</p>
+</div></blockquote>
+<p>]</p>
+<p>meta_model_score = fusion_model.predict(fusion_features)</p>
+<p>return meta_model_score</p>
+</div></blockquote>
+<p><a href="#id115"><span class="problematic" id="id116">``</span></a><a href="#id117"><span class="problematic" id="id118">`</span></a></p>
+</li>
+</ol>
+</section>
+<section id="scaling-to-billions-of-users">
+<h2>Scaling to Billions of Users<a class="headerlink" href="#scaling-to-billions-of-users" title="Link to this heading"></a></h2>
+<p>Building an ad engagement prediction system that can operate at scale requires careful architecture decisions:</p>
+<p>### Distributed Data Storage</p>
+<p><a href="#id119"><span class="problematic" id="id120">``</span></a><a href="#id121"><span class="problematic" id="id122">`</span></a>python
+def design_data_sharding_strategy(user_base_size, regional_distribution):</p>
+<blockquote>
+<div><p>“””
+Design a sharding strategy for user data.</p>
+<p>Parameters:
+- user_base_size: Total number of users
+- regional_distribution: Dictionary mapping regions to percentage of users</p>
+<p>Returns:
+- Sharding configuration
+“””
+# Calculate optimal shard count based on user size
+base_shard_count = user_base_size // OPTIMAL_USERS_PER_SHARD</p>
+<p># Adjust for growth
+shard_count = int(base_shard_count * 1.5)  # 50% growth margin</p>
+<p># Regional shard allocation
+regional_shards = {}
+for region, percentage in regional_distribution.items():</p>
+<blockquote>
+<div><p>region_shard_count = max(1, int(shard_count * percentage / 100))
+regional_shards[region] = region_shard_count</p>
+</div></blockquote>
+<p># Consistent hashing configuration
+hash_ring_config = {</p>
+<blockquote>
+<div><p>‘algorithm’: ‘consistent_hashing’,
+‘virtual_nodes_per_shard’: 200,
+‘hash_function’: ‘murmur3’</p>
+</div></blockquote>
+<p>}</p>
+<p># Tiered storage strategy
+storage_tiers = {</p>
+<blockquote>
+<div><dl class="simple">
+<dt>‘hot_tier’: {</dt><dd><p>‘storage_type’: ‘in_memory’,
+‘data_retention’: ‘24h’,
+‘content’: [‘session_data’, ‘active_user_embeddings’]</p>
+</dd>
+</dl>
+<p>},
+‘warm_tier’: {</p>
+<blockquote>
+<div><p>‘storage_type’: ‘ssd’,
+‘data_retention’: ‘30d’,
+‘content’: [‘recent_user_activity’, ‘ad_performance_data’]</p>
+</div></blockquote>
+<p>},
+‘cold_tier’: {</p>
+<blockquote>
+<div><p>‘storage_type’: ‘object_storage’,
+‘data_retention’: ‘365d’,
+‘content’: [‘historical_data’, ‘training_datasets’]</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+<p>}</p>
+<dl class="simple">
+<dt>return {</dt><dd><p>‘shard_count’: shard_count,
+‘regional_allocation’: regional_shards,
+‘hash_ring_config’: hash_ring_config,
+‘storage_tiers’: storage_tiers</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p><a href="#id123"><span class="problematic" id="id124">``</span></a><a href="#id125"><span class="problematic" id="id126">`</span></a></p>
+<p>### Real-Time Serving Infrastructure</p>
+<p><a href="#id127"><span class="problematic" id="id128">``</span></a><a href="#id129"><span class="problematic" id="id130">`</span></a>python
+def design_serving_infrastructure(peak_qps, p99_latency_target):</p>
+<blockquote>
+<div><p>“””
+Design infrastructure for real-time ad serving.</p>
+<p>Parameters:
+- peak_qps: Peak queries per second
+- p99_latency_target: Target p99 latency in milliseconds</p>
+<p>Returns:
+- Serving infrastructure configuration
+“””
+# Calculate stage-wise latency budget
+stage_latency = {</p>
+<blockquote>
+<div><p>‘sourcing’: int(p99_latency_target * 0.1),  # 10% of total
+‘recall’: int(p99_latency_target * 0.2),    # 20% of total
+‘integrity’: int(p99_latency_target * 0.1), # 10% of total
+‘precision’: int(p99_latency_target * 0.5), # 50% of total
+‘delivery’: int(p99_latency_target * 0.1)   # 10% of total</p>
+</div></blockquote>
+<p>}</p>
+<p># Cache configuration
+cache_config = {</p>
+<blockquote>
+<div><dl class="simple">
+<dt>‘l1_cache’: {</dt><dd><p>‘type’: ‘on-server’,
+‘size_per_instance’: ‘4GB’,
+‘ttl’: ‘5m’,
+‘cached_items’: [‘user_embeddings’, ‘frequent_ads’]</p>
+</dd>
+</dl>
+<p>},
+‘l2_cache’: {</p>
+<blockquote>
+<div><p>‘type’: ‘distributed’,
+‘size_total’: ‘500GB’,
+‘ttl’: ‘1h’,
+‘cached_items’: [‘ad_metadata’, ‘targeting_data’]</p>
+</div></blockquote>
+<p>},
+‘regional_cache’: {</p>
+<blockquote>
+<div><p>‘enabled’: True,
+‘instances_per_region’: 3,
+‘size_per_instance’: ‘250GB’</p>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+<p>}</p>
+<p># Calculate required serving capacity
+base_servers = math.ceil(peak_qps / QPS_PER_SERVER)
+total_servers = int(base_servers * 1.5)  # 50% overhead for spikes and redundancy</p>
+<p># Model serving strategy
+model_serving = {</p>
+<blockquote>
+<div><dl class="simple">
+<dt>‘precision_layer’: {</dt><dd><p>‘primary_model’: ‘deep_ensemble’,
+‘fallback_model’: ‘gradient_boosting’,
+‘model_update_strategy’: ‘shadow_deployment’,
+‘batch_size’: 64,
+‘max_concurrent_batches’: 32</p>
+</dd>
+</dl>
+<p>},
+‘speculative_execution’: {</p>
+<blockquote>
+<div><p>‘enabled’: True,
+‘fast_model’: ‘lightgbm_slim’,
+‘target_model’: ‘deep_ensemble’,
+‘confidence_threshold’: 0.85</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+</section>
+</section>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="01_recommendation_system_design.html" class="btn btn-neutral float-left" title="Recommendation ML/AI System Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../modeling/index.html" class="btn btn-neutral float-right" title="Modeling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

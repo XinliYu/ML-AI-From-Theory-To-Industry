@@ -9,7 +9,7 @@
   <title>Evaluation &mdash; MLAI 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=e159ab47" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=3eba48d4" />
 
   
     <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/evaluation/index.html" />
@@ -20,11 +20,13 @@
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/foldable_admonitions.js?v=351fa817"></script>
       <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+      <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+      <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Basic Evaluation" href="basic_evaluation.html" />
-    <link rel="prev" title="Reinforcement Learning" href="../modeling/classic_modeling/03_reinforcement_learning.html" /> 
+    <link rel="prev" title="Reinforcement Learning" href="../modeling/classic_modeling/04_reinforcement_learning.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -54,6 +56,14 @@
 <li class="toctree-l2"><a class="reference internal" href="basic_evaluation.html">Basic Evaluation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ranking_evaluation.html">Ranking Evaluation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="diversity_evaluation.html">Diversity Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html">Novelty Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#calibrated-diversity">Calibrated Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#personalized-diversity">Personalized Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#trade-offs-between-relevance-and-diversity">Trade-offs Between Relevance and Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#evaluation-challenges">Evaluation Challenges</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#selection-of-an-appropriate-diversity-metric">Selection of an Appropriate Diversity Metric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#practical-applications">Practical Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#summary">Summary</a></li>
 </ul>
 </li>
 </ul>
@@ -179,6 +189,38 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html">Novelty Metrics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#expected-popularity-complement-epc">Expected Popularity Complement (EPC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#expected-intra-list-novelty-ein">Expected Intra-List Novelty (EIN)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html#calibrated-diversity">Calibrated Diversity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html#personalized-diversity">Personalized Diversity</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#user-specific-topic-coverage-ustc">User-Specific Topic Coverage (USTC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#unexpectedness">Unexpectedness</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html#trade-offs-between-relevance-and-diversity">Trade-offs Between Relevance and Diversity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html#evaluation-challenges">Evaluation Challenges</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#subjective-nature">Subjective Nature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#annotation-complexity">Annotation Complexity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#metric-selection">Metric Selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#online-vs-offline-evaluation">Online vs. Offline Evaluation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html#selection-of-an-appropriate-diversity-metric">Selection of an Appropriate Diversity Metric</a></li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html#practical-applications">Practical Applications</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#search-engines">Search Engines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#recommendation-systems">Recommendation Systems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#feed-ranking">Feed Ranking</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="novelty_evaluation.html#summary">Summary</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#key-diversity-metrics">Key Diversity Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#diversity-relevance-balance">Diversity-Relevance Balance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#best-practices">Best Practices</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
@@ -187,7 +229,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../modeling/classic_modeling/03_reinforcement_learning.html" class="btn btn-neutral float-left" title="Reinforcement Learning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../modeling/classic_modeling/04_reinforcement_learning.html" class="btn btn-neutral float-left" title="Reinforcement Learning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="basic_evaluation.html" class="btn btn-neutral float-right" title="Basic Evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

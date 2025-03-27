@@ -1,9 +1,9 @@
 Data Preparation
 ================
 
-In ML/AI systems for search, recommendation, and advertising, effective data preparation for offline model development is crucial. The retrieval system relies on various inputs, including user queries, user data, contextual signals and runtime analytics. Properly collecting, labeling, and balancing this data is critical model performance and user satisfaction.
+Effective data preparation forms the foundation for successful search/recommendation/ads systems. The quality of data directly impacts model performance, system accuracy, and ultimately user satisfaction. This section outlines key considerations for collecting, processing, and labeling data to support search/recommendation/ads ML/AI system development.
 
-The runtime system will typically log the following information for offline development (see also `Recommendation ML/AI System Design <../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html>`_).
+Modern search/recommendation/ads systems capture and utilize various data logs from runtime operations (see also `Recommendation ML/AI System Design <../../system_design/recommendation_and_ads_system_design/01_recommendation_system_design.html>`_). These logs typically include:
 
 * **User Queries**: In search systems and reactive recommendation or advertising scenarios, user queries are primary inputs. While typically textual, queries can also be in the form of audio, images, or videos (e.g., the Amazon Shopping app allows users to search for products by taking pictures).
 * **User Data**: Proactive recommendations and ads heavily depend on user data, such as :refconcept:`User Profiles` and :refconcept:`Historical User Activities & Analytics`. This data is also valuable in search and reactive scenarios to personalize results.
@@ -64,7 +64,7 @@ In contemporary systems with sophisticated downstream search/recommendation/ads 
   * Contextual (considering the whole session for offline, or consdering the interactions up to the last completed one for runtime)
   * Multi-task (learning from major downstream tasks)
   
-  The ecodings can serve as input for classic downstream ML, or serve as context tokens in downstream LLM (if the LLM is post-trained to support it).
+  The encodings can serve as input for classic downstream ML, or serve as context tokens in downstream LLM (if the LLM is post-trained to support it).
 
 * Optionally, for LLM, a session information prompt template can be recommended for downstream LLMs to leverage (post-training not required).
 
@@ -732,8 +732,8 @@ The goal in reward function optimization is typically to maximize the correlatio
     )
 
 
-Deep Reward (Labeling) Models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pairwise Preference Learning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :newconcept:`Deep Reward Models` is now a widely-used advanced approach to build a powerful labeling tool. It is the most critical module for a :newconcept:`Self-Improving ML/AI System` (meaning that the ML/AI system can continuously improve itself using real-time user feedback data with a :newconcept:`Closed Feedback Learning Loop`).
 
@@ -787,6 +787,19 @@ In comparison to :newconcept:`Runtime Models`, despite their similarities in dat
 
 Preference Learning
 ^^^^^^^^^^^^^^^^^^^
+
+* High-quality, user-curated ranking annotations are rare.
+* Explicit feedback, like product ratings or reviews, often lacks absolute ranking clarity. For instance, a product rated 4.2 isn't necessarily inferior to one rated 4.4. 
+* While business-driven reward functions can be manually defined for training models in reward regression, relying solely on synthetic rankings derived from these rewards is suboptimal
+
+  * **Misalignment with User Preferences**: Manually crafted reward functions may not fully capture the nuanced preferences and behaviors of users. This misalignment can lead to recommendations that prioritize business objectives over user satisfaction, potentially diminishing user engagement over time.​
+  * **Simplified Assumptions**: Synthetic rankings often rely on simplified assumptions that may not reflect the complexity of real-world interactions. Such oversimplification can result in models that perform well on synthetic data but fail to generalize effectively to actual user behavior.​
+  * **Lack of Diversity**: Synthetic data may not encompass the full diversity of user interactions present in real-world scenarios. This limitation can cause models to overlook niche user groups or less common items, leading to a homogenized recommendation list that doesn't cater to all user segments.​
+  * **Evaluation Challenges**: Models trained on synthetic rankings might exhibit inflated performance metrics when evaluated on similar synthetic data. However, this performance may not translate to real-world effectiveness, making it challenging to assess the true value of the recommendation system. Models trained on synthetic rankings usually perform suboptimal on real user-curated gold testsets.
+
+1. Offline Model Development: pairwise preferences are extracted from user interactions (clicks, purchases, engagement) to create ranking labels that capture relative item preferences. An offline model is trained on pairwise prefernece to learn prefernce scores through :refconcept:`Pairwise Preference Loss`. After the learning, the model is able to generate preference scores for each item, and the ranking by this learned preference scores can be used as groundtruth. The evaluation is performed against a few carefully human curated annotated rankings. This stage can also optionally perform reward regression (using :refconcept:`Rgression Loss`) or oridinal reward classification (using :refconcept:`Classification Loss` or :refconcept:`Ordinal Classification Loss`) as a joint learning task.
+
+2. Runtime Model Development, runtime models are developed using the labels learned from the offline models.  optimize toward ranking, optionlly jointly alongside reward regresion or oridinal reward classification.
 
 The fundamental unit in preference learning is the :newconcept:`Preference Pair`, derived from the pre-defined :newconcept:`Preference Rules` - "given two interaction sequences, which one is preferred over the other". For example, a preference rule can be "any interaction sequence ending in purchase has highest user preference". As a result,
 

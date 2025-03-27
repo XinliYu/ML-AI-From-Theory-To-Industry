@@ -2,7 +2,7 @@ Modeling
 ========
 
 .. toctree::
-   :maxdepth: 6
+   :maxdepth: 8
    :caption: Contents:
    
    classic_modeling/index

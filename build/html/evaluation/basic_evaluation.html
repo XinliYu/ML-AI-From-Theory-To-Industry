@@ -9,7 +9,7 @@
   <title>Basic Evaluation &mdash; MLAI 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=e159ab47" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=3eba48d4" />
 
   
     <link rel="canonical" href="https://xinliyu.github.io/ML-AI-From-Theory-To-Industry/evaluation/basic_evaluation.html" />
@@ -22,6 +22,8 @@
       <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"]], "displayMath": [["$$", "$$"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       <script src="../_static/js/mathjax-config.js?v=c54ad740"></script>
+      <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+      <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -97,6 +99,14 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="ranking_evaluation.html">Ranking Evaluation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="diversity_evaluation.html">Diversity Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html">Novelty Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#calibrated-diversity">Calibrated Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#personalized-diversity">Personalized Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#trade-offs-between-relevance-and-diversity">Trade-offs Between Relevance and Diversity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#evaluation-challenges">Evaluation Challenges</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#selection-of-an-appropriate-diversity-metric">Selection of an Appropriate Diversity Metric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#practical-applications">Practical Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="novelty_evaluation.html#summary">Summary</a></li>
 </ul>
 </li>
 </ul>
@@ -143,12 +153,12 @@
 <section id="groud-truth">
 <h3>Groud Truth<a class="headerlink" href="#groud-truth" title="Link to this heading"></a></h3>
 <p>Given a query $q$, a <span class="target" id="newconcept-model"></span><span class="newconcept">model</span> $M(q, d)$ is a function generating a <span class="target" id="newconcept-predicted_relevance_score"></span><span class="newconcept">predicted relevance score</span> for every candidate $d \in D$. We choose a <span class="target" id="newconcept-threshold"></span><span class="newconcept">threshold</span> $t$ and all items $d$ such that $M(q, d) &gt; t$ are considered relevant or recommended.</p>
-<p>Given a query $q$, its <span class="target" id="newconcept-ground_truth"></span><span class="newconcept">Ground Truth</span>, denoted by $A_q$ where $A_q \subset \{q\} \times D \times \{0, 1\} \subset A$, is all annotations associated with $q$. Ground truth in practice often only provides positive labels for a subset of $D$, with the remaining items from $D$ assumed to be negatively labeled. Ground truth can be broken down in two ways, as shown in <a class="reference internal" href="#fig-ground-truth"><span class="std std-numref">Figure 7</span></a>.</p>
+<p>Given a query $q$, its <span class="target" id="newconcept-ground_truth"></span><span class="newconcept">Ground Truth</span>, denoted by $A_q$ where $A_q \subset \{q\} \times D \times \{0, 1\} \subset A$, is all annotations associated with $q$. Ground truth in practice often only provides positive labels for a subset of $D$, with the remaining items from $D$ assumed to be negatively labeled. Ground truth can be broken down in two ways, as shown in <a class="reference internal" href="#fig-ground-truth"><span class="std std-numref">Figure 8</span></a>.</p>
 <figure class="align-default" id="fig-ground-truth">
 <a class="reference internal image-reference" href="../_images/ground_truth_breakdown.png"><img alt="Break Down of Ground Truth showing TP, FP, TN, and FN categories" src="../_images/ground_truth_breakdown.png" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 7 </span><span class="caption-text">Break Down of Ground Truth showing TP, FP, TN, and FN categories</span><a class="headerlink" href="#fig-ground-truth" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 8 </span><span class="caption-text">Break Down of Ground Truth showing TP, FP, TN, and FN categories</span><a class="headerlink" href="#fig-ground-truth" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Depending on if an item is relevant:</p>
@@ -177,7 +187,7 @@
 <h3>Confusion Matrix<a class="headerlink" href="#confusion-matrix" title="Link to this heading"></a></h3>
 <p>A confusion matrix is a structured way to evaluate a model’s performance by categorizing its predictions into four possible outcomes:</p>
 <table class="docutils align-default" id="id3">
-<caption><span class="caption-number">Table 1 </span><span class="caption-text">Confusion Matrix</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 3 </span><span class="caption-text">Confusion Matrix</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 33.3%" />
 <col style="width: 33.3%" />
@@ -230,12 +240,12 @@
 <p>Given <span class="math notranslate nohighlight">\(n\)</span> quantities <span class="math notranslate nohighlight">\(x_1, ..., x_n\)</span>, their <span class="target" id="newconcept-harmonic_mean"></span><span class="newconcept">harmonic mean</span> <span class="math notranslate nohighlight">\(H\)</span> is:</p>
 <div class="math notranslate nohighlight">
 \[H(x_1, ..., x_n) = \frac{n}{\sum_{i=1}^{n}{\frac{1}{x_i}}}\]</div>
-<p>where a key property is any one of <span class="math notranslate nohighlight">\(x_i, i=1, ..., n\)</span> approaches <span class="math notranslate nohighlight">\(0\)</span>, the mean approaches <span class="math notranslate nohighlight">\(0\)</span>. To obtain a reasonably high harmonic mean, none of the individual values should approach <span class="math notranslate nohighlight">\(0\)</span>, as shown in <a class="reference internal" href="#fig-harmonic-mean"><span class="std std-numref">Figure 8</span></a>. Intuitively, <span class="underline">this metric is giving more weights to low values</span>.</p>
+<p>where a key property is any one of <span class="math notranslate nohighlight">\(x_i, i=1, ..., n\)</span> approaches <span class="math notranslate nohighlight">\(0\)</span>, the mean approaches <span class="math notranslate nohighlight">\(0\)</span>. To obtain a reasonably high harmonic mean, none of the individual values should approach <span class="math notranslate nohighlight">\(0\)</span>, as shown in <a class="reference internal" href="#fig-harmonic-mean"><span class="std std-numref">Figure 9</span></a>. Intuitively, <span class="underline">this metric is giving more weights to low values</span>.</p>
 <figure class="align-default" id="fig-harmonic-mean">
 <a class="reference internal image-reference" href="../_images/harmonnic_mean.png"><img alt="A plot of 2D harmonic mean between range 0 and 1" src="../_images/harmonnic_mean.png" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 8 </span><span class="caption-text">A plot of 2D harmonic mean between range 0 and 1. The mean approaches 0 if either x or y approaches 0.</span><a class="headerlink" href="#fig-harmonic-mean" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 9 </span><span class="caption-text">A plot of 2D harmonic mean between range 0 and 1. The mean approaches 0 if either x or y approaches 0.</span><a class="headerlink" href="#fig-harmonic-mean" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>The F1 score is the harmonic mean of precision and recall, providing a single metric that balances both considerations. The harmonic mean is used instead of the arithmetic mean because it gives more weight to low values. Intuitively, <span class="underline">a reasonable F1-score performance needs to have reasonable performance in precision and recall</span>.</p>
@@ -305,7 +315,7 @@
 Our precision-recall curves compare two spam detection models (Model A and Model B) that assign scores between 0 and 1 to emails, with higher scores indicating higher likelihood of being spam. Both models are evaluated on 1000 emails, of which 100 (10%) are actually spam. This is a scenario with high class imbalance.</p>
 <p><strong>Score Distribution Comparison:</strong></p>
 <table class="docutils align-default" id="id4">
-<caption><span class="caption-number">Table 2 </span><span class="caption-text">Score Distribution by Model</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 4 </span><span class="caption-text">Score Distribution by Model</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 20.0%" />
 <col style="width: 20.0%" />
@@ -357,7 +367,7 @@ Our precision-recall curves compare two spam detection models (Model A and Model
 <p><strong>Precision-Recall Curve Analysis:</strong>
 Our visualization compares both models across the precision-recall space. Key thresholds are highlighted:</p>
 <table class="docutils align-default" id="id5">
-<caption><span class="caption-number">Table 3 </span><span class="caption-text">Key Operating Points</span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 5 </span><span class="caption-text">Key Operating Points</span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 15.0%" />
 <col style="width: 15.0%" />
@@ -405,7 +415,7 @@ Our visualization compares both models across the precision-recall space. Key th
 <a class="reference internal image-reference" href="../_images/spam_model_comparison_pr.svg"><img alt="Precision-Recall curve comparing two spam detection models" src="../_images/spam_model_comparison_pr.svg" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 9 </span><span class="caption-text">Precision-Recall curve comparing two spam detection models. Model A (blue) and Model B (orange) show different performance characteristics. Model B maintains higher precision at low to medium recall levels, while Model A performs slightly better at very high recall values.</span><a class="headerlink" href="#fig-spam-model-comparison" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 10 </span><span class="caption-text">Precision-Recall curve comparing two spam detection models. Model A (blue) and Model B (orange) show different performance characteristics. Model B maintains higher precision at low to medium recall levels, while Model A performs slightly better at very high recall values.</span><a class="headerlink" href="#fig-spam-model-comparison" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p><strong>Business Implications:</strong>
@@ -526,7 +536,7 @@ In certain settings—like advertising campaigns that must target a large fracti
 * <a class="reference internal" href="#newconcept-false_positive_rate"><span class="refconcept">False Positive Rate (FPR)</span></a> on the x-axis</p>
 <p>While both ROC and PR curves provide threshold-agnostic evaluation of ML/AI systems, they emphasize different aspects of model performance. Understanding the key differences helps select the appropriate curve for specific use cases:</p>
 <table class="docutils align-default" id="id6">
-<caption><span class="caption-number">Table 4 </span><span class="caption-text">Key Differences Between ROC and PR Curves</span><a class="headerlink" href="#id6" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 6 </span><span class="caption-text">Key Differences Between ROC and PR Curves</span><a class="headerlink" href="#id6" title="Link to this table"></a></caption>
 <thead>
 <tr class="row-odd"><th class="head"><p>Aspect</p></th>
 <th class="head"><p>ROC Curve</p></th>
@@ -567,7 +577,7 @@ Our ROC curve illustrates a credit scoring model that assigns a score between 0 
 <p><strong>Data Distribution:</strong>
 The distribution of scores shows the model’s ability to separate defaulting and non-defaulting customers:</p>
 <table class="docutils align-default" id="id7">
-<caption><span class="caption-number">Table 5 </span><span class="caption-text">Score Distribution by Customer Type</span><a class="headerlink" href="#id7" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 7 </span><span class="caption-text">Score Distribution by Customer Type</span><a class="headerlink" href="#id7" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 25.0%" />
 <col style="width: 25.0%" />
@@ -612,7 +622,7 @@ The distribution of scores shows the model’s ability to separate defaulting an
 <p><strong>ROC Curve Analysis:</strong>
 Our visualization shows how varying the threshold creates different points on the ROC curve. Three key thresholds are highlighted:</p>
 <table class="docutils align-default" id="id8">
-<caption><span class="caption-number">Table 6 </span><span class="caption-text">Selected Points on the ROC Curve</span><a class="headerlink" href="#id8" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 8 </span><span class="caption-text">Selected Points on the ROC Curve</span><a class="headerlink" href="#id8" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 20.0%" />
 <col style="width: 20.0%" />
@@ -654,7 +664,7 @@ Our visualization shows how varying the threshold creates different points on th
 <a class="reference internal image-reference" href="../_images/credit_scoring_roc.svg"><img alt="ROC curve for a credit scoring model showing different threshold points" src="../_images/credit_scoring_roc.svg" style="width: 100%;" />
 </a>
 <figcaption>
-<p><span class="caption-number">Figure 10 </span><span class="caption-text">ROC curve for a credit scoring model. The curve shows how TPR and FPR change as the classification threshold varies from high (0.7, conservative) to low (0.3, aggressive). The diagonal dashed line represents random guessing performance. The “High Precision Region” generally contains points with better precision but lower recall, while the “Low Precision Region” offers higher recall at the cost of precision.</span><a class="headerlink" href="#fig-credit-scoring-roc" title="Link to this image"></a></p>
+<p><span class="caption-number">Figure 11 </span><span class="caption-text">ROC curve for a credit scoring model. The curve shows how TPR and FPR change as the classification threshold varies from high (0.7, conservative) to low (0.3, aggressive). The diagonal dashed line represents random guessing performance. The “High Precision Region” generally contains points with better precision but lower recall, while the “Low Precision Region” offers higher recall at the cost of precision.</span><a class="headerlink" href="#fig-credit-scoring-roc" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p><strong>Business Implications:</strong>
@@ -1007,7 +1017,7 @@ The Area Under the ROC Curve (AUC-ROC) equals the probability that a randomly ch
 <h2>Multi-Class Confusion Matrix<a class="headerlink" href="#multi-class-confusion-matrix" title="Link to this heading"></a></h2>
 <p>In multi-class classification, instead of just positive and negative classes, we have multiple classes (e.g., Class A, Class B, Class C). The confusion matrix extends to an <span class="math notranslate nohighlight">\(n \times n\)</span> structure, where each row represents the actual class and each column represents the predicted class.</p>
 <table class="docutils align-default" id="id9">
-<caption><span class="caption-number">Table 7 </span><span class="caption-text">Example Multi-Class Confusion Matrix (3 Classes)</span><a class="headerlink" href="#id9" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 9 </span><span class="caption-text">Example Multi-Class Confusion Matrix (3 Classes)</span><a class="headerlink" href="#id9" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 15.8%" />
 <col style="width: 21.1%" />
@@ -1069,7 +1079,7 @@ The Area Under the ROC Curve (AUC-ROC) equals the probability that a randomly ch
 </ul>
 <p>The model makes predictions based on historical weather data, and we evaluate its performance using a confusion matrix.</p>
 <table class="docutils align-default" id="id10">
-<caption><span class="caption-number">Table 8 </span><span class="caption-text">Example Multi-Class Confusion Matrix (Weather Classification)</span><a class="headerlink" href="#id10" title="Link to this table"></a></caption>
+<caption><span class="caption-number">Table 10 </span><span class="caption-text">Example Multi-Class Confusion Matrix (Weather Classification)</span><a class="headerlink" href="#id10" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 15.8%" />
 <col style="width: 21.1%" />

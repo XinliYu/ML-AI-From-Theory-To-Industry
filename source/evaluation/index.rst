@@ -7,3 +7,4 @@ Evaluation
    basic_evaluation
    ranking_evaluation
    diversity_evaluation
+   novelty_evaluation

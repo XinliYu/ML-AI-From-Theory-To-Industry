@@ -386,16 +386,16 @@
 </ul>
 <p>This is effectively capping the loss gradient, as showing in the following visualization. We also compare with Log-Cosh loss in the visualization, whose gradient is sigmoid-like.</p>
 
-        <div id="wrapper-react-HuberLossVisualizer-7857" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
-            <div id="react-HuberLossVisualizer-7857" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
-            <div id="error-react-HuberLossVisualizer-7857" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        <div id="wrapper-react-HuberLossVisualizer-2396" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-HuberLossVisualizer-2396" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-HuberLossVisualizer-2396" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
         </div>
         <script type="text/javascript">
             (function() {
                 // Self-contained function to avoid global scope pollution
                 function showError(message) {
                     // Display error in contained error div instead of modifying component container
-                    var errorDiv = document.getElementById('error-react-HuberLossVisualizer-7857');
+                    var errorDiv = document.getElementById('error-react-HuberLossVisualizer-2396');
                     if (errorDiv) {
                         errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
                         errorDiv.style.display = 'block';
@@ -423,7 +423,7 @@
                                 if (window.HuberLossVisualizer) {
                                     ReactDOM.render(
                                         React.createElement(window.HuberLossVisualizer, {}, null),
-                                        document.getElementById('react-HuberLossVisualizer-7857')
+                                        document.getElementById('react-HuberLossVisualizer-2396')
                                     );
                                 } else {
                                     showError('Component HuberLossVisualizer not found in global scope');
@@ -538,16 +538,16 @@
 </div></blockquote>
 <p>Meaning that the probability of the true value exceeding the prediction is exactly <span class="math notranslate nohighlight">\(\tau\)</span>, which is precisely the definition of the <span class="math notranslate nohighlight">\(\tau\)</span>-quantile.</p>
 
-        <div id="wrapper-react-QuantileLossVisualizer-9922" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
-            <div id="react-QuantileLossVisualizer-9922" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
-            <div id="error-react-QuantileLossVisualizer-9922" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        <div id="wrapper-react-QuantileLossVisualizer-9461" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-QuantileLossVisualizer-9461" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-QuantileLossVisualizer-9461" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
         </div>
         <script type="text/javascript">
             (function() {
                 // Self-contained function to avoid global scope pollution
                 function showError(message) {
                     // Display error in contained error div instead of modifying component container
-                    var errorDiv = document.getElementById('error-react-QuantileLossVisualizer-9922');
+                    var errorDiv = document.getElementById('error-react-QuantileLossVisualizer-9461');
                     if (errorDiv) {
                         errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
                         errorDiv.style.display = 'block';
@@ -575,7 +575,7 @@
                                 if (window.QuantileLossVisualizer) {
                                     ReactDOM.render(
                                         React.createElement(window.QuantileLossVisualizer, {}, null),
-                                        document.getElementById('react-QuantileLossVisualizer-9922')
+                                        document.getElementById('react-QuantileLossVisualizer-9461')
                                     );
                                 } else {
                                     showError('Component QuantileLossVisualizer not found in global scope');
@@ -653,16 +653,16 @@
 <p class="admonition-title">Note</p>
 <p>The gradient of cross-entropy loss with respect to the logit is the logistic function.</p>
 
-        <div id="wrapper-react-CrossEntropyLossVisualizer-1537" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
-            <div id="react-CrossEntropyLossVisualizer-1537" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
-            <div id="error-react-CrossEntropyLossVisualizer-1537" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        <div id="wrapper-react-CrossEntropyLossVisualizer-7645" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-CrossEntropyLossVisualizer-7645" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-CrossEntropyLossVisualizer-7645" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
         </div>
         <script type="text/javascript">
             (function() {
                 // Self-contained function to avoid global scope pollution
                 function showError(message) {
                     // Display error in contained error div instead of modifying component container
-                    var errorDiv = document.getElementById('error-react-CrossEntropyLossVisualizer-1537');
+                    var errorDiv = document.getElementById('error-react-CrossEntropyLossVisualizer-7645');
                     if (errorDiv) {
                         errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
                         errorDiv.style.display = 'block';
@@ -690,7 +690,7 @@
                                 if (window.CrossEntropyLossVisualizer) {
                                     ReactDOM.render(
                                         React.createElement(window.CrossEntropyLossVisualizer, {}, null),
-                                        document.getElementById('react-CrossEntropyLossVisualizer-1537')
+                                        document.getElementById('react-CrossEntropyLossVisualizer-7645')
                                     );
                                 } else {
                                     showError('Component CrossEntropyLossVisualizer not found in global scope');
@@ -838,16 +838,16 @@ Focal loss was originally proposed for <strong>object detection</strong> (Lin et
 <p>Hinge loss was traditionally popular in margin-based classifiers like Support Vector Machines (SVMs).</p>
 <p>Hinge loss can be extended to multi-class settings (e.g., Crammer-Singer Formulation) or ordinal classification where constraints enforce ordering among classes, each with its own hinge penalty if that order is violated. However, preference learning is where today hinge loss is most commonly employed today. Pairwise preference learning is also dominant today in preference learning, therefore binary hinge loss usually suffices.</p>
 
-        <div id="wrapper-react-HingeLossVisualizer-5172" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
-            <div id="react-HingeLossVisualizer-5172" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
-            <div id="error-react-HingeLossVisualizer-5172" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        <div id="wrapper-react-HingeLossVisualizer-4846" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-HingeLossVisualizer-4846" class="react-component-container " style="width: auto; height: auto; max-width: 1000px; min-width: auto;"></div>
+            <div id="error-react-HingeLossVisualizer-4846" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
         </div>
         <script type="text/javascript">
             (function() {
                 // Self-contained function to avoid global scope pollution
                 function showError(message) {
                     // Display error in contained error div instead of modifying component container
-                    var errorDiv = document.getElementById('error-react-HingeLossVisualizer-5172');
+                    var errorDiv = document.getElementById('error-react-HingeLossVisualizer-4846');
                     if (errorDiv) {
                         errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
                         errorDiv.style.display = 'block';
@@ -875,7 +875,7 @@ Focal loss was originally proposed for <strong>object detection</strong> (Lin et
                                 if (window.HingeLossVisualizer) {
                                     ReactDOM.render(
                                         React.createElement(window.HingeLossVisualizer, {}, null),
-                                        document.getElementById('react-HingeLossVisualizer-5172')
+                                        document.getElementById('react-HingeLossVisualizer-4846')
                                     );
                                 } else {
                                     showError('Component HingeLossVisualizer not found in global scope');

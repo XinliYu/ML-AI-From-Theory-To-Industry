@@ -1030,6 +1030,11 @@ Generation Strategies
 
 After a GPT model produces logits from its forward pass, these logits must be converted into actual tokens through a :newconcept:`decoding strategy`. The choice of decoding strategy significantly impacts the quality, diversity, and coherence of the generated text. GPT models support several approaches, ranging from simple deterministic methods to more sophisticated algorithms that :ub:`balance quality and diversity`.
 
+In contemporary large language models (LLMs) such as GPT-4, Claude, DeepSeek, and LLaMA, :ub:`sampling-based decoding strategies have become the preferred method for text generation` (see `Sampling-Based Generation`_). These strategies introduce controlled randomness, enabling the production of diverse and creative outputs, which is particularly beneficial for open-ended tasks like conversational AI and creative writing.
+
+* Traditionally, `beam search`_ has been employed to maintain multiple candidate sequences, selecting the most probable one. While effective in tasks requiring high accuracy and coherence, such as machine translation, beam search can lead to repetitive and less diverse outputs, making it less suitable for open-ended text generation.
+* However, today :ub:`beam search still remains a valuable decoding strategy in specific scenarios where generating the most probable and coherent sequence is crucial`. Key applications include: Machine Translation, Speech Recognition, Text Summarization, Reasoning and Planning Tasks (e.g. for AI Agents).
+
 .. code-block:: python
    :class: folding
    :name: unified_generate_with_strategy
@@ -1170,6 +1175,23 @@ Before the transformer era, greedy decoding was often sufficient for simpler seq
             # Update existing finished flags with newly finished sequences
             return finished_sequences_flags | just_finished
 
+        def crop_input_ids(self, input_ids: torch.LongTensor) -> torch.LongTensor:
+            """
+            Crop input IDs to respect the model's maximum sequence length.
+
+            If input sequences are longer than the model's maximum sequence length,
+            only the most recent tokens up to max_seq_length are kept.
+
+            Args:
+                input_ids: Tensor of shape (batch_size, seq_length) or
+                          (batch_size * num_beams, seq_length) for beam search
+
+            Returns:
+                Tensor with the same batch dimension but sequence length
+                limited to at most self.max_seq_length
+            """
+            return input_ids if input_ids.size(1) <= self.max_seq_length else input_ids[:, -self.max_seq_length:]
+
         @torch.no_grad()
         def greedy_search(
                 self,
@@ -1207,7 +1229,7 @@ Before the transformer era, greedy decoding was often sufficient for simpler seq
             # The generation loop
             for _ in range(max_new_tokens):
                 # Crop sequence if needed
-                input_ids_cond = input_ids if input_ids.size(1) <= self.max_seq_length else input_ids[:, -self.max_seq_length:]
+                input_ids_cond = self.crop_input_ids(input_ids)
 
                 # ----------------
                 # 2. Get raw logits from the model
@@ -1507,7 +1529,7 @@ Sampling-Based Generation
                 # Crop sequence if needed to respect model's maximum sequence length
                 # input_ids_cond shape: (batch_size, seq_length')
                 # where seq_length' = min(seq_length, max_seq_length)
-                input_ids_cond = input_ids if input_ids.size(1) <= self.max_seq_length else input_ids[:, -self.max_seq_length:]
+                input_ids_cond = self.crop_input_ids(input_ids)
 
                 # ----------------
                 # 4. Get raw logits from the model
@@ -1746,250 +1768,7 @@ The above sampling approach introduces several key hyperparameters that control 
 Beam Search
 ^^^^^^^^^^^
 
-:newconcept:`Beam Search` represents a more sophisticated decoding approach than the other two strategies discussed above, exploring multiple possible sequence paths in parallel:
-
-.. code-block:: python
-   :class: folding
-   :name: gpt_beam_search
-
-    @torch.no_grad()
-    def beam_search(
-            self,
-            input_ids: torch.LongTensor,
-            max_new_tokens: int,
-            num_beams: int = 5,
-            pad_token_id: Optional[int] = None,
-            eos_token_id: Optional[int] = None,
-            length_penalty: float = 1.0
-    ) -> torch.LongTensor:
-        """
-        Beam search decoding: maintains multiple candidate sequences (beams) and expands
-        the most promising ones at each step, eventually returning the highest-scoring complete sequence.
-
-        Args:
-            input_ids: Starting token IDs of shape (batch_size, seq_length)
-            max_new_tokens: Maximum number of tokens to generate
-            num_beams: Number of beams (candidate sequences) to maintain at each step
-            pad_token_id: Token ID used for padding
-            eos_token_id: Token ID that signals sequence completion
-            length_penalty: Controls bias for sequence length (>1.0 penalizes long sequences,
-                            <1.0 rewards longer sequences)
-
-        Returns:
-            Tensor of shape (batch_size, seq_length + generated_length) containing
-            the highest-scoring sequence for each item in the batch
-        """
-        # ----------------
-        # 1. Setup initial state
-        # ----------------
-        batch_size = input_ids.shape[0]
-        device = input_ids.device
-        vocab_size = self.vocab_size
-
-        # Track which sequences have finished generating
-        # batch_finished shape: (batch_size)
-        batch_finished = [False for _ in range(batch_size)]
-
-        # Total scores for each beam across all decoding steps
-        # beam_scores shape: (batch_size * num_beams)
-        beam_scores = torch.zeros((batch_size, num_beams), device=device).view(-1)
-
-        # Set scores for all beams except the first one to -inf
-        # This ensures only the first beam is active at the beginning
-        beam_scores[1::num_beams] = float('-inf')
-        beam_scores[2::num_beams] = float('-inf')
-        # ... and so on for all beams beyond the first
-
-        # Expand input_ids to create initial beams (repeat each input num_beams times)
-        # Original: [batch_0, batch_1, ...] → Expanded: [batch_0, batch_0, ..., batch_1, batch_1, ...]
-        # From shape (batch_size, seq_length) to (batch_size * num_beams, seq_length)
-        input_ids = input_ids.repeat_interleave(num_beams, dim=0)
-
-        # Keep track of the original batch index for each beam
-        # This helps group beams that belong to the same input example
-        # batch_idx shape: (batch_size * num_beams)
-        batch_idx = torch.arange(batch_size, device=device).repeat_interleave(num_beams)
-
-        # ----------------
-        # 2. Generation loop
-        # ----------------
-        # Continue until all sequences finish or max length is reached
-        max_length = input_ids.shape[1] + max_new_tokens
-        while input_ids.shape[1] < max_length and not all(batch_finished):
-            # Crop input to respect maximum context length if needed
-            input_ids_cond = input_ids
-            if input_ids.size(1) > self.max_seq_length:
-                input_ids_cond = input_ids[:, -self.max_seq_length:]
-
-            # ----------------
-            # 3. Get predictions from model
-            # ----------------
-            # Forward pass through model to get next-token logits
-            # logits shape: (batch_size * num_beams, vocab_size)
-            logits = self(input_ids_cond, inference=True)
-
-            # Convert to log probabilities for numerical stability in beam calculations
-            # log_probs shape: (batch_size * num_beams, vocab_size)
-            log_probs = F.log_softmax(logits, dim=-1)
-
-            # ----------------
-            # 4. Calculate scores for all possible next tokens
-            # ----------------
-            # Add current beam scores to next token scores
-            # We're maximizing (log_prob1 + log_prob2 + ...) which is equivalent to
-            # maximizing (prob1 * prob2 * ...)
-            # next_scores shape: (batch_size * num_beams, vocab_size)
-            next_scores = log_probs + beam_scores.unsqueeze(1)
-
-            # Reshape for beam search: combine beams and vocabulary into one dimension
-            # next_scores shape: (batch_size, num_beams * vocab_size)
-            next_scores = next_scores.view(batch_size, num_beams * vocab_size)
-
-            # ----------------
-            # 5. Select top 2*num_beams candidates
-            # ----------------
-            # We select 2*num_beams candidates to have options in case some end with EOS
-            # next_scores shape: (batch_size, 2 * num_beams)
-            # next_tokens shape: (batch_size, 2 * num_beams)
-            next_scores, next_tokens = torch.topk(
-                next_scores, 2 * num_beams, dim=1, largest=True, sorted=True
-            )
-
-            # ----------------
-            # 6. Decode beam indices and token indices
-            # ----------------
-            # next_tokens gives positions in the flattened num_beams*vocab_size space
-            # We need to convert these to:
-            # 1) which beam each candidate came from (parent_idx)
-            # 2) which token to append to that beam (next_token_id)
-
-            # Calculate which beam each candidate came from
-            # parent_idx shape: (batch_size, 2 * num_beams)
-            parent_idx = next_tokens // vocab_size
-
-            # Calculate which token to add to each beam
-            # next_token_id shape: (batch_size, 2 * num_beams)
-            next_token_id = next_tokens % vocab_size
-
-            # ----------------
-            # 7. Build new beams
-            # ----------------
-            # Initialize containers for new beams
-            new_input_ids = []
-            new_beam_scores = torch.zeros((batch_size, num_beams), device=device)
-            new_beam_tokens = torch.zeros((batch_size, num_beams), device=device, dtype=torch.long)
-            new_beam_indices = torch.zeros((batch_size, num_beams), device=device, dtype=torch.long)
-
-            # Process each batch item separately
-            for batch_idx in range(batch_size):
-                # Skip processing if this batch item is already finished
-                if batch_finished[batch_idx]:
-                    # For finished sequences, just copy the highest scoring beam
-                    best_idx = 0
-                    best_beam_idx = parent_idx[batch_idx, best_idx]
-                    best_beam_token = next_token_id[batch_idx, best_idx]
-                    best_beam_score = next_scores[batch_idx, best_idx]
-
-                    # Fill all beam slots with the same sequence
-                    for beam_idx in range(num_beams):
-                        new_beam_indices[batch_idx, beam_idx] = best_beam_idx
-                        new_beam_tokens[batch_idx, beam_idx] = best_beam_token
-                        new_beam_scores[batch_idx, beam_idx] = best_beam_score
-                    continue
-
-                # Track which beams have been selected for this batch item
-                beam_idx = 0
-                beam_candidates = []
-
-                # Consider all candidates in order of decreasing score
-                for score_idx in range(2 * num_beams):
-                    # Get details of this candidate
-                    beam_token_score = next_scores[batch_idx, score_idx]
-                    beam_token = next_token_id[batch_idx, score_idx]
-                    beam_id = parent_idx[batch_idx, score_idx]
-
-                    # Calculate effective source beam index
-                    effective_beam_id = batch_idx * num_beams + beam_id
-
-                    # Check if adding this token would complete the sequence
-                    is_eos = (eos_token_id is not None and beam_token.item() == eos_token_id)
-
-                    # If we already have enough beams and this doesn't end with EOS, skip
-                    if len(beam_candidates) >= num_beams and not is_eos:
-                        continue
-
-                    # Add this candidate
-                    beam_candidates.append((
-                        beam_token_score.item(),
-                        beam_token,
-                        effective_beam_id
-                    ))
-
-                    # If this token completes the sequence, don't add it to active beams
-                    if is_eos:
-                        continue
-
-                    # Add to active beams if we still need more
-                    if beam_idx < num_beams:
-                        new_beam_indices[batch_idx, beam_idx] = beam_id
-                        new_beam_tokens[batch_idx, beam_idx] = beam_token
-                        new_beam_scores[batch_idx, beam_idx] = beam_token_score
-                        beam_idx += 1
-
-                # Check if all candidates for this batch item end with EOS
-                # In that case, mark this batch item as finished
-                if all(beam_token.item() == eos_token_id for _, beam_token, _ in beam_candidates[:num_beams]):
-                    batch_finished[batch_idx] = True
-
-            # ----------------
-            # 8. Update beam state
-            # ----------------
-            # Gather selected beams
-            beam_indices = new_beam_indices.view(-1)
-
-            # Find the positions in the original beams
-            beam_indices = beam_indices + (torch.arange(batch_size, device=device) * num_beams).repeat_interleave(num_beams, dim=0)
-
-            # Get the sequences that these indices point to
-            selected_input_ids = input_ids[beam_indices]
-
-            # Append next tokens to selected beams
-            next_token_ids = new_beam_tokens.view(-1).unsqueeze(1)
-            input_ids = torch.cat([selected_input_ids, next_token_ids], dim=-1)
-
-            # Update beam scores
-            beam_scores = new_beam_scores.view(-1)
-
-            # Apply length penalty if specified
-            if length_penalty != 1.0:
-                # Normalize scores by length to the power of length_penalty
-                # This helps control bias toward shorter or longer sequences:
-                # length_penalty > 1.0: penalize long sequences
-                # length_penalty < 1.0: reward long sequences
-                # length_penalty = 1.0: no adjustment
-                curr_length = input_ids.shape[1]
-                beam_scores = beam_scores / (curr_length ** length_penalty)
-
-        # ----------------
-        # 9. Prepare final output
-        # ----------------
-        # Select the best beam for each batch item
-        output_ids = torch.zeros((batch_size, input_ids.shape[1]), device=device, dtype=torch.long)
-
-        # Group beams by batch
-        grouped_input_ids = input_ids.view(batch_size, num_beams, -1)
-        grouped_beam_scores = beam_scores.view(batch_size, num_beams)
-
-        # Select highest scoring sequence from each batch
-        best_beam_indices = grouped_beam_scores.argmax(dim=1)
-
-        # Extract those sequences
-        for batch_idx in range(batch_size):
-            output_ids[batch_idx] = grouped_input_ids[batch_idx, best_beam_indices[batch_idx]]
-
-        return output_ids
-
-Unlike greedy search and sampling, which maintain a single sequence, beam search :ub:`tracks multiple sequences (beams) simultaneously` to explore different possibilities:
+:newconcept:`Beam Search` represents the most sophisticated decoding approach among the strategies discussed. Unlike greedy search and sampling, which maintain a single sequence, beam search :ub:`tracks multiple sequences (beams) simultaneously` to explore different possibilities in parallel rather than following a single generation trajectory. This fundamental difference makes beam search a unique approach with its own specific workflow:
 
 1. **Initialization**: Start with the input sequence, duplicated for each beam
 2. **Expansion**: For each beam:
@@ -2003,83 +1782,612 @@ Unlike greedy search and sampling, which maintain a single sequence, beam search
    * Select the top N (where N = number of beams) highest-scoring candidates
    * These become the new beams for the next iteration
 
-4. **Handling Completed Sequences**: Special handling for sequences that produce end-of-sequence tokens:
+4. **EOS Handling**: Special processing for sequences that produce end-of-sequence tokens:
 
-   * Completed sequences are tracked separately but remain eligible for selection
-   * When all beams for a batch item end with EOS, that item is marked as finished
+   * Completed sequences (those ending with EOS) are stored separately. Final output selection prioritizes completed sequences.
+   * When sufficient completed sequences are collected, that batch item is marked as finished
 
 5. **Termination**: Continue until:
 
    * Maximum length is reached, or
    * All sequences in the batch have generated an end-of-sequence token
 
-6. **Output**: Return the single highest-scoring completed sequence for each batch item
+6. **Output Selection**: Return the single highest-scoring completed sequence for each batch item
 
-Several key parameters control beam search behavior:
+The following interactive visualization below demonstrates beam search in action with `Length Penalty`_. A complete implementation is also provided with common techniques like :refconcept:`Search Expansion Factor` to mitigate the issue of early EOS diminishing active beams, and configurable `Length Penalty`_ to balance between shorter and longer sequence generation.
 
-Beam Width
-""""""""""
+.. react-component:: ../../_static/images/modeling/classic_modeling/transformer_models/BeamSearchVisualization.tsx
+    :width: auto
+    :max-width: 1300px
+    :center:
+    :katex:
 
-The number of beams (``num_beams``) to maintain, typically between 4-10:
+.. code-block:: python
+   :class: folding
+   :name: gpt_beam_search
 
-* **Higher values** provide a more thorough search but increase computation
-* **Lower values** reduce computational cost but may miss better solutions
-* When beam width = 1, beam search becomes equivalent to greedy search
+    class GPTDecoder(nn.Module):
+        # ... existing methods ...
+
+        def normalize_scores_by_length(
+            self,
+            scores: torch.Tensor,
+            sequence_length: int,
+            alpha: float
+        ) -> torch.Tensor:
+            """
+            Normalize scores by the standard length penalty used in sequence generation.
+
+            Uses the formula: scores / (((5 + length)^alpha) / ((5 + 1)^alpha))
+
+            Args:
+                scores: Tensor containing the scores to normalize
+                sequence_length: Length of the sequence
+                alpha: Length penalty strength parameter (commonly between 0.6 and 1.0)
+                       - alpha = 0: No penalty (favors shorter sequences)
+                       - alpha > 0: Encourages longer sequences
+
+            Returns:
+                Tensor of same shape as scores containing the length-normalized scores
+            """
+            if alpha == 0.0:
+                # No length penalty
+                return scores.clone()
+            else:
+                # Standard length penalty formula from GNMT paper
+                length_penalty = ((5 + sequence_length) ** alpha) / ((5 + 1) ** alpha)
+                return scores / length_penalty
+
+        @torch.no_grad()
+        def beam_search(
+                self,
+                input_ids: torch.LongTensor,
+                max_new_tokens: int,
+                num_beams: int = 5,
+                beam_expansion: float = 2.0,
+                pad_token_id: Optional[int] = None,
+                eos_token_id: Optional[int] = None,
+                length_penalty: float = 1.0
+        ) -> torch.LongTensor:
+            """
+            Beam search decoding: maintains multiple candidate sequences (beams) and expands
+            the most promising ones at each step, eventually returning the highest-scoring complete sequence.
+
+            Args:
+                input_ids: Tensor of shape (batch_size, seq_length), initial input token IDs.
+                max_new_tokens: Maximum number of new tokens to generate.
+                num_beams: Number of candidate beams to maintain at each generation step.
+                beam_expansion: Factor (>1.0) that temporarily expands the candidate beam pool to
+                                `beam_expansion * num_beams`, increasing exploration and
+                                likelihood of higher-quality sequences.
+                pad_token_id: Token ID used for padding finished sequences.
+                eos_token_id: Token ID signaling the end of generation.
+                length_penalty: Controls the bias towards shorter or longer sequences
+                                (>1.0 penalizes long sequences, <1.0 rewards long sequences).
+                                In beam search, each candidate sequence’s score is usually the cumulative (log-) probability
+                                of all tokens generated so far. Without adjustments, shorter sequences might naturally have
+                                higher scores (closer to zero, since log probabilities are negative),
+                                making the model biased toward shorter sequences.
+                                To balance this bias, a length penalty is introduced, making beam search more flexible
+                                in promoting shorter or longer sequences based on the value you set:
+
+            Returns:
+                Tensor of shape (batch_size, seq_length + generated_length) containing
+                the highest-scoring sequence for each item in the batch
+            """
+            # ----------------
+            # 1. Setup initial state
+            # ----------------
+            batch_size = input_ids.shape[0]
+            device = input_ids.device
+            vocab_size = self.vocab_size
+
+            # Track which sequences have finished generating - using same tensor format as other strategies.
+            # finished_sequence_flags shape: (batch_size)
+            finished_sequence_flags = torch.zeros(batch_size, dtype=torch.bool, device=device)
+
+            # Create storage for completed sequences and their scores
+            # We'll store the best completed sequence for each batch item
+            completed_sequences = [[] for _ in range(batch_size)]
+            completed_scores = [[] for _ in range(batch_size)]
+
+            # Initialize beam scores to keep track of active beams: first beam active (score=0), others inactive (score=-inf)
+            beam_scores = torch.zeros((batch_size, num_beams), device=device)
+            beam_scores[:, 1:] = float('-inf')
+
+            # Now flatten to shape (batch_size * num_beams).
+            # The `.view(-1)` operation is used to reshape the 2D tensor into a 1D tensor (a flat array).
+            #   Say `batch_size=2` and `num_beams=3` and we first create a tensor of shape (2, 3):
+            #   [[0, -inf, -inf],   # Batch item 0, beams 0,1,2
+            #    [0, -inf, -inf]]   # Batch item 1, beams 0,1,2
+            #   After `.view(-1)`, it horizontally concatenates the rows becomes [0, -inf, -inf, 0, -inf, -inf] of shape (6,),
+            #   where indices 0,1,2 correspond to beams 0,1,2 for batch item 0,
+            #   and indices 3,4,5 correspond to beams 0,1,2 for batch item 1.
+            # The reason for this operation is that:
+            #   1. Beam search treats as if there were `batch_size * num_beams` batches, so the forward function can work without change.
+            #   2. Later operations like `next_scores = log_probs + beam_scores.unsqueeze(1)` require such flattened array for operational convenience.
+            # beam_scores shape: (batch_size * num_beams)
+            beam_scores = beam_scores.view(-1)
+
+            # Expand input_ids to create initial beams (repeat each input num_beams times).
+            # Original: [batch_0, batch_1, ...] → Expanded: [batch_0, batch_0, ..., batch_1, batch_1, ...]
+            # From shape (batch_size, seq_length) to (batch_size * num_beams, seq_length)
+            input_ids = input_ids.repeat_interleave(num_beams, dim=0)
+
+            # ----------------
+            # 2. Generation loop
+            # ----------------
+            # Continue until all sequences finish or max length is reached.
+            max_length = input_ids.shape[1] + max_new_tokens
+            while input_ids.shape[1] < max_length and not finished_sequence_flags.all():
+                # Crop input to respect maximum context length if needed.
+                input_ids_cond = self.crop_input_ids(input_ids)
+
+                # ----------------
+                # 3. Get predictions from model
+                # ----------------
+                # Forward pass through model to get next-token logits
+                # logits shape: (batch_size * num_beams, vocab_size)
+                logits = self(input_ids_cond, inference=True)
+
+                # Ensure any batch items that have finished generate only padding tokens.
+                logits = self.process_logits_for_finished_sequences(
+                    logits,
+                    finished_sequence_flags.repeat_interleave(num_beams),
+                    pad_token_id
+                )
+
+                # Convert to log probabilities for numerical stability in beam calculations.
+                # log_probs shape: (batch_size * num_beams, vocab_size)
+                log_probs = F.log_softmax(logits, dim=-1)
+
+                # ----------------
+                # 4. Calculate scores for all possible next tokens
+                # ----------------
+                # Add current beam scores to next-token scores over the vocabulary,
+                #   i.e. adding the beam score to every token score in `log_probs`
+                #   so that `next_scores` represents scores over all possible next beams involving the "current beams",
+                #   plus all possible next tokens from the vocabulary.
+                # Also note that initially `beam_scores` only have the first beam activated.
+                #   See above `beam_scores[:, 1:] = float('-inf')`.
+                #   After the initial `beam_scores` adding `log_probs`, the `next_scores` is of shape (batch_size * num_beams, vocab_size),
+                #     but only `batch_size` of the resulting `next_scores` have valid scores, because only one beam is valid per batch item at this time.
+                #   However, this issue will resolve for the next loop, as we expect all beams become valid after the initial loop.
+                # next_scores shape: (batch_size * num_beams, vocab_size)
+                #
+                # For example,
+                # log_probs (after forwarding through the model):
+                # Shape: (batch_size * num_beams, vocab_size) = (4, 3)
+                #
+                # [
+                #  [-0.2, -1.5, -3.0],  # Batch item 0, Beam 0
+                #  [-0.7, -2.1, -0.4],  # Batch item 0, Beam 1
+                #  [-1.0, -0.3, -2.5],  # Batch item 1, Beam 0
+                #  [-0.5, -1.8, -1.2]   # Batch item 1, Beam 1
+                # ]
+                #
+                # beam_scores: cumulative scores for each beam
+                # Shape: (batch_size * num_beams) = (4,)
+                # [-0.5, -1.2, -0.8, -1.5]
+                #
+                # Then after adding log_probs by `next_scores = log_probs + beam_scores.unsqueeze(1)`, we have
+                # Shape: (batch_size * num_beams, vocab_size) = (4, 3)
+                #
+                # [
+                #   [-0.5 + (-0.2), -0.5 + (-1.5), -0.5 + (-3.0)],  # Batch item 0, Beam 0 + Next Token
+                #   [-1.2 + (-0.7), -1.2 + (-2.1), -1.2 + (-0.4)],  # Batch item 0, Beam 1 + Next Token
+                #   [-0.8 + (-1.0), -0.8 + (-0.3), -0.8 + (-2.5)],  # Batch item 1, Beam 0 + Next Token
+                #   [-1.5 + (-0.5), -1.5 + (-1.8), -1.5 + (-1.2)]   # Batch item 1, Beam 1 + Next Token
+                # ] = [
+                #   [-0.7, -2.0, -3.5],  # Batch item 0, Beam 0 + Next Token
+                #   [-1.9, -3.3, -1.6],  # Batch item 0, Beam 1 + Next Token
+                #   [-1.8, -1.1, -3.3],  # Batch item 1, Beam 0 + Next Token
+                #   [-2.0, -3.3, -2.7]   # Batch item 1, Beam 1 + Next Token
+                # ]
+                next_scores = log_probs + beam_scores.unsqueeze(1)
+
+                # Reshape for beam search: horizontally combine beam score.
+                #
+                # Continuing above example, after `next_scores = next_scores.view(batch_size, num_beams * vocab_size)`, we have
+                # Shape: (batch_size, num_beams * vocab_size) = (2, 6)
+                # [
+                #   [-0.7, -2.0, -3.5, -1.9, -3.3, -1.6],  # Batch item 0, all (beam + next token) scores concat horizontally
+                #   [-1.8, -1.1, -3.3, -2.0, -3.3, -2.7]   # Batch item 1, all (beam + next token) scores concat horizontally
+                # ]
+                # next_scores shape: (batch_size, num_beams * vocab_size)
+                next_scores = next_scores.view(batch_size, num_beams * vocab_size)
+
+                next_length = input_ids.shape[1] + 1
+                next_scores_length_normalized = self.normalize_scores_by_length(next_scores, next_length, length_penalty)
+
+                # ----------------
+                # 5. Select top `beam_expansion * num_beams` candidates
+                # ----------------
+                # We temporarily select the top beam_expansion * num_beams candidate beams to provide additional options for exploration. This buffer ensures
+                # 1. maintaining enough active beams, even if some beams terminate early with an EOS token;
+                # 2. and overall increasing the likelihood of discovering higher-quality sequences.
+                # Also note the top next beams may come from the same previous beam.
+                # This one key characteristic that makes beam search different from simply keeping the top token from each beam.
+                # next_scores shape: (batch_size, beam_expansion * num_beams)
+                # next_tokens shape: (batch_size, beam_expansion * num_beams)
+                #
+                # Continuing our example with beam_expansion = 2, num_beams = 2, and length_penalty = 1.5:
+                # Assuming input_ids.shape[1] = 5 (current sequence length), next_length = 6 (after adding next token)
+                #
+                # Let's start with our raw next_scores:
+                # [
+                #   [-0.7, -2.0, -3.5, -1.9, -3.3, -1.6],  # Batch item 0, all (beam + next token) scores
+                #   [-1.8, -1.1, -3.3, -2.0, -3.3, -2.7]   # Batch item 1, all (beam + next token) scores
+                # ]
+                #
+                # Applying length penalty: next_scores_length_normalized = next_scores / (6 ** 1.5)
+                # With 6^1.5 ≈ 14.7, our normalized scores become:
+                # [
+                #   [-0.048, -0.136, -0.238, -0.129, -0.224, -0.109],  # Batch item 0, normalized scores
+                #   [-0.122, -0.075, -0.224, -0.136, -0.224, -0.184]   # Batch item 1, normalized scores
+                # ]
+                #
+                # Now we select the top 4 candidates based on normalized scores:
+                # For batch item 0, sorting the normalized scores:
+                # Top 4 normalized scores: [-0.048, -0.109, -0.129, -0.136]
+                # These correspond to positions [0, 5, 3, 1] in the flattened array
+                #
+                # For batch item 1, sorting the normalized scores:
+                # Top 4 normalized scores: [-0.075, -0.122, -0.136, -0.184]
+                # These correspond to positions [1, 0, 3, 5] in the flattened array
+                #
+                # After topk on normalized scores, we have:
+                # next_tokens = [
+                #   [0, 5, 3, 1],  # Batch item 0 - positions in flattened array
+                #   [1, 0, 3, 5]   # Batch item 1 - positions in flattened array
+                # ]
+                k = int(beam_expansion * num_beams)
+                next_scores_length_normalized, next_tokens = torch.topk(
+                    next_scores_length_normalized, k, dim=1, largest=True, sorted=True
+                )
+
+                # Get original scores at the positions specified by next_tokens.
+                # We need to keep the original scores for score accumulation. The `torch.gather` operation
+                #   helps us retrieve these original scores at the positions selected by next_tokens:
+                #
+                # `torch.gather(next_scores, dim=1, index=next_tokens)` works by:
+                # 1. For each row in next_scores
+                # 2. Select elements at indices specified by the corresponding row in next_tokens
+                #
+                # For batch item 0:
+                # - Original scores: [-0.7, -2.0, -3.5, -1.9, -3.3, -1.6]
+                # - Positions to select: [0, 5, 3, 1]
+                # - Selected scores: [-0.7, -1.6, -1.9, -2.0]
+                #
+                # For batch item 1:
+                # - Original scores: [-1.8, -1.1, -3.3, -2.0, -3.3, -2.7]
+                # - Positions to select: [1, 0, 3, 5]
+                # - Selected scores: [-1.1, -1.8, -2.0, -2.7]
+                #
+                # Result of gather operation:
+                # next_scores = [
+                #   [-0.7, -1.6, -1.9, -2.0],  # Batch item 0, original scores at selected positions
+                #   [-1.1, -1.8, -2.0, -2.7]   # Batch item 1, original scores at selected positions
+                # ]
+                next_scores = torch.gather(next_scores, dim=1, index=next_tokens)
+
+                # ----------------
+                # 6. Decode beam indices and token indices
+                # ----------------
+                # Calculate which beam each candidate came from based on `next_tokens`.
+                # source_beam_id/next_token_id shape: (batch_size, beam_expansion * num_beams)
+
+                source_beam_id = next_tokens // vocab_size # Calculate which beam each candidate came from
+                next_token_id = next_tokens % vocab_size # Calculate which token to add to each beam
+
+                # ----------------
+                # 7. Build new beams
+                # ----------------
+                # This step requires a loop-based approach rather than pure tensor operations for several reasons:
+                #
+                # 1. CONDITIONAL SELECTION: We need to handle different logic for finished vs. unfinished batch items
+                #    - For finished batch items, we preserve the best beam. There is no need to further process this batch.
+                #    - For unfinished batch items, we perform filtering and selection of active beams.
+                #
+                # 2. EOS TOKEN SPECIAL HANDLING: Completed candidates (ending with EOS) need special treatment
+                #    - Candidates ending with EOS are kept as potential final answers, but not used for further expansion
+                #    - This requires conditional logic that's difficult to vectorize
+                #
+                # 3. DYNAMIC FILTERING: The number of candidates varies based on EOS tokens and beam candidates
+                #    - We need to prioritize EOS-ending beams even if they might not be in the top-N scores
+                #    - We need to continue collecting beams until we have enough active beams
+                #
+                # 4. CAPACITY MANAGEMENT: We need to ensure we get exactly num_beams active continuations
+                #    - This requires tracking how many we've collected so far (beam_idx counter)
+                #    - Early stopping when we've collected enough non-EOS beams
+
+                # Initialize containers for new beams (active beams for next loop)
+                new_beam_scores = torch.zeros((batch_size, num_beams), device=device)
+                new_beam_tokens = torch.zeros((batch_size, num_beams), device=device, dtype=torch.long)
+                new_beam_ids = torch.zeros((batch_size, num_beams), device=device, dtype=torch.long)
+
+                # Process each batch item separately
+                for batch_idx in range(batch_size):
+                    # ----------------
+                    # 7.1 Handle finished batch items
+                    # ----------------
+                    if finished_sequence_flags[batch_idx]:
+                        # For finished sequences, copy the best beam across all positions.
+                        # This sets values in `new_beam_scores`, `new_beam_tokens`, and `new_beam_ids` for completed batch items
+                        #   to maintain consistency with ongoing batch items, which is necessary for correctly updating `input_ids` later.
+                        # Since `next_scores` and `next_token_id` are already sorted by the `topk` operation above,
+                        #   the highest-scoring candidate is at index 0.
+                        # Also note that the previous call to `process_logits_for_finished_sequences` ensures that
+                        #   the next token for finished sequences will always be the padding token.
+                        new_beam_scores[batch_idx, :] = next_scores[batch_idx, 0]
+                        new_beam_tokens[batch_idx, :] = next_token_id[batch_idx, 0]
+                        new_beam_ids[batch_idx, :] = source_beam_id[batch_idx, 0]
+                        continue
+
+                    # ----------------
+                    # 7.2 Process unfinished batch items
+                    # ----------------
+                    beam_idx = 0 # Counter for active beams (those that don't end with EOS)
+
+                    # Consider all candidates in order of decreasing score (highest scores first)
+                    for score_idx in range(beam_expansion * num_beams):
+                        # Get details of this candidate
+                        beam_score = next_scores[batch_idx, score_idx]
+                        beam_next_token = next_token_id[batch_idx, score_idx]
+                        beam_id = source_beam_id[batch_idx, score_idx]
+
+                        # ----------------
+                        # 7.3 Check for EOS token
+                        # ----------------
+                        is_eos = (eos_token_id is not None and beam_next_token.item() == eos_token_id)
+
+                        # ----------------
+                        # 7.4 Handle EOS and non-EOS tokens differently
+                        # ----------------
+                        if is_eos:
+                            # Get the source beam's tokens by computing its offset in the flattened input_ids
+                            src_beam_offset = batch_idx * num_beams + beam_id
+                            beam_tokens = input_ids[src_beam_offset].clone()
+
+                            # For EOS tokens, store as completed sequence
+                            # First, create the full sequence by appending the EOS token
+                            # `beam_next_token` is a scalar so it needs `.unsqueeze(0)` to turn it into an array to concat with `beam_tokens`.
+                            complete_sequence = torch.cat([beam_tokens, beam_next_token.unsqueeze(0)], dim=0)
+
+                            # Store this completed sequence and its length-normalized score
+                            completed_sequences[batch_idx].append(complete_sequence)
+                            completed_scores[batch_idx].append(next_scores_length_normalized[batch_idx, score_idx])
+
+                            # Note: We don't increment beam_idx here because EOS sequences aren't used for further expansion
+                        else:
+                            # Add candidate to active beams only if there is room left and candidate does not end with EOS token.
+                            if beam_idx < num_beams:
+                                new_beam_ids[batch_idx, beam_idx] = beam_id
+                                new_beam_tokens[batch_idx, beam_idx] = beam_next_token
+                                new_beam_scores[batch_idx, beam_idx] = beam_score
+                                beam_idx += 1  # Increment active beam counter
+
+                    # ----------------
+                    # 7.5 Check batch completion
+                    # ----------------
+                    # Mark as finished if we have collected at least num_beams completed sequences
+                    if eos_token_id is not None and len(completed_sequences[batch_idx]) >= num_beams:
+                        finished_sequence_flags[batch_idx] = True
+                    elif beam_idx < num_beams:
+                        # Handling left-over beams by filling in dummy values for unused beam slots (if any)
+                        for j in range(beam_idx, num_beams):
+                            # We'll use -inf score to ensure this beam won't be selected later
+                            new_beam_scores[batch_idx, j] = float('-inf')
+                            new_beam_tokens[batch_idx, j] = pad_token_id if pad_token_id is not None else 0
+                            new_beam_ids[batch_idx, j] = 0  # safe fallback, will be ignored
+
+                # ----------------
+                # 8. Update beam state
+                # ----------------
+                # Obtains global beam indexes considering the overall `batch_size * num_beams` beams.
+                # For example,
+                # new_beam_ids = tensor([
+                #     [0, 1],  # For batch 0, selected beam indices 0 and 1 (local indices)
+                #     [1, 0],  # For batch 1, selected beam indices 1 and 0 (local indices)
+                # ])
+                # We flatten this first by `new_beam_indices.view(-1)` and obtain [0, 1, 1, 0].
+                # Meanwhile, `(torch.arange(batch_size) * num_beams)` gives the starting beam index for each batch item,
+                #   and in this example it is [0, 2].
+                # Repeat interleaved by num_beams times by `.repeat_interleave(num_beams)`, we have [0, 0, 2, 2].
+                # As a result, beam_indices = [0, 1, 1, 0] + [0, 0, 2, 2] = [0, 1, 3, 2],
+                #   which are the global beam indexes considering the global `2 * 2 = 4` (`batch_size * num_beams`) beams.
+                beam_indices = new_beam_ids.view(-1) + (torch.arange(batch_size, device=device) * num_beams).repeat_interleave(num_beams, dim=0)
+
+                # Append next tokens to selected beams
+                next_token_ids = new_beam_tokens.view(-1).unsqueeze(1)
+                input_ids = torch.cat([input_ids[beam_indices], next_token_ids], dim=-1)
+
+                # Update beam scores
+                beam_scores = new_beam_scores.view(-1)
+
+            # ----------------
+            # 9. Prepare final output
+            # ----------------
+            # Determine maximum sequence length for output tensor
+            max_seq_len = input_ids.shape[1]
+
+            # Initialize output tensor with padding tokens
+            output_ids = torch.full((batch_size, max_seq_len),
+                                    pad_token_id if pad_token_id is not None else 0,
+                                    device=device, dtype=torch.long)
+
+            # For each batch item, select the best sequence (either completed or in-progress)
+            for batch_idx in range(batch_size):
+                # Check if we have any completed sequences
+                has_completed = len(completed_sequences[batch_idx]) > 0
+
+                if has_completed:
+                    # Find the best completed sequence
+                    best_seq_idx = torch.tensor(completed_scores[batch_idx], device=device).argmax().item()
+                    best_sequence = completed_sequences[batch_idx][best_seq_idx]
+
+                    # Copy to output tensor (will be padded if shorter than max_seq_len)
+                    seq_len = best_sequence.size(0)
+                    output_ids[batch_idx, :seq_len] = best_sequence
+                else:
+                    # If no completed sequences, find best in-progress beam
+                    beam_offset_start = batch_idx * num_beams
+                    beam_offset_end = beam_offset_start + num_beams
+
+                    # Extract scores for this batch's beams with length normalization
+                    batch_beam_scores = self.normalize_scores_by_length(
+                        beam_scores[beam_offset_start:beam_offset_end], input_ids.shape[1], length_penalty
+                    )
+
+                    # Find best beam
+                    best_beam_idx = batch_beam_scores.argmax().item()
+                    best_beam_offset = beam_offset_start + best_beam_idx
+
+                    # Copy best in-progress sequence to output
+                    best_sequence = input_ids[best_beam_offset]
+                    seq_len = best_sequence.size(0)
+                    output_ids[batch_idx, :seq_len] = best_sequence
+
+            return output_ids
+
+
+Beam Width & Search Expansion
+"""""""""""""""""""""""""""""
+
+The :newconcept:`Beam Width` (``num_beams``) represents how many candidate sequences to maintain at each decoding step. Unlike greedy search which considers only the single most probable continuation, beam search explores multiple possibilities in parallel:
+
+* **Beam Width Trade-offs**:
+
+  * **Higher values** (more beams, e.g., 5-10) provide more thorough exploration of the search space, :ub:`benefiting diversity and difficult generation scenarios`.
+  * **Lower values** (less beams, e.g., 1-4) reduce computational requirements but may miss better solutions and reduce outcome diversity.
+  * When ``num_beams = 1``, beam search becomes equivalent to greedy search
+
+* **Task-Specific Recommendations**:
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 25 20 55
+
+     * - Task Type
+       - Recommended Range
+       - Rationale
+     * - **Translation**
+       - 4-8
+       - Balance between fluency and accuracy; larger values benefit difficult language pairs
+     * - **Summarization**
+       - 4-6
+       - Helps maintain coherence while capturing key information
+     * - **Open-ended Generation**
+       - 5-10
+       - Wider exploration for creative tasks with multiple valid continuations
+     * - **Constrained Generation**
+       - 3-5
+       - Narrower search space when outputs must follow specific patterns
+
+* **Scaling Considerations**:
+
+  * **Sequence Length**: :ub:`Longer target sequences benefit from larger beam widths` (8-12).
+  * **Model Size**: :ub:`The benefits of wider beams increase with more expressive and powerful models` (i.e., typically benefiting larger models).
+  * **Diminishing Returns**: :ub:`Performance typically plateaus after 10 beams`  for most tasks.
+
+    * There is known phenomenon called :newconcept:`Beam Search Curse` where very large beam widths (15+) can paradoxically produce worse outputs by favoring common, generic sequences over more appropriate specific ones
+
+  * **Hardware Constraints**: For resource-constrained environments, consider 2-4 beams as a practical maximum.
+
+The :newconcept:`Search Expansion Factor` (``beam_expansion``) is a multiplier that temporarily increases the beam pool size to ``beam_expansion * num_beams`` during the search process. This mechanism enhances beam search by creating a richer candidate pool before filtering back down to ``num_beams``:
+
+* :ub:`Addressing Early Termination`: When sequences complete (by generating EOS tokens), the expansion ensures enough candidates remain to maintain ``num_beams`` active sequences.
+* :ub:`Mitigating Search Collapse`: Helps avoid situations where all beams converge prematurely on very similar sequences.
+* :ub:`Improving Exploration Efficiency & Diversity`: By considering more candidates at each step but carrying forward only the most promising, the approach balances exploration breadth with computational efficiency. Allowing consideration of more sequences that might initially score lower but could lead to better final results also improves diversity.
+
+* **Parameter Selection**:
+
+  * **Default Value**: 1.5-2.0 provides a good exploration-efficiency balance.
+  * **Conservative Setting**: 1.2-1.5 when resources are limited.
+  * **Aggressive Exploration**: 2.0-3.0 for tasks requiring high diversity.
 
 Length Penalty
-"""""""""""""
+""""""""""""""
 
-Beam search has an inherent bias toward shorter sequences (as each additional token can only reduce the overall probability). To counteract this, a :newconcept:`length penalty` is applied:
+:newconcept:`Length Penalty` is a crucial mechanism in beam search that balances between shorter and longer sequence generations. Without this correction, beam search has an inherent bias toward shorter sequences because:
+
+1. **Probability Multiplication Effect**: Each token added to a sequence multiplies the overall probability by a value less than 1 (or adds a negative log probability), naturally causing longer sequences to have lower cumulative scores.
+2. **Search Space Pruning**: During beam search, shorter sequences might monopolize the available beams, preventing the exploration of potentially better but longer sequences.
+
+The standard length penalty formula (used in Transformer-based models like BERT, GPT, and T5) is:
 
 .. math::
 
-   \text{score} = \frac{\text{log-probability}}{(\text{length})^{\alpha}}
+   \text{LengthPenalty}(L) = (\frac{5 + L}{5 + 1})^{\alpha}
 
-Where α is the length penalty parameter:
+where :math:`L` is the length of the generated sequence, and
 
-* α > 1.0: Penalizes longer sequences (favors brevity)
-* α < 1.0: Rewards longer sequences (favors verbosity)
-* α = 1.0: No length normalization (raw log probabilities)
+* :math:`\alpha` is the length penalty hyperparameter (commonly between 0.6 and 1.0).
 
-The length penalty provides control over the model's tendency to prefer shorter sequences, which is particularly important for tasks like translation and summarization where output length should be appropriate to the content.
+  * :math:`\alpha = 0`: **No penalty** - Original scores are used without modification, which typically favors shorter sequences.
+  * :math:`0 < \alpha < 1`: **Mild penalty** - Moderately encourages longer sequences.
+  * :math:`\alpha = 1`: **Linear penalty** - The penalty grows linearly with sequence length.
+  * :math:`\alpha > 1`: **Strong penalty** - Aggressively favors longer sequences.
 
-Numerical Considerations
-"""""""""""""""""""""""
+* The "5+" constant in the formula serves to dampen the penalty effect for very short sequences, ensuring that the penalty scales more smoothly and reasonably when the sequence length is very short (e.g., 1~3 tokens).
 
-The implementation uses log probabilities instead of raw probabilities for numerical stability:
+Higher $α$ values not only encourage longer sequences but can also increase diversity among the top beams. Simply put, :ub:`encouraging longer sequences provides more opportunities to explore different possible paths` - by more aggressively rewarding length, higher α values enable the consideration of alternative trajectories that might initially have lower probabilities but lead to more diverse final outputs. This effectively prevents "beam collapse" where multiple beams converge on nearly identical sequences with only minor variations.
 
-* Working in log space prevents numerical underflow when multiplying many small probabilities
-* Addition of log probabilities is equivalent to multiplication of raw probabilities
-* Using ``log_softmax`` instead of ``softmax`` followed by logarithm is both more efficient and numerically stable
+  * **Domain-Specific Tuning**: Different domains may require different $α$ values, with higher $α$ for better diversity.
 
-.. admonition:: Advantages and Limitations of Beam Search
-   :class: note
+    * Translation tasks often use values around $α \\in [0.6, 0.8]$.
+    * Summarization might use $α \\in [0.8, 1.0]$.
+    * Creative text generation can benefit from $α \\in [1.0, 1.2]$.
 
-   **Advantages**:
+The final score calculation during beam search becomes:
 
-   * :ub:`Explores multiple promising paths simultaneously`
-   * Less susceptible to local optima than greedy search
-   * Often produces higher-quality output for tasks requiring precision
-   * Deterministic (produces reproducible results)
+.. math::
 
-   **Limitations**:
+   \text{Score} = \frac{\log P(\text{sequence})}{\text{LengthPenalty}(L)}
 
-   * :ub:`Computationally expensive` - scales linearly with beam width
-   * :ub:`Memory intensive` - must store multiple sequences and their histories
-   * :ub:`Tends to produce similar outputs` - focuses on high-probability paths
-   * Less effective for creative generation tasks where diversity is valued
-   * Cannot recover from early mistakes shared across all beams
+This is often called :newconcept:`Length-Normalized Log-Probability`.
 
-   **Optimal Use Cases**:
+In implementation, there is also a design choice between :ub:`early vs. late length normalization`. The length penalty can be applied at each step (early, more encouraging longer sequences and diversity) or only when comparing final sequences (late, more efficient). The code example above applies early path normalization.
 
-   Beam search is particularly effective for:
+.. admonition:: Origin and Purpose of the Constants
+    :class: note
 
-   * Machine translation
-   * Summarization
-   * Question answering
-   * Code generation
-   * Tasks where output quality and coherence are prioritized over diversity
+    1. **The "5+" Constant**:
 
-   For creative tasks where diversity and novelty are valued, sampling-based approaches typically produce better results.
+       The addition of 5 to the sequence length serves several critical purposes:
 
-Compared to the previously discussed strategies, beam search represents a more computationally intensive but thorough approach to sequence generation. It bridges the gap between the purely deterministic behavior of greedy search and the flexibility of sampling-based methods, providing a middle ground that works well for many practical applications.
+       * **Smoothing Effect**: It prevents extreme penalties for very short sequences. Without this constant, sequences of length 1 or 2 would receive dramatically different penalties compared to slightly longer ones.
+
+       * **Stability for Short Sequences**: For short sequences ($L < 5$), the penalty differences would be too extreme without this offset, potentially causing unstable behavior during early generation steps.
+
+       * **Gradual Scaling**: The "5+" ensures that the penalty scales more gradually across the entire range of possible sequence lengths, creating a more balanced comparison.
+
+    2. **The Denominator (5+1)**:
+
+       * **Normalization Factor**: This ensures that a sequence of length 1 has a penalty value of $(\\frac{6}{6})^α = 1$ when $α > 0$.
+       * **Reference Point**: It establishes a reference point against which all other sequence lengths are compared.
+       * **Baseline Calibration**: This denominator calibrates the entire penalty function, ensuring that very short sequences aren't unduly penalized or favored.
+
+    **Practical Implications**:
+
+    1. **Effect on Different Sequence Lengths**:
+
+       For $α = 1.0$, the penalties scale as follows:
+
+       * $L = 1$: $\\frac{5+1}{6} = 1.0$ (no effect)
+       * $L = 5$: $\\frac{5+5}{6} = 1.67$ (moderate penalty)
+       * $L = 10$: $\\frac{5+10}{6} = 2.5$ (stronger penalty)
+       * $L = 20$: $\\frac{5+20}{6} = 4.17$ (significant penalty)
+
+    2. **Modified Constants**:
+
+       Some implementations use different constants (like $3+L$ or $7+L$) based on empirical results for specific tasks:
+
+       * **Smaller Constants** (e.g., $3+L$): Create more aggressive length penalties that differentiate more strongly between short sequences.
+       * **Larger Constants** (e.g., $7+L$): Produce more conservative penalties with gentler scaling.
+
+    3. **Historical Context**:
+
+       The $5+L$ formulation was first introduced in Google's Neural Machine Translation (GNMT) system and has since become a standard in many sequence generation models. The choice of 5 was determined through empirical testing across various language pairs and generation tasks.
+
+

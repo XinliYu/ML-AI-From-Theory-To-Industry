@@ -1754,6 +1754,11 @@
 <section id="generation-strategies">
 <h3>Generation Strategies<a class="headerlink" href="#generation-strategies" title="Link to this heading"></a></h3>
 <p>After a GPT model produces logits from its forward pass, these logits must be converted into actual tokens through a <span class="target" id="newconcept-decoding_strategy"></span><span class="newconcept">decoding strategy</span>. The choice of decoding strategy significantly impacts the quality, diversity, and coherence of the generated text. GPT models support several approaches, ranging from simple deterministic methods to more sophisticated algorithms that <strong class="underline-bold">balance quality and diversity</strong>.</p>
+<p>In contemporary large language models (LLMs) such as GPT-4, Claude, DeepSeek, and LLaMA, <strong class="underline-bold">sampling-based decoding strategies have become the preferred method for text generation</strong> (see <a class="reference internal" href="#sampling-based-generation">Sampling-Based Generation</a>). These strategies introduce controlled randomness, enabling the production of diverse and creative outputs, which is particularly beneficial for open-ended tasks like conversational AI and creative writing.</p>
+<ul class="simple">
+<li><p>Traditionally, <a class="reference internal" href="#beam-search">beam search</a> has been employed to maintain multiple candidate sequences, selecting the most probable one. While effective in tasks requiring high accuracy and coherence, such as machine translation, beam search can lead to repetitive and less diverse outputs, making it less suitable for open-ended text generation.</p></li>
+<li><p>However, today <strong class="underline-bold">beam search still remains a valuable decoding strategy in specific scenarios where generating the most probable and coherent sequence is crucial</strong>. Key applications include: Machine Translation, Speech Recognition, Text Summarization, Reasoning and Planning Tasks (e.g. for AI Agents).</p></li>
+</ul>
 <div class="folding highlight-python notranslate" id="unified-generate-with-strategy"><div class="highlight"><pre><span></span> <span class="k">def</span> <span class="nf">generate_with_strategy</span><span class="p">(</span>
          <span class="bp">self</span><span class="p">,</span>
          <span class="n">input_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
@@ -1886,6 +1891,23 @@
          <span class="c1"># Update existing finished flags with newly finished sequences</span>
          <span class="k">return</span> <span class="n">finished_sequences_flags</span> <span class="o">|</span> <span class="n">just_finished</span>
 
+     <span class="k">def</span> <span class="nf">crop_input_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">:</span>
+<span class="w">         </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Crop input IDs to respect the model&#39;s maximum sequence length.</span>
+
+<span class="sd">         If input sequences are longer than the model&#39;s maximum sequence length,</span>
+<span class="sd">         only the most recent tokens up to max_seq_length are kept.</span>
+
+<span class="sd">         Args:</span>
+<span class="sd">             input_ids: Tensor of shape (batch_size, seq_length) or</span>
+<span class="sd">                       (batch_size * num_beams, seq_length) for beam search</span>
+
+<span class="sd">         Returns:</span>
+<span class="sd">             Tensor with the same batch dimension but sequence length</span>
+<span class="sd">             limited to at most self.max_seq_length</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+         <span class="k">return</span> <span class="n">input_ids</span> <span class="k">if</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span> <span class="k">else</span> <span class="n">input_ids</span><span class="p">[:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span><span class="p">:]</span>
+
      <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
      <span class="k">def</span> <span class="nf">greedy_search</span><span class="p">(</span>
              <span class="bp">self</span><span class="p">,</span>
@@ -1923,7 +1945,7 @@
          <span class="c1"># The generation loop</span>
          <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_new_tokens</span><span class="p">):</span>
              <span class="c1"># Crop sequence if needed</span>
-             <span class="n">input_ids_cond</span> <span class="o">=</span> <span class="n">input_ids</span> <span class="k">if</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span> <span class="k">else</span> <span class="n">input_ids</span><span class="p">[:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span><span class="p">:]</span>
+             <span class="n">input_ids_cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">crop_input_ids</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
 
              <span class="c1"># ----------------</span>
              <span class="c1"># 2. Get raw logits from the model</span>
@@ -2218,7 +2240,7 @@
              <span class="c1"># Crop sequence if needed to respect model&#39;s maximum sequence length</span>
              <span class="c1"># input_ids_cond shape: (batch_size, seq_length&#39;)</span>
              <span class="c1"># where seq_length&#39; = min(seq_length, max_seq_length)</span>
-             <span class="n">input_ids_cond</span> <span class="o">=</span> <span class="n">input_ids</span> <span class="k">if</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span> <span class="k">else</span> <span class="n">input_ids</span><span class="p">[:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span><span class="p">:]</span>
+             <span class="n">input_ids_cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">crop_input_ids</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
 
              <span class="c1"># ----------------</span>
              <span class="c1"># 4. Get raw logits from the model</span>
@@ -2460,246 +2482,7 @@
 </section>
 <section id="beam-search">
 <h4>Beam Search<a class="headerlink" href="#beam-search" title="Link to this heading"></a></h4>
-<p><span class="target" id="newconcept-beam_search"></span><span class="newconcept">Beam Search</span> represents a more sophisticated decoding approach than the other two strategies discussed above, exploring multiple possible sequence paths in parallel:</p>
-<div class="folding highlight-python notranslate" id="gpt-beam-search"><div class="highlight"><pre><span></span> <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
- <span class="k">def</span> <span class="nf">beam_search</span><span class="p">(</span>
-         <span class="bp">self</span><span class="p">,</span>
-         <span class="n">input_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
-         <span class="n">max_new_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-         <span class="n">num_beams</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-         <span class="n">pad_token_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-         <span class="n">eos_token_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-         <span class="n">length_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
- <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">:</span>
-<span class="w">     </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">     Beam search decoding: maintains multiple candidate sequences (beams) and expands</span>
-<span class="sd">     the most promising ones at each step, eventually returning the highest-scoring complete sequence.</span>
-
-<span class="sd">     Args:</span>
-<span class="sd">         input_ids: Starting token IDs of shape (batch_size, seq_length)</span>
-<span class="sd">         max_new_tokens: Maximum number of tokens to generate</span>
-<span class="sd">         num_beams: Number of beams (candidate sequences) to maintain at each step</span>
-<span class="sd">         pad_token_id: Token ID used for padding</span>
-<span class="sd">         eos_token_id: Token ID that signals sequence completion</span>
-<span class="sd">         length_penalty: Controls bias for sequence length (&gt;1.0 penalizes long sequences,</span>
-<span class="sd">                         &lt;1.0 rewards longer sequences)</span>
-
-<span class="sd">     Returns:</span>
-<span class="sd">         Tensor of shape (batch_size, seq_length + generated_length) containing</span>
-<span class="sd">         the highest-scoring sequence for each item in the batch</span>
-<span class="sd">     &quot;&quot;&quot;</span>
-     <span class="c1"># ----------------</span>
-     <span class="c1"># 1. Setup initial state</span>
-     <span class="c1"># ----------------</span>
-     <span class="n">batch_size</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-     <span class="n">device</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">device</span>
-     <span class="n">vocab_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab_size</span>
-
-     <span class="c1"># Track which sequences have finished generating</span>
-     <span class="c1"># batch_finished shape: (batch_size)</span>
-     <span class="n">batch_finished</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
-
-     <span class="c1"># Total scores for each beam across all decoding steps</span>
-     <span class="c1"># beam_scores shape: (batch_size * num_beams)</span>
-     <span class="n">beam_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-     <span class="c1"># Set scores for all beams except the first one to -inf</span>
-     <span class="c1"># This ensures only the first beam is active at the beginning</span>
-     <span class="n">beam_scores</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="n">num_beams</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">)</span>
-     <span class="n">beam_scores</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="n">num_beams</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">)</span>
-     <span class="c1"># ... and so on for all beams beyond the first</span>
-
-     <span class="c1"># Expand input_ids to create initial beams (repeat each input num_beams times)</span>
-     <span class="c1"># Original: [batch_0, batch_1, ...] → Expanded: [batch_0, batch_0, ..., batch_1, batch_1, ...]</span>
-     <span class="c1"># From shape (batch_size, seq_length) to (batch_size * num_beams, seq_length)</span>
-     <span class="n">input_ids</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">num_beams</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-     <span class="c1"># Keep track of the original batch index for each beam</span>
-     <span class="c1"># This helps group beams that belong to the same input example</span>
-     <span class="c1"># batch_idx shape: (batch_size * num_beams)</span>
-     <span class="n">batch_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">num_beams</span><span class="p">)</span>
-
-     <span class="c1"># ----------------</span>
-     <span class="c1"># 2. Generation loop</span>
-     <span class="c1"># ----------------</span>
-     <span class="c1"># Continue until all sequences finish or max length is reached</span>
-     <span class="n">max_length</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">max_new_tokens</span>
-     <span class="k">while</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">max_length</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">batch_finished</span><span class="p">):</span>
-         <span class="c1"># Crop input to respect maximum context length if needed</span>
-         <span class="n">input_ids_cond</span> <span class="o">=</span> <span class="n">input_ids</span>
-         <span class="k">if</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span><span class="p">:</span>
-             <span class="n">input_ids_cond</span> <span class="o">=</span> <span class="n">input_ids</span><span class="p">[:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">max_seq_length</span><span class="p">:]</span>
-
-         <span class="c1"># ----------------</span>
-         <span class="c1"># 3. Get predictions from model</span>
-         <span class="c1"># ----------------</span>
-         <span class="c1"># Forward pass through model to get next-token logits</span>
-         <span class="c1"># logits shape: (batch_size * num_beams, vocab_size)</span>
-         <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">input_ids_cond</span><span class="p">,</span> <span class="n">inference</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-         <span class="c1"># Convert to log probabilities for numerical stability in beam calculations</span>
-         <span class="c1"># log_probs shape: (batch_size * num_beams, vocab_size)</span>
-         <span class="n">log_probs</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-         <span class="c1"># ----------------</span>
-         <span class="c1"># 4. Calculate scores for all possible next tokens</span>
-         <span class="c1"># ----------------</span>
-         <span class="c1"># Add current beam scores to next token scores</span>
-         <span class="c1"># We&#39;re maximizing (log_prob1 + log_prob2 + ...) which is equivalent to</span>
-         <span class="c1"># maximizing (prob1 * prob2 * ...)</span>
-         <span class="c1"># next_scores shape: (batch_size * num_beams, vocab_size)</span>
-         <span class="n">next_scores</span> <span class="o">=</span> <span class="n">log_probs</span> <span class="o">+</span> <span class="n">beam_scores</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
-         <span class="c1"># Reshape for beam search: combine beams and vocabulary into one dimension</span>
-         <span class="c1"># next_scores shape: (batch_size, num_beams * vocab_size)</span>
-         <span class="n">next_scores</span> <span class="o">=</span> <span class="n">next_scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span> <span class="o">*</span> <span class="n">vocab_size</span><span class="p">)</span>
-
-         <span class="c1"># ----------------</span>
-         <span class="c1"># 5. Select top 2*num_beams candidates</span>
-         <span class="c1"># ----------------</span>
-         <span class="c1"># We select 2*num_beams candidates to have options in case some end with EOS</span>
-         <span class="c1"># next_scores shape: (batch_size, 2 * num_beams)</span>
-         <span class="c1"># next_tokens shape: (batch_size, 2 * num_beams)</span>
-         <span class="n">next_scores</span><span class="p">,</span> <span class="n">next_tokens</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span>
-             <span class="n">next_scores</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">num_beams</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">largest</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span>
-         <span class="p">)</span>
-
-         <span class="c1"># ----------------</span>
-         <span class="c1"># 6. Decode beam indices and token indices</span>
-         <span class="c1"># ----------------</span>
-         <span class="c1"># next_tokens gives positions in the flattened num_beams*vocab_size space</span>
-         <span class="c1"># We need to convert these to:</span>
-         <span class="c1"># 1) which beam each candidate came from (parent_idx)</span>
-         <span class="c1"># 2) which token to append to that beam (next_token_id)</span>
-
-         <span class="c1"># Calculate which beam each candidate came from</span>
-         <span class="c1"># parent_idx shape: (batch_size, 2 * num_beams)</span>
-         <span class="n">parent_idx</span> <span class="o">=</span> <span class="n">next_tokens</span> <span class="o">//</span> <span class="n">vocab_size</span>
-
-         <span class="c1"># Calculate which token to add to each beam</span>
-         <span class="c1"># next_token_id shape: (batch_size, 2 * num_beams)</span>
-         <span class="n">next_token_id</span> <span class="o">=</span> <span class="n">next_tokens</span> <span class="o">%</span> <span class="n">vocab_size</span>
-
-         <span class="c1"># ----------------</span>
-         <span class="c1"># 7. Build new beams</span>
-         <span class="c1"># ----------------</span>
-         <span class="c1"># Initialize containers for new beams</span>
-         <span class="n">new_input_ids</span> <span class="o">=</span> <span class="p">[]</span>
-         <span class="n">new_beam_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-         <span class="n">new_beam_tokens</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
-         <span class="n">new_beam_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
-
-         <span class="c1"># Process each batch item separately</span>
-         <span class="k">for</span> <span class="n">batch_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
-             <span class="c1"># Skip processing if this batch item is already finished</span>
-             <span class="k">if</span> <span class="n">batch_finished</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]:</span>
-                 <span class="c1"># For finished sequences, just copy the highest scoring beam</span>
-                 <span class="n">best_idx</span> <span class="o">=</span> <span class="mi">0</span>
-                 <span class="n">best_beam_idx</span> <span class="o">=</span> <span class="n">parent_idx</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">best_idx</span><span class="p">]</span>
-                 <span class="n">best_beam_token</span> <span class="o">=</span> <span class="n">next_token_id</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">best_idx</span><span class="p">]</span>
-                 <span class="n">best_beam_score</span> <span class="o">=</span> <span class="n">next_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">best_idx</span><span class="p">]</span>
-
-                 <span class="c1"># Fill all beam slots with the same sequence</span>
-                 <span class="k">for</span> <span class="n">beam_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_beams</span><span class="p">):</span>
-                     <span class="n">new_beam_indices</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_beam_idx</span>
-                     <span class="n">new_beam_tokens</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_beam_token</span>
-                     <span class="n">new_beam_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_beam_score</span>
-                 <span class="k">continue</span>
-
-             <span class="c1"># Track which beams have been selected for this batch item</span>
-             <span class="n">beam_idx</span> <span class="o">=</span> <span class="mi">0</span>
-             <span class="n">beam_candidates</span> <span class="o">=</span> <span class="p">[]</span>
-
-             <span class="c1"># Consider all candidates in order of decreasing score</span>
-             <span class="k">for</span> <span class="n">score_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">num_beams</span><span class="p">):</span>
-                 <span class="c1"># Get details of this candidate</span>
-                 <span class="n">beam_token_score</span> <span class="o">=</span> <span class="n">next_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">score_idx</span><span class="p">]</span>
-                 <span class="n">beam_token</span> <span class="o">=</span> <span class="n">next_token_id</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">score_idx</span><span class="p">]</span>
-                 <span class="n">beam_id</span> <span class="o">=</span> <span class="n">parent_idx</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">score_idx</span><span class="p">]</span>
-
-                 <span class="c1"># Calculate effective source beam index</span>
-                 <span class="n">effective_beam_id</span> <span class="o">=</span> <span class="n">batch_idx</span> <span class="o">*</span> <span class="n">num_beams</span> <span class="o">+</span> <span class="n">beam_id</span>
-
-                 <span class="c1"># Check if adding this token would complete the sequence</span>
-                 <span class="n">is_eos</span> <span class="o">=</span> <span class="p">(</span><span class="n">eos_token_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">beam_token</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="n">eos_token_id</span><span class="p">)</span>
-
-                 <span class="c1"># If we already have enough beams and this doesn&#39;t end with EOS, skip</span>
-                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">beam_candidates</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">num_beams</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_eos</span><span class="p">:</span>
-                     <span class="k">continue</span>
-
-                 <span class="c1"># Add this candidate</span>
-                 <span class="n">beam_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
-                     <span class="n">beam_token_score</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-                     <span class="n">beam_token</span><span class="p">,</span>
-                     <span class="n">effective_beam_id</span>
-                 <span class="p">))</span>
-
-                 <span class="c1"># If this token completes the sequence, don&#39;t add it to active beams</span>
-                 <span class="k">if</span> <span class="n">is_eos</span><span class="p">:</span>
-                     <span class="k">continue</span>
-
-                 <span class="c1"># Add to active beams if we still need more</span>
-                 <span class="k">if</span> <span class="n">beam_idx</span> <span class="o">&lt;</span> <span class="n">num_beams</span><span class="p">:</span>
-                     <span class="n">new_beam_indices</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_id</span>
-                     <span class="n">new_beam_tokens</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_token</span>
-                     <span class="n">new_beam_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_token_score</span>
-                     <span class="n">beam_idx</span> <span class="o">+=</span> <span class="mi">1</span>
-
-             <span class="c1"># Check if all candidates for this batch item end with EOS</span>
-             <span class="c1"># In that case, mark this batch item as finished</span>
-             <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">beam_token</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="n">eos_token_id</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">beam_token</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">beam_candidates</span><span class="p">[:</span><span class="n">num_beams</span><span class="p">]):</span>
-                 <span class="n">batch_finished</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-
-         <span class="c1"># ----------------</span>
-         <span class="c1"># 8. Update beam state</span>
-         <span class="c1"># ----------------</span>
-         <span class="c1"># Gather selected beams</span>
-         <span class="n">beam_indices</span> <span class="o">=</span> <span class="n">new_beam_indices</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-         <span class="c1"># Find the positions in the original beams</span>
-         <span class="n">beam_indices</span> <span class="o">=</span> <span class="n">beam_indices</span> <span class="o">+</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_beams</span><span class="p">)</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">num_beams</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-         <span class="c1"># Get the sequences that these indices point to</span>
-         <span class="n">selected_input_ids</span> <span class="o">=</span> <span class="n">input_ids</span><span class="p">[</span><span class="n">beam_indices</span><span class="p">]</span>
-
-         <span class="c1"># Append next tokens to selected beams</span>
-         <span class="n">next_token_ids</span> <span class="o">=</span> <span class="n">new_beam_tokens</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-         <span class="n">input_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">selected_input_ids</span><span class="p">,</span> <span class="n">next_token_ids</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-         <span class="c1"># Update beam scores</span>
-         <span class="n">beam_scores</span> <span class="o">=</span> <span class="n">new_beam_scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-         <span class="c1"># Apply length penalty if specified</span>
-         <span class="k">if</span> <span class="n">length_penalty</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
-             <span class="c1"># Normalize scores by length to the power of length_penalty</span>
-             <span class="c1"># This helps control bias toward shorter or longer sequences:</span>
-             <span class="c1"># length_penalty &gt; 1.0: penalize long sequences</span>
-             <span class="c1"># length_penalty &lt; 1.0: reward long sequences</span>
-             <span class="c1"># length_penalty = 1.0: no adjustment</span>
-             <span class="n">curr_length</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-             <span class="n">beam_scores</span> <span class="o">=</span> <span class="n">beam_scores</span> <span class="o">/</span> <span class="p">(</span><span class="n">curr_length</span> <span class="o">**</span> <span class="n">length_penalty</span><span class="p">)</span>
-
-     <span class="c1"># ----------------</span>
-     <span class="c1"># 9. Prepare final output</span>
-     <span class="c1"># ----------------</span>
-     <span class="c1"># Select the best beam for each batch item</span>
-     <span class="n">output_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
-
-     <span class="c1"># Group beams by batch</span>
-     <span class="n">grouped_input_ids</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-     <span class="n">grouped_beam_scores</span> <span class="o">=</span> <span class="n">beam_scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">)</span>
-
-     <span class="c1"># Select highest scoring sequence from each batch</span>
-     <span class="n">best_beam_indices</span> <span class="o">=</span> <span class="n">grouped_beam_scores</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-     <span class="c1"># Extract those sequences</span>
-     <span class="k">for</span> <span class="n">batch_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
-         <span class="n">output_ids</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped_input_ids</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">best_beam_indices</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]]</span>
-
-     <span class="k">return</span> <span class="n">output_ids</span>
-</pre></div>
-</div>
-<p>Unlike greedy search and sampling, which maintain a single sequence, beam search <strong class="underline-bold">tracks multiple sequences (beams) simultaneously</strong> to explore different possibilities:</p>
+<p><span class="target" id="newconcept-beam_search"></span><span class="newconcept">Beam Search</span> represents the most sophisticated decoding approach among the strategies discussed. Unlike greedy search and sampling, which maintain a single sequence, beam search <strong class="underline-bold">tracks multiple sequences (beams) simultaneously</strong> to explore different possibilities in parallel rather than following a single generation trajectory. This fundamental difference makes beam search a unique approach with its own specific workflow:</p>
 <ol class="arabic simple">
 <li><p><strong>Initialization</strong>: Start with the input sequence, duplicated for each beam</p></li>
 <li><p><strong>Expansion</strong>: For each beam:</p>
@@ -2715,10 +2498,10 @@
 <li><p>These become the new beams for the next iteration</p></li>
 </ul>
 </li>
-<li><p><strong>Handling Completed Sequences</strong>: Special handling for sequences that produce end-of-sequence tokens:</p>
+<li><p><strong>EOS Handling</strong>: Special processing for sequences that produce end-of-sequence tokens:</p>
 <ul class="simple">
-<li><p>Completed sequences are tracked separately but remain eligible for selection</p></li>
-<li><p>When all beams for a batch item end with EOS, that item is marked as finished</p></li>
+<li><p>Completed sequences (those ending with EOS) are stored separately. Final output selection prioritizes completed sequences.</p></li>
+<li><p>When sufficient completed sequences are collected, that batch item is marked as finished</p></li>
 </ul>
 </li>
 <li><p><strong>Termination</strong>: Continue until:</p>
@@ -2727,68 +2510,697 @@
 <li><p>All sequences in the batch have generated an end-of-sequence token</p></li>
 </ul>
 </li>
-<li><p><strong>Output</strong>: Return the single highest-scoring completed sequence for each batch item</p></li>
+<li><p><strong>Output Selection</strong>: Return the single highest-scoring completed sequence for each batch item</p></li>
 </ol>
-<p>Several key parameters control beam search behavior:</p>
-<section id="beam-width">
-<h5>Beam Width<a class="headerlink" href="#beam-width" title="Link to this heading"></a></h5>
-<p>The number of beams (<code class="docutils literal notranslate"><span class="pre">num_beams</span></code>) to maintain, typically between 4-10:</p>
+<p>The following interactive visualization below demonstrates beam search in action with <a class="reference internal" href="#length-penalty">Length Penalty</a>. A complete implementation is also provided with common techniques like <a class="reference internal" href="#newconcept-search_expansion_factor"><span class="refconcept">Search Expansion Factor</span></a> to mitigate the issue of early EOS diminishing active beams, and configurable <a class="reference internal" href="#length-penalty">Length Penalty</a> to balance between shorter and longer sequence generation.</p>
+
+        <div id="wrapper-react-BeamSearchVisualization-2551" class="react-component-wrapper " style="display: flex; justify-content: center; align-items: center; width: 100%;">
+            <div id="react-BeamSearchVisualization-2551" class="react-component-container " style="width: auto; height: auto; max-width: 1300px; min-width: auto;"></div>
+            <div id="error-react-BeamSearchVisualization-2551" style="display: none; color: red; padding: 10px; border: 1px solid #ffcccc; margin-top: 10px; background-color: #fff8f8;"></div>
+        </div>
+        <script type="text/javascript">
+            (function() {
+                // Self-contained function to avoid global scope pollution
+                function showError(message) {
+                    // Display error in contained error div instead of modifying component container
+                    var errorDiv = document.getElementById('error-react-BeamSearchVisualization-2551');
+                    if (errorDiv) {
+                        errorDiv.innerHTML = '<strong>Error:</strong> ' + message;
+                        errorDiv.style.display = 'block';
+                        console.error(message);
+                    }
+                }
+
+                function loadComponentScript() {
+                    try {
+                        // Only proceed if React is available
+                        if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+                            showError('React or ReactDOM is not available');
+                            return;
+                        }
+
+                        // Load component script - using the exact filename and path
+                        var script = document.createElement('script');
+                        script.src = '../../_static/js/modeling/classic_modeling/transformer_models/BeamSearchVisualization.js';
+                        script.onerror = function(e) {
+                            showError('Failed to load component script: ../../_static/js/modeling/classic_modeling/transformer_models/BeamSearchVisualization.js');
+                        };
+                        script.onload = function() {
+                            // Mount component with error handling - use the exact component name
+                            try {
+                                if (window.BeamSearchVisualization) {
+                                    ReactDOM.render(
+                                        React.createElement(window.BeamSearchVisualization, {}, null),
+                                        document.getElementById('react-BeamSearchVisualization-2551')
+                                    );
+                                } else {
+                                    showError('Component BeamSearchVisualization not found in global scope');
+                                }
+                            } catch (error) {
+                                showError(error.message);
+                            }
+                        };
+                        document.head.appendChild(script);
+                    } catch (error) {
+                        showError('Unexpected error: ' + error.message);
+                    }
+                }
+
+                // Initialize component loading based on KaTeX option
+                function initComponent() {
+                    
+            // Only load KaTeX if it's not already loaded
+            if (typeof window.katex === 'undefined') {
+                // Load KaTeX CSS
+                var katexCss = document.createElement('link');
+                katexCss.rel = 'stylesheet';
+                katexCss.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+                katexCss.integrity = 'sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntxDrHanlDqC0IIziTXcrXPnpVcVB8n2eHZ';
+                katexCss.crossOrigin = 'anonymous';
+                document.head.appendChild(katexCss);
+
+                // Load KaTeX JS
+                var katexScript = document.createElement('script');
+                katexScript.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js';
+                katexScript.integrity = 'sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx';
+                katexScript.crossOrigin = 'anonymous';
+                katexScript.onload = function() {
+                    // Once KaTeX is loaded, load the component
+                    loadComponentScript();
+                };
+                document.head.appendChild(katexScript);
+            } else {
+                // KaTeX already loaded, proceed to load component
+                loadComponentScript();
+            }
+            
+                }
+
+                // Initialize when DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initComponent);
+                } else {
+                    initComponent();
+                }
+            })();
+        </script>
+        <div class="folding highlight-python notranslate" id="gpt-beam-search"><div class="highlight"><pre><span></span> <span class="k">class</span> <span class="nc">GPTDecoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+     <span class="c1"># ... existing methods ...</span>
+
+     <span class="k">def</span> <span class="nf">normalize_scores_by_length</span><span class="p">(</span>
+         <span class="bp">self</span><span class="p">,</span>
+         <span class="n">scores</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+         <span class="n">sequence_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+         <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span>
+     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">         </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Normalize scores by the standard length penalty used in sequence generation.</span>
+
+<span class="sd">         Uses the formula: scores / (((5 + length)^alpha) / ((5 + 1)^alpha))</span>
+
+<span class="sd">         Args:</span>
+<span class="sd">             scores: Tensor containing the scores to normalize</span>
+<span class="sd">             sequence_length: Length of the sequence</span>
+<span class="sd">             alpha: Length penalty strength parameter (commonly between 0.6 and 1.0)</span>
+<span class="sd">                    - alpha = 0: No penalty (favors shorter sequences)</span>
+<span class="sd">                    - alpha &gt; 0: Encourages longer sequences</span>
+
+<span class="sd">         Returns:</span>
+<span class="sd">             Tensor of same shape as scores containing the length-normalized scores</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+         <span class="k">if</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+             <span class="c1"># No length penalty</span>
+             <span class="k">return</span> <span class="n">scores</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+         <span class="k">else</span><span class="p">:</span>
+             <span class="c1"># Standard length penalty formula from GNMT paper</span>
+             <span class="n">length_penalty</span> <span class="o">=</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="n">sequence_length</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span><span class="p">)</span>
+             <span class="k">return</span> <span class="n">scores</span> <span class="o">/</span> <span class="n">length_penalty</span>
+
+     <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+     <span class="k">def</span> <span class="nf">beam_search</span><span class="p">(</span>
+             <span class="bp">self</span><span class="p">,</span>
+             <span class="n">input_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
+             <span class="n">max_new_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+             <span class="n">num_beams</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+             <span class="n">beam_expansion</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+             <span class="n">pad_token_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">eos_token_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">length_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">:</span>
+<span class="w">         </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Beam search decoding: maintains multiple candidate sequences (beams) and expands</span>
+<span class="sd">         the most promising ones at each step, eventually returning the highest-scoring complete sequence.</span>
+
+<span class="sd">         Args:</span>
+<span class="sd">             input_ids: Tensor of shape (batch_size, seq_length), initial input token IDs.</span>
+<span class="sd">             max_new_tokens: Maximum number of new tokens to generate.</span>
+<span class="sd">             num_beams: Number of candidate beams to maintain at each generation step.</span>
+<span class="sd">             beam_expansion: Factor (&gt;1.0) that temporarily expands the candidate beam pool to</span>
+<span class="sd">                             `beam_expansion * num_beams`, increasing exploration and</span>
+<span class="sd">                             likelihood of higher-quality sequences.</span>
+<span class="sd">             pad_token_id: Token ID used for padding finished sequences.</span>
+<span class="sd">             eos_token_id: Token ID signaling the end of generation.</span>
+<span class="sd">             length_penalty: Controls the bias towards shorter or longer sequences</span>
+<span class="sd">                             (&gt;1.0 penalizes long sequences, &lt;1.0 rewards long sequences).</span>
+<span class="sd">                             In beam search, each candidate sequence’s score is usually the cumulative (log-) probability</span>
+<span class="sd">                             of all tokens generated so far. Without adjustments, shorter sequences might naturally have</span>
+<span class="sd">                             higher scores (closer to zero, since log probabilities are negative),</span>
+<span class="sd">                             making the model biased toward shorter sequences.</span>
+<span class="sd">                             To balance this bias, a length penalty is introduced, making beam search more flexible</span>
+<span class="sd">                             in promoting shorter or longer sequences based on the value you set:</span>
+
+<span class="sd">         Returns:</span>
+<span class="sd">             Tensor of shape (batch_size, seq_length + generated_length) containing</span>
+<span class="sd">             the highest-scoring sequence for each item in the batch</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+         <span class="c1"># ----------------</span>
+         <span class="c1"># 1. Setup initial state</span>
+         <span class="c1"># ----------------</span>
+         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+         <span class="n">device</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">device</span>
+         <span class="n">vocab_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab_size</span>
+
+         <span class="c1"># Track which sequences have finished generating - using same tensor format as other strategies.</span>
+         <span class="c1"># finished_sequence_flags shape: (batch_size)</span>
+         <span class="n">finished_sequence_flags</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+
+         <span class="c1"># Create storage for completed sequences and their scores</span>
+         <span class="c1"># We&#39;ll store the best completed sequence for each batch item</span>
+         <span class="n">completed_sequences</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
+         <span class="n">completed_scores</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)]</span>
+
+         <span class="c1"># Initialize beam scores to keep track of active beams: first beam active (score=0), others inactive (score=-inf)</span>
+         <span class="n">beam_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+         <span class="n">beam_scores</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">)</span>
+
+         <span class="c1"># Now flatten to shape (batch_size * num_beams).</span>
+         <span class="c1"># The `.view(-1)` operation is used to reshape the 2D tensor into a 1D tensor (a flat array).</span>
+         <span class="c1">#   Say `batch_size=2` and `num_beams=3` and we first create a tensor of shape (2, 3):</span>
+         <span class="c1">#   [[0, -inf, -inf],   # Batch item 0, beams 0,1,2</span>
+         <span class="c1">#    [0, -inf, -inf]]   # Batch item 1, beams 0,1,2</span>
+         <span class="c1">#   After `.view(-1)`, it horizontally concatenates the rows becomes [0, -inf, -inf, 0, -inf, -inf] of shape (6,),</span>
+         <span class="c1">#   where indices 0,1,2 correspond to beams 0,1,2 for batch item 0,</span>
+         <span class="c1">#   and indices 3,4,5 correspond to beams 0,1,2 for batch item 1.</span>
+         <span class="c1"># The reason for this operation is that:</span>
+         <span class="c1">#   1. Beam search treats as if there were `batch_size * num_beams` batches, so the forward function can work without change.</span>
+         <span class="c1">#   2. Later operations like `next_scores = log_probs + beam_scores.unsqueeze(1)` require such flattened array for operational convenience.</span>
+         <span class="c1"># beam_scores shape: (batch_size * num_beams)</span>
+         <span class="n">beam_scores</span> <span class="o">=</span> <span class="n">beam_scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+         <span class="c1"># Expand input_ids to create initial beams (repeat each input num_beams times).</span>
+         <span class="c1"># Original: [batch_0, batch_1, ...] → Expanded: [batch_0, batch_0, ..., batch_1, batch_1, ...]</span>
+         <span class="c1"># From shape (batch_size, seq_length) to (batch_size * num_beams, seq_length)</span>
+         <span class="n">input_ids</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">num_beams</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+         <span class="c1"># ----------------</span>
+         <span class="c1"># 2. Generation loop</span>
+         <span class="c1"># ----------------</span>
+         <span class="c1"># Continue until all sequences finish or max length is reached.</span>
+         <span class="n">max_length</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">max_new_tokens</span>
+         <span class="k">while</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">max_length</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">finished_sequence_flags</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+             <span class="c1"># Crop input to respect maximum context length if needed.</span>
+             <span class="n">input_ids_cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">crop_input_ids</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
+
+             <span class="c1"># ----------------</span>
+             <span class="c1"># 3. Get predictions from model</span>
+             <span class="c1"># ----------------</span>
+             <span class="c1"># Forward pass through model to get next-token logits</span>
+             <span class="c1"># logits shape: (batch_size * num_beams, vocab_size)</span>
+             <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">input_ids_cond</span><span class="p">,</span> <span class="n">inference</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+             <span class="c1"># Ensure any batch items that have finished generate only padding tokens.</span>
+             <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_logits_for_finished_sequences</span><span class="p">(</span>
+                 <span class="n">logits</span><span class="p">,</span>
+                 <span class="n">finished_sequence_flags</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">num_beams</span><span class="p">),</span>
+                 <span class="n">pad_token_id</span>
+             <span class="p">)</span>
+
+             <span class="c1"># Convert to log probabilities for numerical stability in beam calculations.</span>
+             <span class="c1"># log_probs shape: (batch_size * num_beams, vocab_size)</span>
+             <span class="n">log_probs</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+             <span class="c1"># ----------------</span>
+             <span class="c1"># 4. Calculate scores for all possible next tokens</span>
+             <span class="c1"># ----------------</span>
+             <span class="c1"># Add current beam scores to next-token scores over the vocabulary,</span>
+             <span class="c1">#   i.e. adding the beam score to every token score in `log_probs`</span>
+             <span class="c1">#   so that `next_scores` represents scores over all possible next beams involving the &quot;current beams&quot;,</span>
+             <span class="c1">#   plus all possible next tokens from the vocabulary.</span>
+             <span class="c1"># Also note that initially `beam_scores` only have the first beam activated.</span>
+             <span class="c1">#   See above `beam_scores[:, 1:] = float(&#39;-inf&#39;)`.</span>
+             <span class="c1">#   After the initial `beam_scores` adding `log_probs`, the `next_scores` is of shape (batch_size * num_beams, vocab_size),</span>
+             <span class="c1">#     but only `batch_size` of the resulting `next_scores` have valid scores, because only one beam is valid per batch item at this time.</span>
+             <span class="c1">#   However, this issue will resolve for the next loop, as we expect all beams become valid after the initial loop.</span>
+             <span class="c1"># next_scores shape: (batch_size * num_beams, vocab_size)</span>
+             <span class="c1">#</span>
+             <span class="c1"># For example,</span>
+             <span class="c1"># log_probs (after forwarding through the model):</span>
+             <span class="c1"># Shape: (batch_size * num_beams, vocab_size) = (4, 3)</span>
+             <span class="c1">#</span>
+             <span class="c1"># [</span>
+             <span class="c1">#  [-0.2, -1.5, -3.0],  # Batch item 0, Beam 0</span>
+             <span class="c1">#  [-0.7, -2.1, -0.4],  # Batch item 0, Beam 1</span>
+             <span class="c1">#  [-1.0, -0.3, -2.5],  # Batch item 1, Beam 0</span>
+             <span class="c1">#  [-0.5, -1.8, -1.2]   # Batch item 1, Beam 1</span>
+             <span class="c1"># ]</span>
+             <span class="c1">#</span>
+             <span class="c1"># beam_scores: cumulative scores for each beam</span>
+             <span class="c1"># Shape: (batch_size * num_beams) = (4,)</span>
+             <span class="c1"># [-0.5, -1.2, -0.8, -1.5]</span>
+             <span class="c1">#</span>
+             <span class="c1"># Then after adding log_probs by `next_scores = log_probs + beam_scores.unsqueeze(1)`, we have</span>
+             <span class="c1"># Shape: (batch_size * num_beams, vocab_size) = (4, 3)</span>
+             <span class="c1">#</span>
+             <span class="c1"># [</span>
+             <span class="c1">#   [-0.5 + (-0.2), -0.5 + (-1.5), -0.5 + (-3.0)],  # Batch item 0, Beam 0 + Next Token</span>
+             <span class="c1">#   [-1.2 + (-0.7), -1.2 + (-2.1), -1.2 + (-0.4)],  # Batch item 0, Beam 1 + Next Token</span>
+             <span class="c1">#   [-0.8 + (-1.0), -0.8 + (-0.3), -0.8 + (-2.5)],  # Batch item 1, Beam 0 + Next Token</span>
+             <span class="c1">#   [-1.5 + (-0.5), -1.5 + (-1.8), -1.5 + (-1.2)]   # Batch item 1, Beam 1 + Next Token</span>
+             <span class="c1"># ] = [</span>
+             <span class="c1">#   [-0.7, -2.0, -3.5],  # Batch item 0, Beam 0 + Next Token</span>
+             <span class="c1">#   [-1.9, -3.3, -1.6],  # Batch item 0, Beam 1 + Next Token</span>
+             <span class="c1">#   [-1.8, -1.1, -3.3],  # Batch item 1, Beam 0 + Next Token</span>
+             <span class="c1">#   [-2.0, -3.3, -2.7]   # Batch item 1, Beam 1 + Next Token</span>
+             <span class="c1"># ]</span>
+             <span class="n">next_scores</span> <span class="o">=</span> <span class="n">log_probs</span> <span class="o">+</span> <span class="n">beam_scores</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+             <span class="c1"># Reshape for beam search: horizontally combine beam score.</span>
+             <span class="c1">#</span>
+             <span class="c1"># Continuing above example, after `next_scores = next_scores.view(batch_size, num_beams * vocab_size)`, we have</span>
+             <span class="c1"># Shape: (batch_size, num_beams * vocab_size) = (2, 6)</span>
+             <span class="c1"># [</span>
+             <span class="c1">#   [-0.7, -2.0, -3.5, -1.9, -3.3, -1.6],  # Batch item 0, all (beam + next token) scores concat horizontally</span>
+             <span class="c1">#   [-1.8, -1.1, -3.3, -2.0, -3.3, -2.7]   # Batch item 1, all (beam + next token) scores concat horizontally</span>
+             <span class="c1"># ]</span>
+             <span class="c1"># next_scores shape: (batch_size, num_beams * vocab_size)</span>
+             <span class="n">next_scores</span> <span class="o">=</span> <span class="n">next_scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span> <span class="o">*</span> <span class="n">vocab_size</span><span class="p">)</span>
+
+             <span class="n">next_length</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+             <span class="n">next_scores_length_normalized</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_scores_by_length</span><span class="p">(</span><span class="n">next_scores</span><span class="p">,</span> <span class="n">next_length</span><span class="p">,</span> <span class="n">length_penalty</span><span class="p">)</span>
+
+             <span class="c1"># ----------------</span>
+             <span class="c1"># 5. Select top `beam_expansion * num_beams` candidates</span>
+             <span class="c1"># ----------------</span>
+             <span class="c1"># We temporarily select the top beam_expansion * num_beams candidate beams to provide additional options for exploration. This buffer ensures</span>
+             <span class="c1"># 1. maintaining enough active beams, even if some beams terminate early with an EOS token;</span>
+             <span class="c1"># 2. and overall increasing the likelihood of discovering higher-quality sequences.</span>
+             <span class="c1"># Also note the top next beams may come from the same previous beam.</span>
+             <span class="c1"># This one key characteristic that makes beam search different from simply keeping the top token from each beam.</span>
+             <span class="c1"># next_scores shape: (batch_size, beam_expansion * num_beams)</span>
+             <span class="c1"># next_tokens shape: (batch_size, beam_expansion * num_beams)</span>
+             <span class="c1">#</span>
+             <span class="c1"># Continuing our example with beam_expansion = 2, num_beams = 2, and length_penalty = 1.5:</span>
+             <span class="c1"># Assuming input_ids.shape[1] = 5 (current sequence length), next_length = 6 (after adding next token)</span>
+             <span class="c1">#</span>
+             <span class="c1"># Let&#39;s start with our raw next_scores:</span>
+             <span class="c1"># [</span>
+             <span class="c1">#   [-0.7, -2.0, -3.5, -1.9, -3.3, -1.6],  # Batch item 0, all (beam + next token) scores</span>
+             <span class="c1">#   [-1.8, -1.1, -3.3, -2.0, -3.3, -2.7]   # Batch item 1, all (beam + next token) scores</span>
+             <span class="c1"># ]</span>
+             <span class="c1">#</span>
+             <span class="c1"># Applying length penalty: next_scores_length_normalized = next_scores / (6 ** 1.5)</span>
+             <span class="c1"># With 6^1.5 ≈ 14.7, our normalized scores become:</span>
+             <span class="c1"># [</span>
+             <span class="c1">#   [-0.048, -0.136, -0.238, -0.129, -0.224, -0.109],  # Batch item 0, normalized scores</span>
+             <span class="c1">#   [-0.122, -0.075, -0.224, -0.136, -0.224, -0.184]   # Batch item 1, normalized scores</span>
+             <span class="c1"># ]</span>
+             <span class="c1">#</span>
+             <span class="c1"># Now we select the top 4 candidates based on normalized scores:</span>
+             <span class="c1"># For batch item 0, sorting the normalized scores:</span>
+             <span class="c1"># Top 4 normalized scores: [-0.048, -0.109, -0.129, -0.136]</span>
+             <span class="c1"># These correspond to positions [0, 5, 3, 1] in the flattened array</span>
+             <span class="c1">#</span>
+             <span class="c1"># For batch item 1, sorting the normalized scores:</span>
+             <span class="c1"># Top 4 normalized scores: [-0.075, -0.122, -0.136, -0.184]</span>
+             <span class="c1"># These correspond to positions [1, 0, 3, 5] in the flattened array</span>
+             <span class="c1">#</span>
+             <span class="c1"># After topk on normalized scores, we have:</span>
+             <span class="c1"># next_tokens = [</span>
+             <span class="c1">#   [0, 5, 3, 1],  # Batch item 0 - positions in flattened array</span>
+             <span class="c1">#   [1, 0, 3, 5]   # Batch item 1 - positions in flattened array</span>
+             <span class="c1"># ]</span>
+             <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">beam_expansion</span> <span class="o">*</span> <span class="n">num_beams</span><span class="p">)</span>
+             <span class="n">next_scores_length_normalized</span><span class="p">,</span> <span class="n">next_tokens</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span>
+                 <span class="n">next_scores_length_normalized</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">largest</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span>
+             <span class="p">)</span>
+
+             <span class="c1"># Get original scores at the positions specified by next_tokens.</span>
+             <span class="c1"># We need to keep the original scores for score accumulation. The `torch.gather` operation</span>
+             <span class="c1">#   helps us retrieve these original scores at the positions selected by next_tokens:</span>
+             <span class="c1">#</span>
+             <span class="c1"># `torch.gather(next_scores, dim=1, index=next_tokens)` works by:</span>
+             <span class="c1"># 1. For each row in next_scores</span>
+             <span class="c1"># 2. Select elements at indices specified by the corresponding row in next_tokens</span>
+             <span class="c1">#</span>
+             <span class="c1"># For batch item 0:</span>
+             <span class="c1"># - Original scores: [-0.7, -2.0, -3.5, -1.9, -3.3, -1.6]</span>
+             <span class="c1"># - Positions to select: [0, 5, 3, 1]</span>
+             <span class="c1"># - Selected scores: [-0.7, -1.6, -1.9, -2.0]</span>
+             <span class="c1">#</span>
+             <span class="c1"># For batch item 1:</span>
+             <span class="c1"># - Original scores: [-1.8, -1.1, -3.3, -2.0, -3.3, -2.7]</span>
+             <span class="c1"># - Positions to select: [1, 0, 3, 5]</span>
+             <span class="c1"># - Selected scores: [-1.1, -1.8, -2.0, -2.7]</span>
+             <span class="c1">#</span>
+             <span class="c1"># Result of gather operation:</span>
+             <span class="c1"># next_scores = [</span>
+             <span class="c1">#   [-0.7, -1.6, -1.9, -2.0],  # Batch item 0, original scores at selected positions</span>
+             <span class="c1">#   [-1.1, -1.8, -2.0, -2.7]   # Batch item 1, original scores at selected positions</span>
+             <span class="c1"># ]</span>
+             <span class="n">next_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">next_scores</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">next_tokens</span><span class="p">)</span>
+
+             <span class="c1"># ----------------</span>
+             <span class="c1"># 6. Decode beam indices and token indices</span>
+             <span class="c1"># ----------------</span>
+             <span class="c1"># Calculate which beam each candidate came from based on `next_tokens`.</span>
+             <span class="c1"># source_beam_id/next_token_id shape: (batch_size, beam_expansion * num_beams)</span>
+
+             <span class="n">source_beam_id</span> <span class="o">=</span> <span class="n">next_tokens</span> <span class="o">//</span> <span class="n">vocab_size</span> <span class="c1"># Calculate which beam each candidate came from</span>
+             <span class="n">next_token_id</span> <span class="o">=</span> <span class="n">next_tokens</span> <span class="o">%</span> <span class="n">vocab_size</span> <span class="c1"># Calculate which token to add to each beam</span>
+
+             <span class="c1"># ----------------</span>
+             <span class="c1"># 7. Build new beams</span>
+             <span class="c1"># ----------------</span>
+             <span class="c1"># This step requires a loop-based approach rather than pure tensor operations for several reasons:</span>
+             <span class="c1">#</span>
+             <span class="c1"># 1. CONDITIONAL SELECTION: We need to handle different logic for finished vs. unfinished batch items</span>
+             <span class="c1">#    - For finished batch items, we preserve the best beam. There is no need to further process this batch.</span>
+             <span class="c1">#    - For unfinished batch items, we perform filtering and selection of active beams.</span>
+             <span class="c1">#</span>
+             <span class="c1"># 2. EOS TOKEN SPECIAL HANDLING: Completed candidates (ending with EOS) need special treatment</span>
+             <span class="c1">#    - Candidates ending with EOS are kept as potential final answers, but not used for further expansion</span>
+             <span class="c1">#    - This requires conditional logic that&#39;s difficult to vectorize</span>
+             <span class="c1">#</span>
+             <span class="c1"># 3. DYNAMIC FILTERING: The number of candidates varies based on EOS tokens and beam candidates</span>
+             <span class="c1">#    - We need to prioritize EOS-ending beams even if they might not be in the top-N scores</span>
+             <span class="c1">#    - We need to continue collecting beams until we have enough active beams</span>
+             <span class="c1">#</span>
+             <span class="c1"># 4. CAPACITY MANAGEMENT: We need to ensure we get exactly num_beams active continuations</span>
+             <span class="c1">#    - This requires tracking how many we&#39;ve collected so far (beam_idx counter)</span>
+             <span class="c1">#    - Early stopping when we&#39;ve collected enough non-EOS beams</span>
+
+             <span class="c1"># Initialize containers for new beams (active beams for next loop)</span>
+             <span class="n">new_beam_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+             <span class="n">new_beam_tokens</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+             <span class="n">new_beam_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+
+             <span class="c1"># Process each batch item separately</span>
+             <span class="k">for</span> <span class="n">batch_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
+                 <span class="c1"># ----------------</span>
+                 <span class="c1"># 7.1 Handle finished batch items</span>
+                 <span class="c1"># ----------------</span>
+                 <span class="k">if</span> <span class="n">finished_sequence_flags</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]:</span>
+                     <span class="c1"># For finished sequences, copy the best beam across all positions.</span>
+                     <span class="c1"># This sets values in `new_beam_scores`, `new_beam_tokens`, and `new_beam_ids` for completed batch items</span>
+                     <span class="c1">#   to maintain consistency with ongoing batch items, which is necessary for correctly updating `input_ids` later.</span>
+                     <span class="c1"># Since `next_scores` and `next_token_id` are already sorted by the `topk` operation above,</span>
+                     <span class="c1">#   the highest-scoring candidate is at index 0.</span>
+                     <span class="c1"># Also note that the previous call to `process_logits_for_finished_sequences` ensures that</span>
+                     <span class="c1">#   the next token for finished sequences will always be the padding token.</span>
+                     <span class="n">new_beam_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">next_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                     <span class="n">new_beam_tokens</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">next_token_id</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                     <span class="n">new_beam_ids</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">source_beam_id</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                     <span class="k">continue</span>
+
+                 <span class="c1"># ----------------</span>
+                 <span class="c1"># 7.2 Process unfinished batch items</span>
+                 <span class="c1"># ----------------</span>
+                 <span class="n">beam_idx</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># Counter for active beams (those that don&#39;t end with EOS)</span>
+
+                 <span class="c1"># Consider all candidates in order of decreasing score (highest scores first)</span>
+                 <span class="k">for</span> <span class="n">score_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">beam_expansion</span> <span class="o">*</span> <span class="n">num_beams</span><span class="p">):</span>
+                     <span class="c1"># Get details of this candidate</span>
+                     <span class="n">beam_score</span> <span class="o">=</span> <span class="n">next_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">score_idx</span><span class="p">]</span>
+                     <span class="n">beam_next_token</span> <span class="o">=</span> <span class="n">next_token_id</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">score_idx</span><span class="p">]</span>
+                     <span class="n">beam_id</span> <span class="o">=</span> <span class="n">source_beam_id</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">score_idx</span><span class="p">]</span>
+
+                     <span class="c1"># ----------------</span>
+                     <span class="c1"># 7.3 Check for EOS token</span>
+                     <span class="c1"># ----------------</span>
+                     <span class="n">is_eos</span> <span class="o">=</span> <span class="p">(</span><span class="n">eos_token_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">beam_next_token</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="n">eos_token_id</span><span class="p">)</span>
+
+                     <span class="c1"># ----------------</span>
+                     <span class="c1"># 7.4 Handle EOS and non-EOS tokens differently</span>
+                     <span class="c1"># ----------------</span>
+                     <span class="k">if</span> <span class="n">is_eos</span><span class="p">:</span>
+                         <span class="c1"># Get the source beam&#39;s tokens by computing its offset in the flattened input_ids</span>
+                         <span class="n">src_beam_offset</span> <span class="o">=</span> <span class="n">batch_idx</span> <span class="o">*</span> <span class="n">num_beams</span> <span class="o">+</span> <span class="n">beam_id</span>
+                         <span class="n">beam_tokens</span> <span class="o">=</span> <span class="n">input_ids</span><span class="p">[</span><span class="n">src_beam_offset</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+                         <span class="c1"># For EOS tokens, store as completed sequence</span>
+                         <span class="c1"># First, create the full sequence by appending the EOS token</span>
+                         <span class="c1"># `beam_next_token` is a scalar so it needs `.unsqueeze(0)` to turn it into an array to concat with `beam_tokens`.</span>
+                         <span class="n">complete_sequence</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">beam_tokens</span><span class="p">,</span> <span class="n">beam_next_token</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                         <span class="c1"># Store this completed sequence and its length-normalized score</span>
+                         <span class="n">completed_sequences</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">complete_sequence</span><span class="p">)</span>
+                         <span class="n">completed_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_scores_length_normalized</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">score_idx</span><span class="p">])</span>
+
+                         <span class="c1"># Note: We don&#39;t increment beam_idx here because EOS sequences aren&#39;t used for further expansion</span>
+                     <span class="k">else</span><span class="p">:</span>
+                         <span class="c1"># Add candidate to active beams only if there is room left and candidate does not end with EOS token.</span>
+                         <span class="k">if</span> <span class="n">beam_idx</span> <span class="o">&lt;</span> <span class="n">num_beams</span><span class="p">:</span>
+                             <span class="n">new_beam_ids</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_id</span>
+                             <span class="n">new_beam_tokens</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_next_token</span>
+                             <span class="n">new_beam_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">beam_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">beam_score</span>
+                             <span class="n">beam_idx</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># Increment active beam counter</span>
+
+                 <span class="c1"># ----------------</span>
+                 <span class="c1"># 7.5 Check batch completion</span>
+                 <span class="c1"># ----------------</span>
+                 <span class="c1"># Mark as finished if we have collected at least num_beams completed sequences</span>
+                 <span class="k">if</span> <span class="n">eos_token_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">completed_sequences</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">num_beams</span><span class="p">:</span>
+                     <span class="n">finished_sequence_flags</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                 <span class="k">elif</span> <span class="n">beam_idx</span> <span class="o">&lt;</span> <span class="n">num_beams</span><span class="p">:</span>
+                     <span class="c1"># Handling left-over beams by filling in dummy values for unused beam slots (if any)</span>
+                     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">beam_idx</span><span class="p">,</span> <span class="n">num_beams</span><span class="p">):</span>
+                         <span class="c1"># We&#39;ll use -inf score to ensure this beam won&#39;t be selected later</span>
+                         <span class="n">new_beam_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">)</span>
+                         <span class="n">new_beam_tokens</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">pad_token_id</span> <span class="k">if</span> <span class="n">pad_token_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+                         <span class="n">new_beam_ids</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># safe fallback, will be ignored</span>
+
+             <span class="c1"># ----------------</span>
+             <span class="c1"># 8. Update beam state</span>
+             <span class="c1"># ----------------</span>
+             <span class="c1"># Obtains global beam indexes considering the overall `batch_size * num_beams` beams.</span>
+             <span class="c1"># For example,</span>
+             <span class="c1"># new_beam_ids = tensor([</span>
+             <span class="c1">#     [0, 1],  # For batch 0, selected beam indices 0 and 1 (local indices)</span>
+             <span class="c1">#     [1, 0],  # For batch 1, selected beam indices 1 and 0 (local indices)</span>
+             <span class="c1"># ])</span>
+             <span class="c1"># We flatten this first by `new_beam_indices.view(-1)` and obtain [0, 1, 1, 0].</span>
+             <span class="c1"># Meanwhile, `(torch.arange(batch_size) * num_beams)` gives the starting beam index for each batch item,</span>
+             <span class="c1">#   and in this example it is [0, 2].</span>
+             <span class="c1"># Repeat interleaved by num_beams times by `.repeat_interleave(num_beams)`, we have [0, 0, 2, 2].</span>
+             <span class="c1"># As a result, beam_indices = [0, 1, 1, 0] + [0, 0, 2, 2] = [0, 1, 3, 2],</span>
+             <span class="c1">#   which are the global beam indexes considering the global `2 * 2 = 4` (`batch_size * num_beams`) beams.</span>
+             <span class="n">beam_indices</span> <span class="o">=</span> <span class="n">new_beam_ids</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_beams</span><span class="p">)</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">num_beams</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+             <span class="c1"># Append next tokens to selected beams</span>
+             <span class="n">next_token_ids</span> <span class="o">=</span> <span class="n">new_beam_tokens</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+             <span class="n">input_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">input_ids</span><span class="p">[</span><span class="n">beam_indices</span><span class="p">],</span> <span class="n">next_token_ids</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+             <span class="c1"># Update beam scores</span>
+             <span class="n">beam_scores</span> <span class="o">=</span> <span class="n">new_beam_scores</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+         <span class="c1"># ----------------</span>
+         <span class="c1"># 9. Prepare final output</span>
+         <span class="c1"># ----------------</span>
+         <span class="c1"># Determine maximum sequence length for output tensor</span>
+         <span class="n">max_seq_len</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+         <span class="c1"># Initialize output tensor with padding tokens</span>
+         <span class="n">output_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">max_seq_len</span><span class="p">),</span>
+                                 <span class="n">pad_token_id</span> <span class="k">if</span> <span class="n">pad_token_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                                 <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+
+         <span class="c1"># For each batch item, select the best sequence (either completed or in-progress)</span>
+         <span class="k">for</span> <span class="n">batch_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
+             <span class="c1"># Check if we have any completed sequences</span>
+             <span class="n">has_completed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">completed_sequences</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+             <span class="k">if</span> <span class="n">has_completed</span><span class="p">:</span>
+                 <span class="c1"># Find the best completed sequence</span>
+                 <span class="n">best_seq_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">completed_scores</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                 <span class="n">best_sequence</span> <span class="o">=</span> <span class="n">completed_sequences</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">][</span><span class="n">best_seq_idx</span><span class="p">]</span>
+
+                 <span class="c1"># Copy to output tensor (will be padded if shorter than max_seq_len)</span>
+                 <span class="n">seq_len</span> <span class="o">=</span> <span class="n">best_sequence</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                 <span class="n">output_ids</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="p">:</span><span class="n">seq_len</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_sequence</span>
+             <span class="k">else</span><span class="p">:</span>
+                 <span class="c1"># If no completed sequences, find best in-progress beam</span>
+                 <span class="n">beam_offset_start</span> <span class="o">=</span> <span class="n">batch_idx</span> <span class="o">*</span> <span class="n">num_beams</span>
+                 <span class="n">beam_offset_end</span> <span class="o">=</span> <span class="n">beam_offset_start</span> <span class="o">+</span> <span class="n">num_beams</span>
+
+                 <span class="c1"># Extract scores for this batch&#39;s beams with length normalization</span>
+                 <span class="n">batch_beam_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_scores_by_length</span><span class="p">(</span>
+                     <span class="n">beam_scores</span><span class="p">[</span><span class="n">beam_offset_start</span><span class="p">:</span><span class="n">beam_offset_end</span><span class="p">],</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">length_penalty</span>
+                 <span class="p">)</span>
+
+                 <span class="c1"># Find best beam</span>
+                 <span class="n">best_beam_idx</span> <span class="o">=</span> <span class="n">batch_beam_scores</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                 <span class="n">best_beam_offset</span> <span class="o">=</span> <span class="n">beam_offset_start</span> <span class="o">+</span> <span class="n">best_beam_idx</span>
+
+                 <span class="c1"># Copy best in-progress sequence to output</span>
+                 <span class="n">best_sequence</span> <span class="o">=</span> <span class="n">input_ids</span><span class="p">[</span><span class="n">best_beam_offset</span><span class="p">]</span>
+                 <span class="n">seq_len</span> <span class="o">=</span> <span class="n">best_sequence</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                 <span class="n">output_ids</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="p">:</span><span class="n">seq_len</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_sequence</span>
+
+         <span class="k">return</span> <span class="n">output_ids</span>
+</pre></div>
+</div>
+<section id="beam-width-search-expansion">
+<h5>Beam Width &amp; Search Expansion<a class="headerlink" href="#beam-width-search-expansion" title="Link to this heading"></a></h5>
+<p>The <span class="target" id="newconcept-beam_width"></span><span class="newconcept">Beam Width</span> (<code class="docutils literal notranslate"><span class="pre">num_beams</span></code>) represents how many candidate sequences to maintain at each decoding step. Unlike greedy search which considers only the single most probable continuation, beam search explores multiple possibilities in parallel:</p>
+<ul>
+<li><p><strong>Beam Width Trade-offs</strong>:</p>
 <ul class="simple">
-<li><p><strong>Higher values</strong> provide a more thorough search but increase computation</p></li>
-<li><p><strong>Lower values</strong> reduce computational cost but may miss better solutions</p></li>
-<li><p>When beam width = 1, beam search becomes equivalent to greedy search</p></li>
+<li><p><strong>Higher values</strong> (more beams, e.g., 5-10) provide more thorough exploration of the search space, <strong class="underline-bold">benefiting diversity and difficult generation scenarios</strong>.</p></li>
+<li><p><strong>Lower values</strong> (less beams, e.g., 1-4) reduce computational requirements but may miss better solutions and reduce outcome diversity.</p></li>
+<li><p>When <code class="docutils literal notranslate"><span class="pre">num_beams</span> <span class="pre">=</span> <span class="pre">1</span></code>, beam search becomes equivalent to greedy search</p></li>
+</ul>
+</li>
+<li><p><strong>Task-Specific Recommendations</strong>:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 20.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Task Type</p></th>
+<th class="head"><p>Recommended Range</p></th>
+<th class="head"><p>Rationale</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Translation</strong></p></td>
+<td><p>4-8</p></td>
+<td><p>Balance between fluency and accuracy; larger values benefit difficult language pairs</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Summarization</strong></p></td>
+<td><p>4-6</p></td>
+<td><p>Helps maintain coherence while capturing key information</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Open-ended Generation</strong></p></td>
+<td><p>5-10</p></td>
+<td><p>Wider exploration for creative tasks with multiple valid continuations</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Constrained Generation</strong></p></td>
+<td><p>3-5</p></td>
+<td><p>Narrower search space when outputs must follow specific patterns</p></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><p><strong>Scaling Considerations</strong>:</p>
+<ul class="simple">
+<li><p><strong>Sequence Length</strong>: <strong class="underline-bold">Longer target sequences benefit from larger beam widths</strong> (8-12).</p></li>
+<li><p><strong>Model Size</strong>: <strong class="underline-bold">The benefits of wider beams increase with more expressive and powerful models</strong> (i.e., typically benefiting larger models).</p></li>
+<li><p><strong>Diminishing Returns</strong>: <strong class="underline-bold">Performance typically plateaus after 10 beams</strong>  for most tasks.</p>
+<ul>
+<li><p>There is known phenomenon called <span class="target" id="newconcept-beam_search_curse"></span><span class="newconcept">Beam Search Curse</span> where very large beam widths (15+) can paradoxically produce worse outputs by favoring common, generic sequences over more appropriate specific ones</p></li>
+</ul>
+</li>
+<li><p><strong>Hardware Constraints</strong>: For resource-constrained environments, consider 2-4 beams as a practical maximum.</p></li>
+</ul>
+</li>
+</ul>
+<p>The <span class="target" id="newconcept-search_expansion_factor"></span><span class="newconcept">Search Expansion Factor</span> (<code class="docutils literal notranslate"><span class="pre">beam_expansion</span></code>) is a multiplier that temporarily increases the beam pool size to <code class="docutils literal notranslate"><span class="pre">beam_expansion</span> <span class="pre">*</span> <span class="pre">num_beams</span></code> during the search process. This mechanism enhances beam search by creating a richer candidate pool before filtering back down to <code class="docutils literal notranslate"><span class="pre">num_beams</span></code>:</p>
+<ul class="simple">
+<li><p><strong class="underline-bold">Addressing Early Termination</strong>: When sequences complete (by generating EOS tokens), the expansion ensures enough candidates remain to maintain <code class="docutils literal notranslate"><span class="pre">num_beams</span></code> active sequences.</p></li>
+<li><p><strong class="underline-bold">Mitigating Search Collapse</strong>: Helps avoid situations where all beams converge prematurely on very similar sequences.</p></li>
+<li><p><strong class="underline-bold">Improving Exploration Efficiency &amp; Diversity</strong>: By considering more candidates at each step but carrying forward only the most promising, the approach balances exploration breadth with computational efficiency. Allowing consideration of more sequences that might initially score lower but could lead to better final results also improves diversity.</p></li>
+<li><p><strong>Parameter Selection</strong>:</p>
+<ul>
+<li><p><strong>Default Value</strong>: 1.5-2.0 provides a good exploration-efficiency balance.</p></li>
+<li><p><strong>Conservative Setting</strong>: 1.2-1.5 when resources are limited.</p></li>
+<li><p><strong>Aggressive Exploration</strong>: 2.0-3.0 for tasks requiring high diversity.</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="length-penalty">
 <h5>Length Penalty<a class="headerlink" href="#length-penalty" title="Link to this heading"></a></h5>
-<p>Beam search has an inherent bias toward shorter sequences (as each additional token can only reduce the overall probability). To counteract this, a <span class="target" id="newconcept-length_penalty"></span><span class="newconcept">length penalty</span> is applied:</p>
+<p><span class="target" id="newconcept-length_penalty"></span><span class="newconcept">Length Penalty</span> is a crucial mechanism in beam search that balances between shorter and longer sequence generations. Without this correction, beam search has an inherent bias toward shorter sequences because:</p>
+<ol class="arabic simple">
+<li><p><strong>Probability Multiplication Effect</strong>: Each token added to a sequence multiplies the overall probability by a value less than 1 (or adds a negative log probability), naturally causing longer sequences to have lower cumulative scores.</p></li>
+<li><p><strong>Search Space Pruning</strong>: During beam search, shorter sequences might monopolize the available beams, preventing the exploration of potentially better but longer sequences.</p></li>
+</ol>
+<p>The standard length penalty formula (used in Transformer-based models like BERT, GPT, and T5) is:</p>
 <div class="math notranslate nohighlight">
-\[\text{score} = \frac{\text{log-probability}}{(\text{length})^{\alpha}}\]</div>
-<p>Where α is the length penalty parameter:</p>
+\[\text{LengthPenalty}(L) = (\frac{5 + L}{5 + 1})^{\alpha}\]</div>
+<p>where <span class="math notranslate nohighlight">\(L\)</span> is the length of the generated sequence, and</p>
 <ul class="simple">
-<li><p>α &gt; 1.0: Penalizes longer sequences (favors brevity)</p></li>
-<li><p>α &lt; 1.0: Rewards longer sequences (favors verbosity)</p></li>
-<li><p>α = 1.0: No length normalization (raw log probabilities)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\alpha\)</span> is the length penalty hyperparameter (commonly between 0.6 and 1.0).</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(\alpha = 0\)</span>: <strong>No penalty</strong> - Original scores are used without modification, which typically favors shorter sequences.</p></li>
+<li><p><span class="math notranslate nohighlight">\(0 &lt; \alpha &lt; 1\)</span>: <strong>Mild penalty</strong> - Moderately encourages longer sequences.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\alpha = 1\)</span>: <strong>Linear penalty</strong> - The penalty grows linearly with sequence length.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\alpha &gt; 1\)</span>: <strong>Strong penalty</strong> - Aggressively favors longer sequences.</p></li>
 </ul>
-<p>The length penalty provides control over the model’s tendency to prefer shorter sequences, which is particularly important for tasks like translation and summarization where output length should be appropriate to the content.</p>
-</section>
-<section id="numerical-considerations">
-<h5>Numerical Considerations<a class="headerlink" href="#numerical-considerations" title="Link to this heading"></a></h5>
-<p>The implementation uses log probabilities instead of raw probabilities for numerical stability:</p>
-<ul class="simple">
-<li><p>Working in log space prevents numerical underflow when multiplying many small probabilities</p></li>
-<li><p>Addition of log probabilities is equivalent to multiplication of raw probabilities</p></li>
-<li><p>Using <code class="docutils literal notranslate"><span class="pre">log_softmax</span></code> instead of <code class="docutils literal notranslate"><span class="pre">softmax</span></code> followed by logarithm is both more efficient and numerically stable</p></li>
+</li>
+<li><p>The “5+” constant in the formula serves to dampen the penalty effect for very short sequences, ensuring that the penalty scales more smoothly and reasonably when the sequence length is very short (e.g., 1~3 tokens).</p></li>
 </ul>
+<p>Higher $α$ values not only encourage longer sequences but can also increase diversity among the top beams. Simply put, <strong class="underline-bold">encouraging longer sequences provides more opportunities to explore different possible paths</strong> - by more aggressively rewarding length, higher α values enable the consideration of alternative trajectories that might initially have lower probabilities but lead to more diverse final outputs. This effectively prevents “beam collapse” where multiple beams converge on nearly identical sequences with only minor variations.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Domain-Specific Tuning</strong>: Different domains may require different $α$ values, with higher $α$ for better diversity.</p>
+<ul>
+<li><p>Translation tasks often use values around $α \in [0.6, 0.8]$.</p></li>
+<li><p>Summarization might use $α \in [0.8, 1.0]$.</p></li>
+<li><p>Creative text generation can benefit from $α \in [1.0, 1.2]$.</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<p>The final score calculation during beam search becomes:</p>
+<div class="math notranslate nohighlight">
+\[\text{Score} = \frac{\log P(\text{sequence})}{\text{LengthPenalty}(L)}\]</div>
+<p>This is often called <span class="target" id="newconcept-length-normalized_log-probability"></span><span class="newconcept">Length-Normalized Log-Probability</span>.</p>
+<p>In implementation, there is also a design choice between <strong class="underline-bold">early vs. late length normalization</strong>. The length penalty can be applied at each step (early, more encouraging longer sequences and diversity) or only when comparing final sequences (late, more efficient). The code example above applies early path normalization.</p>
 <div class="note admonition">
-<p class="admonition-title">Advantages and Limitations of Beam Search</p>
-<p><strong>Advantages</strong>:</p>
+<p class="admonition-title">Origin and Purpose of the Constants</p>
+<ol class="arabic">
+<li><p><strong>The “5+” Constant</strong>:</p>
+<p>The addition of 5 to the sequence length serves several critical purposes:</p>
 <ul class="simple">
-<li><p><strong class="underline-bold">Explores multiple promising paths simultaneously</strong></p></li>
-<li><p>Less susceptible to local optima than greedy search</p></li>
-<li><p>Often produces higher-quality output for tasks requiring precision</p></li>
-<li><p>Deterministic (produces reproducible results)</p></li>
+<li><p><strong>Smoothing Effect</strong>: It prevents extreme penalties for very short sequences. Without this constant, sequences of length 1 or 2 would receive dramatically different penalties compared to slightly longer ones.</p></li>
+<li><p><strong>Stability for Short Sequences</strong>: For short sequences ($L &lt; 5$), the penalty differences would be too extreme without this offset, potentially causing unstable behavior during early generation steps.</p></li>
+<li><p><strong>Gradual Scaling</strong>: The “5+” ensures that the penalty scales more gradually across the entire range of possible sequence lengths, creating a more balanced comparison.</p></li>
 </ul>
-<p><strong>Limitations</strong>:</p>
+</li>
+<li><p><strong>The Denominator (5+1)</strong>:</p>
 <ul class="simple">
-<li><p><strong class="underline-bold">Computationally expensive</strong> - scales linearly with beam width</p></li>
-<li><p><strong class="underline-bold">Memory intensive</strong> - must store multiple sequences and their histories</p></li>
-<li><p><strong class="underline-bold">Tends to produce similar outputs</strong> - focuses on high-probability paths</p></li>
-<li><p>Less effective for creative generation tasks where diversity is valued</p></li>
-<li><p>Cannot recover from early mistakes shared across all beams</p></li>
+<li><p><strong>Normalization Factor</strong>: This ensures that a sequence of length 1 has a penalty value of $(\frac{6}{6})^α = 1$ when $α &gt; 0$.</p></li>
+<li><p><strong>Reference Point</strong>: It establishes a reference point against which all other sequence lengths are compared.</p></li>
+<li><p><strong>Baseline Calibration</strong>: This denominator calibrates the entire penalty function, ensuring that very short sequences aren’t unduly penalized or favored.</p></li>
 </ul>
-<p><strong>Optimal Use Cases</strong>:</p>
-<p>Beam search is particularly effective for:</p>
+</li>
+</ol>
+<p><strong>Practical Implications</strong>:</p>
+<ol class="arabic">
+<li><p><strong>Effect on Different Sequence Lengths</strong>:</p>
+<p>For $α = 1.0$, the penalties scale as follows:</p>
 <ul class="simple">
-<li><p>Machine translation</p></li>
-<li><p>Summarization</p></li>
-<li><p>Question answering</p></li>
-<li><p>Code generation</p></li>
-<li><p>Tasks where output quality and coherence are prioritized over diversity</p></li>
+<li><p>$L = 1$: $\frac{5+1}{6} = 1.0$ (no effect)</p></li>
+<li><p>$L = 5$: $\frac{5+5}{6} = 1.67$ (moderate penalty)</p></li>
+<li><p>$L = 10$: $\frac{5+10}{6} = 2.5$ (stronger penalty)</p></li>
+<li><p>$L = 20$: $\frac{5+20}{6} = 4.17$ (significant penalty)</p></li>
 </ul>
-<p>For creative tasks where diversity and novelty are valued, sampling-based approaches typically produce better results.</p>
+</li>
+<li><p><strong>Modified Constants</strong>:</p>
+<p>Some implementations use different constants (like $3+L$ or $7+L$) based on empirical results for specific tasks:</p>
+<ul class="simple">
+<li><p><strong>Smaller Constants</strong> (e.g., $3+L$): Create more aggressive length penalties that differentiate more strongly between short sequences.</p></li>
+<li><p><strong>Larger Constants</strong> (e.g., $7+L$): Produce more conservative penalties with gentler scaling.</p></li>
+</ul>
+</li>
+<li><p><strong>Historical Context</strong>:</p>
+<p>The $5+L$ formulation was first introduced in Google’s Neural Machine Translation (GNMT) system and has since become a standard in many sequence generation models. The choice of 5 was determined through empirical testing across various language pairs and generation tasks.</p>
+</li>
+</ol>
 </div>
-<p>Compared to the previously discussed strategies, beam search represents a more computationally intensive but thorough approach to sequence generation. It bridges the gap between the purely deterministic behavior of greedy search and the flexibility of sampling-based methods, providing a middle ground that works well for many practical applications.</p>
 </section>
 </section>
 </section>

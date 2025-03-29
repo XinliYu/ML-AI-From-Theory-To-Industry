@@ -28,7 +28,7 @@ Reactive recommendation systems respond to explicit user actions or queries, del
 Staged Recommendation System
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Multi-pass recommendation employs a staged filtering approach that progressively narrows down candidate items to achieve both computational efficiency and recommendation quality.
+Multi-pass recommendation employs a :newconcept:`Staged Filtering` approach that progressively narrows down candidate items to achieve both computational efficiency and recommendation quality.
 
 * The :newconcept:`Sourcing Layer` acquires potential candidates from diverse sources, makes proper storage and indexing before formal retrieval begins. 
   

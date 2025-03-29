@@ -4,11 +4,11 @@ Supervised Learning
 Generic Neural Modeling Architecture
 ------------------------------------
 
-In modern practice, supervised learning models for search/recommendation/ads commonly employ :refconcept:`Transformer Architecture` as their foundational modeling architecture for both the recall and precision stages (see :refconcept:`Staged Recommendations`).
+In modern practice, supervised learning models for search/recommendation/ads commonly employ :refconcept:`Transformer Architecture` as their foundational modeling architecture for both the recall and precision stages (see :refconcept:`Staged Filtering`).
 
 .. math::
 
-  \hat{r} = f_\mathbf{\theta}(\mathbf{u}, \mathbf{Q}, \mathbf{I})
+  \hat{r_1}, \hat{r_2}, ..., \hat{r_T} = f_\mathbf{\theta}(\mathbf{u}, \mathbf{Q}, \mathbf{I})
 
 where
 
@@ -28,7 +28,13 @@ where
     * A causal (auto-regressive) masking mechanism similar to `transformer decoder masking <02_transformer_models.html#code-transformer-masking>`_ is typically applied to ensure each interaction is only contextualized by previous (not future) interactions.
 
 * :math:`\mathbf{I}` represents encoded item features of a limited number of items.
-* :math:`f_\mathbf{\theta}` is a model with parameters :math:`\mathbf{\theta}`
+* :math:`f_\mathbf{\theta}` is a model with parameters :math:`\mathbf{\theta}`.
+
+  * :math:`f_\mathbf{\theta}` learns to make estimations $\\hat{r_1}, ..., \\hat{r_T}$ of multiple target business metrics/labels $r_1, ..., r_T$. This is known as :newconcept:`Multi-Task Learning (MTL)` and modern supervised learning for production systems typically employ such multi-task learning strategy. Even if only one or two of the metrics are the critical (e.g., direct business goal metrics), we might still consider learning other related metrics/labels as :newconcept:`Supplemental Tasks`, as :ub:`multi-tasking usually in general benefits model performance, stability and robustness`.
+
+    * MTL has been shown to :ub:`encourage comprehensive model learning from structures and patterns common to multiple tasks`, improving data efficiency and reducing overfitting risk, and thus leading to better generalization and predictive accuracy.
+    * MTL has been shown to better generalize model to unseen data (as a result of reduced overfitting and better generalization), thereby enhancing stability.
+    * MTL has also been shown help model better resist noise and variability in the data (as a result of comprehensive and generalized learning), thereby improving robustness.
 
 The following is an example design of $f$ for a precision-stage model, consisting of two modules. The :ub:`precision stage model targets to rank the items` given all information from :math:`\mathbf{u}, \mathbf{Q}, \mathbf{I}`, and present the top-$k$ results to the user.
 
